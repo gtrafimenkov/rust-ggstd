@@ -1,14 +1,22 @@
-# Parts of Go standard library implemented in Rust
+# Partial implementation of Go standard library in Rust
 
-Go language has the great [standard library](https://pkg.go.dev/std): extensive and well tested.
+Go language has a very good [standard library](https://pkg.go.dev/std): extensive and well tested.
 It would be great to have something like that in Rust.
+
+## Partially implemented modules
+
+- crypto::sha256
+- encoding::binary
+- encoding::hex
+- hash
+- math::bits
 
 ## Development process
 
 When a piece of functionality is needed, appropriate Go source code is copied from
-https://github.com/golang/go/tree/go1.20.5/src and translated to Rust.  Structures and functions
-are renamed to meet Rust naming conventions.
+[go1.20.5](https://github.com/golang/go/tree/go1.20.5/src) and translated to Rust.
+Structures and functions are renamed to meet Rust naming conventions.
 
 ## License
 
-The same license as used by Go project since the code is derived from it.  See [LINCESE](./LICENSE).
+The same license as used by Go project.  See [LICENSE](./LICENSE).
