@@ -1,5 +1,5 @@
-use gstd::crypto::sha256;
-use gstd::encoding::hex;
+use ggstd::crypto::sha256;
+use ggstd::encoding::hex;
 
 fn main() {
     let msg = "hello world";
