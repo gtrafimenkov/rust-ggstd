@@ -19,7 +19,7 @@
 //! decode data written with any previously released version,
 //! subject to issues such as security fixes.
 //! See the Go compatibility document for background: <https://golang.org/doc/go1compat>
-pub trait Hash {
+pub trait Hash: std::io::Write {
     // // Write (via the embedded io.Writer interface) adds more data to the running hash.
     // // It never returns an error.
     // io.Writer
@@ -41,14 +41,12 @@ pub trait Hash {
     fn block_size(&self) -> usize;
 }
 
-// // Hash32 is the common interface implemented by all 32-bit hash functions.
-// type Hash32 interface {
-// 	Hash
-// 	Sum32() uint32
-// }
+/// Hash32 is the common interface implemented by all 32-bit hash functions.
+pub trait Hash32: Hash {
+    fn sum32(&self) -> u32;
+}
 
-// // Hash64 is the common interface implemented by all 64-bit hash functions.
-// type Hash64 interface {
-// 	Hash
-// 	Sum64() uint64
-// }
+/// Hash64 is the common interface implemented by all 64-bit hash functions.
+pub trait Hash64: Hash {
+    fn sum64(&self) -> u64;
+}

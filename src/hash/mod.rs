@@ -2,4 +2,6 @@
 
 mod hash;
 
-pub use hash::Hash;
+pub mod crc32;
+
+pub use hash::{Hash, Hash32, Hash64};

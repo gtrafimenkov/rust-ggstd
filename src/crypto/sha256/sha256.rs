@@ -13,6 +13,7 @@
 use super::sha256block::block_generic;
 use crate::encoding::binary::BigEndian;
 use crate::hash::{self, Hash};
+use std::io::Write;
 
 // fn init() {
 // 	crypto.RegisterHash(crypto.SHA224, New224)
@@ -201,8 +202,10 @@ impl Digest {
         }
         bytes_to_copy
     }
+}
 
-    pub fn write(&mut self, p: &[u8]) -> std::io::Result<usize> {
+impl std::io::Write for Digest {
+    fn write(&mut self, p: &[u8]) -> std::io::Result<usize> {
         // boring.Unreachable()
         let mut p = p;
         let nn = p.len();
@@ -227,6 +230,12 @@ impl Digest {
         Ok(nn)
     }
 
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+impl Digest {
     // fn (d *Digest) Sum(in []u8) []u8 {
     // 	boring.Unreachable()
     // 	// Make a copy of d so that caller can keep writing and summing.
