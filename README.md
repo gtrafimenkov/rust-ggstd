@@ -3,6 +3,15 @@
 Go language has a very good [standard library](https://pkg.go.dev/std): simple,
 extensive and well tested.  It would be great to have something like that in Rust.
 
+## Usage examples
+
+Usage examples can be found in [src/bin](./src/bin) folder.
+They can be run with `cargo run --bin NAME` command, for example:
+
+```
+cargo run --bin time
+```
+
 ## Partially implemented modules
 
 - crypto::sha256
@@ -10,6 +19,12 @@ extensive and well tested.  It would be great to have something like that in Rus
 - encoding::hex
 - hash
 - math::bits
+- time::time
+  - limitations:
+    - no time zone support
+    - no duration support
+    - no formatting support
+    - no monothonic time support
 
 ## Development process
 

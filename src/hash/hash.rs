@@ -18,7 +18,7 @@
 //! That is, any released versions of the packages should be able to
 //! decode data written with any previously released version,
 //! subject to issues such as security fixes.
-//! See the Go compatibility document for background: https://golang.org/doc/go1compat
+//! See the Go compatibility document for background: <https://golang.org/doc/go1compat>
 pub trait Hash {
     // // Write (via the embedded io.Writer interface) adds more data to the running hash.
     // // It never returns an error.
