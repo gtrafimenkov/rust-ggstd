@@ -1124,7 +1124,7 @@ const DAYS_BEFORE: [u16; 13] = [
 ];
 
 #[allow(dead_code)]
-pub(crate) fn days_in(m: usize, year: isize) -> usize {
+pub(super) fn days_in(m: usize, year: isize) -> usize {
     if m == 2 && is_leap(year) {
         return 29;
     }
