@@ -18,6 +18,8 @@ cargo run --bin time
 - encoding::binary
 - encoding::hex
 - hash
+- hash::adler32
+- hash::crc32
 - math::bits
 - time::time
   - limitations:
