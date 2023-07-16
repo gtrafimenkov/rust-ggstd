@@ -14,6 +14,7 @@ cargo run --bin time
 
 ## Partially implemented modules
 
+- bytes
 - crypto::sha256
 - encoding::binary
 - encoding::hex
