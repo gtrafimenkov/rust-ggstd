@@ -5,68 +5,56 @@
 use ggstd::encoding::hex;
 
 fn main() {
-    println!("hello world");
-    println!(
-        "{}",
-        hex::encode_to_string(&[
-            0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x47, 0x6f, 0x70, 0x68, 0x65, 0x72, 0x21
-        ])
-    );
+    example_encode();
+    example_decode();
+    example_decode_string();
+    example_encode_to_string();
 }
 
-// package hex_test
+fn example_encode() {
+    let src = "Hello Gopher!";
 
-// import (
-// 	"encoding/hex"
-// 	"fmt"
-// 	"log"
-// 	"os"
-// )
+    let mut dst = vec![0; hex::encoded_len(src.len())];
+    let n = hex::encode(&mut dst, src.as_bytes());
 
-// func ExampleEncode() {
-// 	src := []byte("Hello Gopher!")
+    println!("{}", String::from_utf8_lossy(&dst[..n]));
 
-// 	dst := make([]byte, hex.EncodedLen(len(src)))
-// 	hex.Encode(dst, src)
+    // Output:
+    // 48656c6c6f20476f7068657221
+}
 
-// 	fmt.Printf("%s\n", dst)
+fn example_decode() {
+    let src = b"48656c6c6f20476f7068657221";
 
-// 	// Output:
-// 	// 48656c6c6f20476f7068657221
-// }
+    let mut dst = vec![0; hex::decoded_len(src.len())];
+    let (n, err) = hex::decode(&mut dst, src);
+    if err.is_some() {
+        panic!("{}", err.unwrap());
+    }
 
-// func ExampleDecode() {
-// 	src := []byte("48656c6c6f20476f7068657221")
+    println!("{}", String::from_utf8_lossy(&dst[..n]));
 
-// 	dst := make([]byte, hex.DecodedLen(len(src)))
-// 	n, err := hex.Decode(dst, src)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+    // Output:
+    // Hello Gopher!
+}
 
-// 	fmt.Printf("%s\n", dst[:n])
+fn example_decode_string() {
+    let s = "48656c6c6f20476f7068657221";
+    let (decoded, err) = hex::decode_string(s);
+    if err.is_some() {
+        panic!("{}", err.unwrap());
+    }
 
-// 	// Output:
-// 	// Hello Gopher!
-// }
+    println!("{}", String::from_utf8_lossy(&decoded));
 
-// func ExampleDecodeString() {
-// 	const s = "48656c6c6f20476f7068657221"
-// 	decoded, err := hex.DecodeString(s)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+    // Output:
+    // Hello Gopher!
+}
 
-// 	fmt.Printf("%s\n", decoded)
-
-// 	// Output:
-// 	// Hello Gopher!
-// }
-
-// func ExampleDump() {
+// fn ExampleDump() {
 // 	content := []byte("Go is an open source programming language.")
 
-// 	fmt.Printf("%s", hex.Dump(content))
+// 	fmt.Printf("%s", hex::Dump(content))
 
 // 	// Output:
 // 	// 00000000  47 6f 20 69 73 20 61 6e  20 6f 70 65 6e 20 73 6f  |Go is an open so|
@@ -74,14 +62,14 @@ fn main() {
 // 	// 00000020  20 6c 61 6e 67 75 61 67  65 2e                    | language.|
 // }
 
-// func ExampleDumper() {
+// fn ExampleDumper() {
 // 	lines := []string{
 // 		"Go is an open source programming language.",
 // 		"\n",
 // 		"We encourage all Go users to subscribe to golang-announce.",
 // 	}
 
-// 	stdoutDumper := hex.Dumper(os.Stdout)
+// 	stdoutDumper := hex::Dumper(os.Stdout)
 
 // 	defer stdoutDumper.Close()
 
@@ -99,12 +87,12 @@ fn main() {
 // 	// 00000060  75 6e 63 65 2e                                    |unce.|
 // }
 
-// func ExampleEncodeToString() {
-// 	src := []byte("Hello")
-// 	encodedStr := hex.EncodeToString(src)
+fn example_encode_to_string() {
+    let src = b"Hello";
+    let encoded_str = hex::encode_to_string(src);
 
-// 	fmt.Printf("%s\n", encodedStr)
+    println!("{}", encoded_str);
 
-// 	// Output:
-// 	// 48656c6c6f
-// }
+    // Output:
+    // 48656c6c6f
+}

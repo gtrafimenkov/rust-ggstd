@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -60,7 +60,7 @@ pub fn simple_update(crc: u32, tab: &crc32::Table, p: &[u8]) -> u32 {
 // func slicingMakeTable(poly uint32) *slicing8Table {
 // 	t := new(slicing8Table)
 // 	simple_populate_table(poly, &t[0])
-// 	for i := 0; i < 256; i++ {
+// 	for i := 0; i < 256; i += 1 {
 // 		crc := t[0][i]
 // 		for j := 1; j < 8; j++ {
 // 			crc = t[0][crc&0xFF] ^ (crc >> 8)

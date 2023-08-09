@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -81,7 +81,7 @@ fn test_golden() {
         let p = test.input.as_bytes();
         let mut input_str = String::from_utf8_lossy(p).to_string();
         if p.len() > 200 {
-            // 			in = in[:100] + "..." + in[len(in)-100:]
+            // 			in = in[..100] + "..." + in[len(in)-100:]
             let mut shorter = p[0..100].to_vec();
             let mut dots = "...".as_bytes().to_vec();
             let mut end = p[p.len().saturating_sub(100)..].to_vec();
@@ -109,11 +109,11 @@ fn test_golden() {
 // 		h := New()
 // 		h2 := New()
 
-// 		io.WriteString(h, g.input[:len(g.input)/2])
+// 		io.write_string(h, g.input[..len(g.input)/2])
 
 // 		state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
 // 		if err != nil {
-// 			t.Errorf("could not marshal: %v", err)
+// 			t.Errorf("could not marshal: {}", err)
 // 			continue
 // 		}
 
@@ -123,12 +123,12 @@ fn test_golden() {
 // 		}
 
 // 		if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
-// 			t.Errorf("could not unmarshal: %v", err)
+// 			t.Errorf("could not unmarshal: {}", err)
 // 			continue
 // 		}
 
-// 		io.WriteString(h, g.input[len(g.input)/2:])
-// 		io.WriteString(h2, g.input[len(g.input)/2:])
+// 		io.write_string(h, g.input[len(g.input)/2:])
+// 		io.write_string(h2, g.input[len(g.input)/2:])
 
 // 		if h.Sum32() != h2.Sum32() {
 // 			t.Errorf("checksum(%q) = 0x%x != marshaled (0x%x)", g.input, h.Sum32(), h2.Sum32())
@@ -146,7 +146,7 @@ fn test_golden() {
 // 	let in = make([]byte, 0, h.Size())
 
 // 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		h.Reset()
 // 		h.Write(data)
 // 		h.Sum(in)

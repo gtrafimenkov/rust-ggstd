@@ -1,5 +1,7 @@
 use ggstd::bytes::Buffer;
 
+use std::io::Write;
+
 fn main() {
     let mut buf = Buffer::new();
     buf.write("hello world".as_bytes()).unwrap();

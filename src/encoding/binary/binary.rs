@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -210,7 +210,7 @@ impl BigEndian {
 // 	// Fast path for basic types and slices.
 // 	if n := intDataSize(data); n != 0 {
 // 		bs := make([]u8, n)
-// 		if _, err := io.ReadFull(r, bs); err != nil {
+// 		if _, err := io.read_full(r, bs); err != nil {
 // 			return err
 // 		}
 // 		switch data := data.(type) {
@@ -300,7 +300,7 @@ impl BigEndian {
 // 		return errors.New("binary.Read: invalid type " + reflect.TypeOf(data).String())
 // 	}
 // 	d := &decoder{order: order, buf: make([]u8, size)}
-// 	if _, err := io.ReadFull(r, d.buf); err != nil {
+// 	if _, err := io.read_full(r, d.buf); err != nil {
 // 		return err
 // 	}
 // 	d.value(v)
@@ -419,7 +419,7 @@ impl BigEndian {
 // 				order.put_u64(bs[8*i:], math.Float64bits(x))
 // 			}
 // 		}
-// 		_, err := w.Write(bs)
+// 		_, err := w.write(bs)
 // 		return err
 // 	}
 
@@ -432,7 +432,7 @@ impl BigEndian {
 // 	buf := make([]u8, size)
 // 	e := &encoder{order: order, buf: buf}
 // 	e.value(v)
-// 	_, err := w.Write(buf)
+// 	_, err := w.write(buf)
 // 	return err
 // }
 
@@ -481,7 +481,7 @@ impl BigEndian {
 
 // 	case reflect.Struct:
 // 		sum := 0
-// 		for i, n := 0, t.NumField(); i < n; i++ {
+// 		for i, n := 0, t.NumField(); i < n; i += 1 {
 // 			s := sizeof(t.Field(i).Type)
 // 			if s < 0 {
 // 				return -1
@@ -588,14 +588,14 @@ impl BigEndian {
 // 	switch v.Kind() {
 // 	case reflect.Array:
 // 		l := v.Len()
-// 		for i := 0; i < l; i++ {
+// 		for i := 0; i < l; i += 1 {
 // 			d.value(v.Index(i))
 // 		}
 
 // 	case reflect.Struct:
 // 		t := v.Type()
 // 		l := v.NumField()
-// 		for i := 0; i < l; i++ {
+// 		for i := 0; i < l; i += 1 {
 // 			// Note: Calling v.CanSet() below is an optimization.
 // 			// It would be sufficient to check the field name,
 // 			// but creating the StructField info for each field is
@@ -610,7 +610,7 @@ impl BigEndian {
 
 // 	case reflect.Slice:
 // 		l := v.Len()
-// 		for i := 0; i < l; i++ {
+// 		for i := 0; i < l; i += 1 {
 // 			d.value(v.Index(i))
 // 		}
 
@@ -657,14 +657,14 @@ impl BigEndian {
 // 	switch v.Kind() {
 // 	case reflect.Array:
 // 		l := v.Len()
-// 		for i := 0; i < l; i++ {
+// 		for i := 0; i < l; i += 1 {
 // 			e.value(v.Index(i))
 // 		}
 
 // 	case reflect.Struct:
 // 		t := v.Type()
 // 		l := v.NumField()
-// 		for i := 0; i < l; i++ {
+// 		for i := 0; i < l; i += 1 {
 // 			// see comment for corresponding code in decoder.value()
 // 			if v := v.Field(i); v.CanSet() || t.Field(i).Name != "_" {
 // 				e.value(v)
@@ -675,7 +675,7 @@ impl BigEndian {
 
 // 	case reflect.Slice:
 // 		l := v.Len()
-// 		for i := 0; i < l; i++ {
+// 		for i := 0; i < l; i += 1 {
 // 			e.value(v.Index(i))
 // 		}
 

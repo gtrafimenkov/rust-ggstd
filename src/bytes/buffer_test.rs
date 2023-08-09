@@ -1,9 +1,11 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 use super::buffer::{self, new_buffer, Buffer};
+use std::io::Read;
+use std::io::Write;
 use std::sync::OnceLock;
 
 const N: usize = 10000; // make this bigger for a larger (and slower) test
@@ -45,9 +47,9 @@ fn check(_testname: &str, buf: &Buffer, s: &str) {
 // fn fillString(testname string, buf: &Buffer, s string, n int, fus string) string {
 // 	check(&(testname.to_string()+" (fill 1)", buf, s)
 // 	for ; n > 0; n-- {
-// 		m, err := buf.WriteString(fus)
+// 		m, err := buf.write_string(fus)
 // 		if m != len(fus) {
-// 			t.Errorf(testname+" (fill 2): m == %d, expected %d", m, len(fus))
+// 			t.Errorf(testname+" (fill 2): m == {}, expected {}", m, len(fus))
 // 		}
 // 		if err != nil {
 // 			t.Errorf(testname+" (fill 3): err should always be nil, found err == %s", err)
@@ -66,7 +68,7 @@ fn check(_testname: &str, buf: &Buffer, s: &str) {
 // 	for ; n > 0; n-- {
 // 		m, err := buf.write(fub)
 // 		if m != len(fub) {
-// 			t.Errorf(testname+" (fill 2): m == %d, expected %d", m, len(fub))
+// 			t.Errorf(testname+" (fill 2): m == {}, expected {}", m, len(fub))
 // 		}
 // 		if err != nil {
 // 			t.Errorf(testname+" (fill 3): err should always be nil, found err == %s", err)
@@ -204,7 +206,7 @@ fn test_basic_operations() {
 // fn TestMixedReadsAndWrites() {
 // 	var buf Buffer
 // 	s := ""
-// 	for i := 0; i < 50; i++ {
+// 	for i := 0; i < 50; i += 1 {
 // 		wlen := rand.Intn(len(get_test_string()))
 // 		if i%2 == 0 {
 // 			s = fillString(t, "TestMixedReadsAndWrites (1)", &buf, s, 1, get_test_string()[0:wlen])
@@ -273,7 +275,7 @@ fn test_cap_with_slice_and_written_data() {
 // 		t.Fatal(err)
 // 	}
 // 	if i != 0 {
-// 		t.Fatalf("unexpected return from bytes.ReadFrom (1): got: %d, want %d", i, 0)
+// 		t.Fatalf("unexpected return from bytes.ReadFrom (1): got: {}, want {}", i, 0)
 // 	}
 // 	check("TestReadFromPanicReader (1)", &buf, "");
 
@@ -292,12 +294,12 @@ fn test_cap_with_slice_and_written_data() {
 // 	defer fn() {
 // 		switch err := recover().(type) {
 // 		case nil:
-// 			t.Fatal("bytes.Buffer.ReadFrom didn't panic")
+// 			t.Fatal("bytes::Buffer::new().ReadFrom didn't panic")
 // 		case error:
 // 			// this is the error string of errNegativeRead
-// 			wantError := "bytes.Buffer: reader returned negative count from Read"
+// 			wantError := "bytes::Buffer::new(): reader returned negative count from Read"
 // 			if err.Error() != wantError {
-// 				t.Fatalf("recovered panic: got %v, want %v", err.Error(), wantError)
+// 				t.Fatalf("recovered panic: got {}, want {}", err.Error(), wantError)
 // 			}
 // 		default:
 // 			t.Fatalf("unexpected panic value: %#v", err)
@@ -332,15 +334,15 @@ fn test_cap_with_slice_and_written_data() {
 // 			t.Fatalf("WriteRune(%U) error: %s", r, err)
 // 		}
 // 		if nbytes != size {
-// 			t.Fatalf("WriteRune(%U) expected %d, got %d", r, size, nbytes)
+// 			t.Fatalf("WriteRune(%U) expected {}, got {}", r, size, nbytes)
 // 		}
 // 		n += size
 // 	}
 // 	b = b[0:n]
 
 // 	// Check the resulting bytes
-// 	if !Equal(buf.Bytes(), b) {
-// 		t.Fatalf("incorrect result from WriteRune: %q not %q", buf.Bytes(), b)
+// 	if !Equal(buf.bytes(), b) {
+// 		t.Fatalf("incorrect result from WriteRune: %q not %q", buf.bytes(), b)
 // 	}
 
 // 	p := make([u8], utf8.UTFMax)
@@ -349,7 +351,7 @@ fn test_cap_with_slice_and_written_data() {
 // 		size := utf8.EncodeRune(p, r)
 // 		nr, nbytes, err := buf.ReadRune()
 // 		if nr != r || nbytes != size || err != nil {
-// 			t.Fatalf("ReadRune(%U) got %U,%d not %U,%d (err=%s)", r, nr, nbytes, r, size, err)
+// 			t.Fatalf("ReadRune(%U) got %U,{} not %U,{} (err=%s)", r, nr, nbytes, r, size, err)
 // 		}
 // 	}
 
@@ -376,7 +378,7 @@ fn test_cap_with_slice_and_written_data() {
 // 		}
 // 		r2, nbytes, err := buf.ReadRune()
 // 		if r1 != r2 || r1 != r || nbytes != size || err != nil {
-// 			t.Fatalf("ReadRune(%U) after UnreadRune got %U,%d not %U,%d (err=%s)", r, r2, nbytes, r, size, err)
+// 			t.Fatalf("ReadRune(%U) after UnreadRune got %U,{} not %U,{} (err=%s)", r, r2, nbytes, r, size, err)
 // 		}
 // 	}
 // }
@@ -388,7 +390,7 @@ fn test_cap_with_slice_and_written_data() {
 // 	for _, r := range []rune{-1, utf8.MaxRune + 1} {
 // 		var buf Buffer
 // 		buf.WriteRune(r)
-// 		check(fmt.Sprintf("TestWriteInvalidRune (%d)", r), &buf, "\uFFFD")
+// 		check(fmt.Sprintf("TestWriteInvalidRune ({})", r), &buf, "\uFFFD")
 // 	}
 // }
 
@@ -396,7 +398,7 @@ fn test_cap_with_slice_and_written_data() {
 // fn TestNext() {
 // 	b := [u8]{0, 1, 2, 3, 4}
 // 	tmp := make([u8], 5)
-// 	for i := 0; i <= 5; i++ {
+// 	for i := 0; i <= 5; i += 1 {
 // 		for j := i; j <= 5; j++ {
 // 			for k := 0; k <= 6; k++ {
 // 				// 0 <= i <= j <= 5; 0 <= k <= 6
@@ -406,7 +408,7 @@ fn test_cap_with_slice_and_written_data() {
 // 				let buf = new_buffer(b[0:j])
 // 				n, _ := buf.read(tmp[0:i])
 // 				if n != i {
-// 					t.Fatalf("Read %d returned %d", i, n)
+// 					t.Fatalf("Read {} returned {}", i, n)
 // 				}
 // 				bb := buf.Next(k)
 // 				want := k
@@ -414,11 +416,11 @@ fn test_cap_with_slice_and_written_data() {
 // 					want = j - i
 // 				}
 // 				if len(bb) != want {
-// 					t.Fatalf("in %d,%d: len(Next(%d)) == %d", i, j, k, len(bb))
+// 					t.Fatalf("in {},{}: len(Next({})) == {}", i, j, k, len(bb))
 // 				}
 // 				for l, v := range bb {
 // 					if v != byte(l+i) {
-// 						t.Fatalf("in %d,%d: Next(%d)[%d] = %d, want %d", i, j, k, l, v, l+i)
+// 						t.Fatalf("in {},{}: Next({})[{}] = {}, want {}", i, j, k, l, v, l+i)
 // 					}
 // 				}
 // 			}
@@ -457,7 +459,7 @@ fn test_cap_with_slice_and_written_data() {
 // 			}
 // 		}
 // 		if err != test.err {
-// 			t.Errorf("expected error %v, got %v", test.err, err)
+// 			t.Errorf("expected error {}, got {}", test.err, err)
 // 		}
 // 	}
 // }
@@ -478,7 +480,7 @@ fn test_cap_with_slice_and_written_data() {
 // 			}
 // 		}
 // 		if err != test.err {
-// 			t.Errorf("expected error %v, got %v", test.err, err)
+// 			t.Errorf("expected error {}, got {}", test.err, err)
 // 		}
 // 	}
 // }
@@ -489,7 +491,7 @@ fn test_cap_with_slice_and_written_data() {
 // 	data := make([u8], n)
 // 	data[n-1] = 'x'
 // 	b.SetBytes(int64(n))
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		let buf = new_buffer(data)
 // 		_, err := buf.ReadString('x')
 // 		if err != nil {
@@ -520,11 +522,11 @@ fn test_cap_with_slice_and_written_data() {
 // 				t.Errorf("allocation occurred during write")
 // 			}
 // 			// Check that buffer has correct data.
-// 			if !Equal(buf.Bytes()[0:startLen-readBytes], xBytes[readBytes:]) {
-// 				t.Errorf("bad initial data at %d %d", startLen, growLen)
+// 			if !Equal(buf.bytes()[0:startLen-readBytes], xBytes[readBytes:]) {
+// 				t.Errorf("bad initial data at {} {}", startLen, growLen)
 // 			}
-// 			if !Equal(buf.Bytes()[startLen-readBytes:startLen-readBytes+growLen], yBytes) {
-// 				t.Errorf("bad written data at %d %d", startLen, growLen)
+// 			if !Equal(buf.bytes()[startLen-readBytes:startLen-readBytes+growLen], yBytes) {
+// 				t.Errorf("bad written data at {} {}", startLen, growLen)
 // 			}
 // 		}
 // 	}
@@ -534,7 +536,7 @@ fn test_cap_with_slice_and_written_data() {
 // fn TestGrowOverflow() {
 // 	defer fn() {
 // 		if err := recover(); err != ErrTooLarge {
-// 			t.Errorf("after too-large Grow, recover() = %v; want %v", err, ErrTooLarge)
+// 			t.Errorf("after too-large Grow, recover() = {}; want {}", err, ErrTooLarge)
 // 		}
 // 	}()
 
@@ -550,10 +552,10 @@ fn test_cap_with_slice_and_written_data() {
 // 	slice := make([u8], 0)
 // 	n, err := b.read(slice)
 // 	if err != nil {
-// 		t.Errorf("read error: %v", err)
+// 		t.Errorf("read error: {}", err)
 // 	}
 // 	if n != 0 {
-// 		t.Errorf("wrong count; got %d want 0", n)
+// 		t.Errorf("wrong count; got {} want 0", n)
 // 	}
 // }
 
@@ -573,11 +575,11 @@ fn test_cap_with_slice_and_written_data() {
 // 	}
 
 // 	// check not at EOF
-// 	b.WriteString("abcdefghijklmnopqrstuvwxyz")
+// 	b.write_string("abcdefghijklmnopqrstuvwxyz")
 
 // 	// after unsuccessful read
 // 	if n, err := b.read(nil); n != 0 || err != nil {
-// 		t.Fatalf("Read(nil) = %d,%v; want 0,nil", n, err)
+// 		t.Fatalf("Read(nil) = {},{}; want 0,nil", n, err)
 // 	}
 // 	if err := b.UnreadByte(); err == nil {
 // 		t.Fatal("UnreadByte after Read(nil): got no error")
@@ -585,14 +587,14 @@ fn test_cap_with_slice_and_written_data() {
 
 // 	// after successful read
 // 	if _, err := b.ReadBytes('m'); err != nil {
-// 		t.Fatalf("ReadBytes: %v", err)
+// 		t.Fatalf("ReadBytes: {}", err)
 // 	}
 // 	if err := b.UnreadByte(); err != nil {
-// 		t.Fatalf("UnreadByte: %v", err)
+// 		t.Fatalf("UnreadByte: {}", err)
 // 	}
 // 	c, err := b.ReadByte()
 // 	if err != nil {
-// 		t.Fatalf("ReadByte: %v", err)
+// 		t.Fatalf("ReadByte: {}", err)
 // 	}
 // 	if c != 'm' {
 // 		t.Errorf("ReadByte = %q; want %q", c, 'm')
@@ -606,7 +608,7 @@ fn test_cap_with_slice_and_written_data() {
 // 	buf := make([u8], 1024)
 // 	b.write(buf[0..1])
 // 	var cap0 int
-// 	for i := 0; i < 5<<10; i++ {
+// 	for i := 0; i < 5<<10; i += 1 {
 // 		b.write(buf)
 // 		b.read(buf)
 // 		if i == 0 {
@@ -617,7 +619,7 @@ fn test_cap_with_slice_and_written_data() {
 // 	// (*Buffer).grow allows for 2x capacity slop before sliding,
 // 	// so set our error threshold at 3x.
 // 	if cap1 > cap0*3 {
-// 		t.Errorf("buffer cap = %d; too big (grew from %d)", cap1, cap0)
+// 		t.Errorf("buffer cap = {}; too big (grew from {})", cap1, cap0)
 // 	}
 // }
 
@@ -625,9 +627,9 @@ fn test_cap_with_slice_and_written_data() {
 // 	const n = 4 << 10
 // 	b.SetBytes(n)
 // 	let buf = new_buffer(make([u8], n))
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		buf.Reset()
-// 		for i := 0; i < n; i++ {
+// 		for i := 0; i < n; i += 1 {
 // 			buf.WriteByte('x')
 // 		}
 // 	}
@@ -638,9 +640,9 @@ fn test_cap_with_slice_and_written_data() {
 // 	const r = '☺'
 // 	b.SetBytes(int64(n * utf8.RuneLen(r)))
 // 	let buf = new_buffer(make([u8], n*utf8.UTFMax))
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		buf.Reset()
-// 		for i := 0; i < n; i++ {
+// 		for i := 0; i < n; i += 1 {
 // 			buf.WriteRune(r)
 // 		}
 // 	}
@@ -649,10 +651,10 @@ fn test_cap_with_slice_and_written_data() {
 // // From Issue 5154.
 // fn BenchmarkBufferNotEmptyWriteRead(b *testing.B) {
 // 	buf := make([u8], 1024)
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		var b Buffer
 // 		b.write(buf[0..1])
-// 		for i := 0; i < 5<<10; i++ {
+// 		for i := 0; i < 5<<10; i += 1 {
 // 			b.write(buf)
 // 			b.read(buf)
 // 		}
@@ -662,15 +664,15 @@ fn test_cap_with_slice_and_written_data() {
 // // Check that we don't compact too often. From Issue 5154.
 // fn BenchmarkBufferFullSmallReads(b *testing.B) {
 // 	buf := make([u8], 1024)
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		var b Buffer
 // 		b.write(buf)
 // 		for b.Len()+20 < b.Cap() {
-// 			b.write(buf[:10])
+// 			b.write(buf[..10])
 // 		}
-// 		for i := 0; i < 5<<10; i++ {
-// 			b.read(buf[:1])
-// 			b.write(buf[:1])
+// 		for i := 0; i < 5<<10; i += 1 {
+// 			b.read(buf[..1])
+// 			b.write(buf[..1])
 // 		}
 // 	}
 // }
@@ -678,9 +680,9 @@ fn test_cap_with_slice_and_written_data() {
 // fn BenchmarkBufferWriteBlock(b *testing.B) {
 // 	block := make([u8], 1024)
 // 	for _, n := range []int{1 << 12, 1 << 16, 1 << 20} {
-// 		b.Run(fmt.Sprintf("N%d", n), fn(b *testing.B) {
+// 		b.Run(fmt.Sprintf("N{}", n), fn(b *testing.B) {
 // 			b.ReportAllocs()
-// 			for i := 0; i < b.N; i++ {
+// 			for i := 0; i < b.N; i += 1 {
 // 				var bb Buffer
 // 				for bb.Len() < n {
 // 					bb.write(block)

@@ -1,7 +1,9 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2017 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
+use super::bits_tables;
 
 // //go:generate go run make_tables.go
 
@@ -13,19 +15,19 @@
 // // --- LeadingZeros ---
 
 // // LeadingZeros returns the number of leading zero bits in x; the result is UintSize for x == 0.
-// func LeadingZeros(x uint) int { return UintSize - Len(x) }
+// fn LeadingZeros(x uint) int { return UintSize - Len(x) }
 
 // // LeadingZeros8 returns the number of leading zero bits in x; the result is 8 for x == 0.
-// func LeadingZeros8(x uint8) int { return 8 - Len8(x) }
+// fn LeadingZeros8(x u8) int { return 8 - Len8(x) }
 
 // // LeadingZeros16 returns the number of leading zero bits in x; the result is 16 for x == 0.
-// func LeadingZeros16(x uint16) int { return 16 - Len16(x) }
+// fn LeadingZeros16(x u16) int { return 16 - Len16(x) }
 
 // // LeadingZeros32 returns the number of leading zero bits in x; the result is 32 for x == 0.
-// func LeadingZeros32(x uint32) int { return 32 - Len32(x) }
+// fn LeadingZeros32(x uint32) int { return 32 - Len32(x) }
 
 // // LeadingZeros64 returns the number of leading zero bits in x; the result is 64 for x == 0.
-// func LeadingZeros64(x uint64) int { return 64 - Len64(x) }
+// fn LeadingZeros64(x uint64) int { return 64 - Len64(x) }
 
 // // --- TrailingZeros ---
 
@@ -47,7 +49,7 @@
 // }
 
 // // TrailingZeros returns the number of trailing zero bits in x; the result is UintSize for x == 0.
-// func TrailingZeros(x uint) int {
+// fn TrailingZeros(x uint) int {
 // 	if UintSize == 32 {
 // 		return TrailingZeros32(uint32(x))
 // 	}
@@ -55,12 +57,12 @@
 // }
 
 // // TrailingZeros8 returns the number of trailing zero bits in x; the result is 8 for x == 0.
-// func TrailingZeros8(x uint8) int {
+// fn TrailingZeros8(x u8) int {
 // 	return int(ntz8tab[x])
 // }
 
 // // TrailingZeros16 returns the number of trailing zero bits in x; the result is 16 for x == 0.
-// func TrailingZeros16(x uint16) int {
+// fn TrailingZeros16(x u16) int {
 // 	if x == 0 {
 // 		return 16
 // 	}
@@ -69,7 +71,7 @@
 // }
 
 // // TrailingZeros32 returns the number of trailing zero bits in x; the result is 32 for x == 0.
-// func TrailingZeros32(x uint32) int {
+// fn TrailingZeros32(x uint32) int {
 // 	if x == 0 {
 // 		return 32
 // 	}
@@ -78,7 +80,7 @@
 // }
 
 // // TrailingZeros64 returns the number of trailing zero bits in x; the result is 64 for x == 0.
-// func TrailingZeros64(x uint64) int {
+// fn TrailingZeros64(x uint64) int {
 // 	if x == 0 {
 // 		return 64
 // 	}
@@ -105,7 +107,7 @@
 // const m4 = 0x0000ffff0000ffff
 
 // // OnesCount returns the number of one bits ("population count") in x.
-// func OnesCount(x uint) int {
+// fn OnesCount(x uint) int {
 // 	if UintSize == 32 {
 // 		return OnesCount32(uint32(x))
 // 	}
@@ -113,22 +115,22 @@
 // }
 
 // // OnesCount8 returns the number of one bits ("population count") in x.
-// func OnesCount8(x uint8) int {
+// fn OnesCount8(x u8) int {
 // 	return int(pop8tab[x])
 // }
 
 // // OnesCount16 returns the number of one bits ("population count") in x.
-// func OnesCount16(x uint16) int {
+// fn OnesCount16(x u16) int {
 // 	return int(pop8tab[x>>8] + pop8tab[x&0xff])
 // }
 
 // // OnesCount32 returns the number of one bits ("population count") in x.
-// func OnesCount32(x uint32) int {
+// fn OnesCount32(x uint32) int {
 // 	return int(pop8tab[x>>24] + pop8tab[x>>16&0xff] + pop8tab[x>>8&0xff] + pop8tab[x&0xff])
 // }
 
 // // OnesCount64 returns the number of one bits ("population count") in x.
-// func OnesCount64(x uint64) int {
+// fn OnesCount64(x uint64) int {
 // 	// Implementation: Parallel summing of adjacent bits.
 // 	// See "Hacker's Delight", Chap. 5: Counting Bits.
 // 	// The following pattern shows the general approach:
@@ -164,9 +166,9 @@
 // // To rotate x right by k bits, call RotateLeft(x, -k).
 // //
 // // This function's execution time does not depend on the inputs.
-// func RotateLeft(x uint, k int) uint {
+// fn RotateLeft(x uint, k int) uint {
 // 	if UintSize == 32 {
-// 		return uint(RotateLeft32(uint32(x), k))
+// 		return uint(rotate_left32(uint32(x), k))
 // 	}
 // 	return uint(RotateLeft64(uint64(x), k))
 // }
@@ -175,7 +177,7 @@
 // // To rotate x right by k bits, call RotateLeft8(x, -k).
 // //
 // // This function's execution time does not depend on the inputs.
-// func RotateLeft8(x uint8, k int) uint8 {
+// fn RotateLeft8(x u8, k int) u8 {
 // 	const n = 8
 // 	s := uint(k) & (n - 1)
 // 	return x<<s | x>>(n-s)
@@ -185,14 +187,14 @@
 // // To rotate x right by k bits, call RotateLeft16(x, -k).
 // //
 // // This function's execution time does not depend on the inputs.
-// func RotateLeft16(x uint16, k int) uint16 {
+// fn RotateLeft16(x u16, k int) -> u16 {
 // 	const n = 16
 // 	s := uint(k) & (n - 1)
 // 	return x<<s | x>>(n-s)
 // }
 
-/// RotateLeft32 returns the value of x rotated left by (k mod 32) bits.
-/// To rotate x right by k bits, call RotateLeft32(x, -k).
+/// rotate_left32 returns the value of x rotated left by (k mod 32) bits.
+/// To rotate x right by k bits, call rotate_left32(x, -k).
 ///
 /// This function's execution time does not depend on the inputs.
 pub fn rotate_left32(x: u32, k: isize) -> u32 {
@@ -208,7 +210,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // To rotate x right by k bits, call RotateLeft64(x, -k).
 // //
 // // This function's execution time does not depend on the inputs.
-// func RotateLeft64(x uint64, k int) uint64 {
+// fn RotateLeft64(x uint64, k int) uint64 {
 // 	const n = 64
 // 	s := uint(k) & (n - 1)
 // 	return x<<s | x>>(n-s)
@@ -217,25 +219,26 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // --- Reverse ---
 
 // // Reverse returns the value of x with its bits in reversed order.
-// func Reverse(x uint) uint {
+// fn Reverse(x uint) uint {
 // 	if UintSize == 32 {
 // 		return uint(Reverse32(uint32(x)))
 // 	}
 // 	return uint(Reverse64(uint64(x)))
 // }
 
-// // Reverse8 returns the value of x with its bits in reversed order.
-// func Reverse8(x uint8) uint8 {
-// 	return rev8tab[x]
-// }
+// reverse8 returns the value of x with its bits in reversed order.
+pub fn reverse8(x: u8) -> u8 {
+    return bits_tables::REV8TAB[x as usize];
+}
 
-// // Reverse16 returns the value of x with its bits in reversed order.
-// func Reverse16(x uint16) uint16 {
-// 	return uint16(rev8tab[x>>8]) | uint16(rev8tab[x&0xff])<<8
-// }
+// reverse16 returns the value of x with its bits in reversed order.
+pub fn reverse16(x: u16) -> u16 {
+    return ((bits_tables::REV8TAB[(x >> 8) as usize]) as u16)
+        | ((bits_tables::REV8TAB[(x & 0xff) as usize]) as u16) << 8;
+}
 
 // // Reverse32 returns the value of x with its bits in reversed order.
-// func Reverse32(x uint32) uint32 {
+// fn Reverse32(x uint32) uint32 {
 // 	const m = 1<<32 - 1
 // 	x = x>>1&(m0&m) | x&(m0&m)<<1
 // 	x = x>>2&(m1&m) | x&(m1&m)<<2
@@ -244,7 +247,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // }
 
 // // Reverse64 returns the value of x with its bits in reversed order.
-// func Reverse64(x uint64) uint64 {
+// fn Reverse64(x uint64) uint64 {
 // 	const m = 1<<64 - 1
 // 	x = x>>1&(m0&m) | x&(m0&m)<<1
 // 	x = x>>2&(m1&m) | x&(m1&m)<<2
@@ -257,7 +260,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // ReverseBytes returns the value of x with its bytes in reversed order.
 // //
 // // This function's execution time does not depend on the inputs.
-// func ReverseBytes(x uint) uint {
+// fn ReverseBytes(x uint) uint {
 // 	if UintSize == 32 {
 // 		return uint(ReverseBytes32(uint32(x)))
 // 	}
@@ -267,14 +270,14 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // ReverseBytes16 returns the value of x with its bytes in reversed order.
 // //
 // // This function's execution time does not depend on the inputs.
-// func ReverseBytes16(x uint16) uint16 {
+// fn ReverseBytes16(x u16) -> u16 {
 // 	return x>>8 | x<<8
 // }
 
 // // ReverseBytes32 returns the value of x with its bytes in reversed order.
 // //
 // // This function's execution time does not depend on the inputs.
-// func ReverseBytes32(x uint32) uint32 {
+// fn ReverseBytes32(x uint32) uint32 {
 // 	const m = 1<<32 - 1
 // 	x = x>>8&(m3&m) | x&(m3&m)<<8
 // 	return x>>16 | x<<16
@@ -283,7 +286,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // ReverseBytes64 returns the value of x with its bytes in reversed order.
 // //
 // // This function's execution time does not depend on the inputs.
-// func ReverseBytes64(x uint64) uint64 {
+// fn ReverseBytes64(x uint64) uint64 {
 // 	const m = 1<<64 - 1
 // 	x = x>>8&(m3&m) | x&(m3&m)<<8
 // 	x = x>>16&(m4&m) | x&(m4&m)<<16
@@ -293,7 +296,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // --- Len ---
 
 // // Len returns the minimum number of bits required to represent x; the result is 0 for x == 0.
-// func Len(x uint) int {
+// fn Len(x uint) int {
 // 	if UintSize == 32 {
 // 		return Len32(uint32(x))
 // 	}
@@ -301,12 +304,12 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // }
 
 // // Len8 returns the minimum number of bits required to represent x; the result is 0 for x == 0.
-// func Len8(x uint8) int {
+// fn Len8(x u8) int {
 // 	return int(len8tab[x])
 // }
 
 // // Len16 returns the minimum number of bits required to represent x; the result is 0 for x == 0.
-// func Len16(x uint16) (n int) {
+// fn Len16(x u16) (n int) {
 // 	if x >= 1<<8 {
 // 		x >>= 8
 // 		n = 8
@@ -315,7 +318,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // }
 
 // // Len32 returns the minimum number of bits required to represent x; the result is 0 for x == 0.
-// func Len32(x uint32) (n int) {
+// fn Len32(x uint32) (n int) {
 // 	if x >= 1<<16 {
 // 		x >>= 16
 // 		n = 16
@@ -328,7 +331,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // }
 
 // // Len64 returns the minimum number of bits required to represent x; the result is 0 for x == 0.
-// func Len64(x uint64) (n int) {
+// fn Len64(x uint64) (n int) {
 // 	if x >= 1<<32 {
 // 		x >>= 32
 // 		n = 32
@@ -351,7 +354,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // The carryOut output is guaranteed to be 0 or 1.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Add(x, y, carry uint) (sum, carryOut uint) {
+// fn Add(x, y, carry uint) (sum, carryOut uint) {
 // 	if UintSize == 32 {
 // 		s32, c32 := Add32(uint32(x), uint32(y), uint32(carry))
 // 		return uint(s32), uint(c32)
@@ -365,7 +368,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // The carryOut output is guaranteed to be 0 or 1.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Add32(x, y, carry uint32) (sum, carryOut uint32) {
+// fn Add32(x, y, carry uint32) (sum, carryOut uint32) {
 // 	sum64 := uint64(x) + uint64(y) + uint64(carry)
 // 	sum = uint32(sum64)
 // 	carryOut = uint32(sum64 >> 32)
@@ -377,7 +380,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // The carryOut output is guaranteed to be 0 or 1.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Add64(x, y, carry uint64) (sum, carryOut uint64) {
+// fn Add64(x, y, carry uint64) (sum, carryOut uint64) {
 // 	sum = x + y + carry
 // 	// The sum will overflow if both top bits are set (x & y) or if one of them
 // 	// is (x | y), and a carry from the lower place happened. If such a carry
@@ -393,7 +396,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // The borrowOut output is guaranteed to be 0 or 1.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Sub(x, y, borrow uint) (diff, borrowOut uint) {
+// fn Sub(x, y, borrow uint) (diff, borrowOut uint) {
 // 	if UintSize == 32 {
 // 		d32, b32 := Sub32(uint32(x), uint32(y), uint32(borrow))
 // 		return uint(d32), uint(b32)
@@ -407,7 +410,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // The borrowOut output is guaranteed to be 0 or 1.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Sub32(x, y, borrow uint32) (diff, borrowOut uint32) {
+// fn Sub32(x, y, borrow uint32) (diff, borrowOut uint32) {
 // 	diff = x - y - borrow
 // 	// The difference will underflow if the top bit of x is not set and the top
 // 	// bit of y is set (^x & y) or if they are the same (^(x ^ y)) and a borrow
@@ -422,7 +425,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // The borrowOut output is guaranteed to be 0 or 1.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Sub64(x, y, borrow uint64) (diff, borrowOut uint64) {
+// fn Sub64(x, y, borrow uint64) (diff, borrowOut uint64) {
 // 	diff = x - y - borrow
 // 	// See Sub32 for the bit logic.
 // 	borrowOut = ((^x & y) | (^(x ^ y) & diff)) >> 63
@@ -436,7 +439,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // half returned in lo.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Mul(x, y uint) (hi, lo uint) {
+// fn Mul(x, y uint) (hi, lo uint) {
 // 	if UintSize == 32 {
 // 		h, l := Mul32(uint32(x), uint32(y))
 // 		return uint(h), uint(l)
@@ -450,7 +453,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // half returned in lo.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Mul32(x, y uint32) (hi, lo uint32) {
+// fn Mul32(x, y uint32) (hi, lo uint32) {
 // 	tmp := uint64(x) * uint64(y)
 // 	hi, lo = uint32(tmp>>32), uint32(tmp)
 // 	return
@@ -461,7 +464,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // half returned in lo.
 // //
 // // This function's execution time does not depend on the inputs.
-// func Mul64(x, y uint64) (hi, lo uint64) {
+// fn Mul64(x, y uint64) (hi, lo uint64) {
 // 	const mask32 = 1<<32 - 1
 // 	x0 := x & mask32
 // 	x1 := x >> 32
@@ -483,7 +486,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // quo = (hi, lo)/y, rem = (hi, lo)%y with the dividend bits' upper
 // // half in parameter hi and the lower half in parameter lo.
 // // Div panics for y == 0 (division by zero) or y <= hi (quotient overflow).
-// func Div(hi, lo, y uint) (quo, rem uint) {
+// fn Div(hi, lo, y uint) (quo, rem uint) {
 // 	if UintSize == 32 {
 // 		q, r := Div32(uint32(hi), uint32(lo), uint32(y))
 // 		return uint(q), uint(r)
@@ -496,7 +499,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // quo = (hi, lo)/y, rem = (hi, lo)%y with the dividend bits' upper
 // // half in parameter hi and the lower half in parameter lo.
 // // Div32 panics for y == 0 (division by zero) or y <= hi (quotient overflow).
-// func Div32(hi, lo, y uint32) (quo, rem uint32) {
+// fn Div32(hi, lo, y uint32) (quo, rem uint32) {
 // 	if y != 0 && y <= hi {
 // 		panic(overflowError)
 // 	}
@@ -509,7 +512,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // quo = (hi, lo)/y, rem = (hi, lo)%y with the dividend bits' upper
 // // half in parameter hi and the lower half in parameter lo.
 // // Div64 panics for y == 0 (division by zero) or y <= hi (quotient overflow).
-// func Div64(hi, lo, y uint64) (quo, rem uint64) {
+// fn Div64(hi, lo, y uint64) (quo, rem uint64) {
 // 	if y == 0 {
 // 		panic(divideError)
 // 	}
@@ -564,7 +567,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // Rem returns the remainder of (hi, lo) divided by y. Rem panics for
 // // y == 0 (division by zero) but, unlike Div, it doesn't panic on a
 // // quotient overflow.
-// func Rem(hi, lo, y uint) uint {
+// fn Rem(hi, lo, y uint) uint {
 // 	if UintSize == 32 {
 // 		return uint(Rem32(uint32(hi), uint32(lo), uint32(y)))
 // 	}
@@ -574,14 +577,14 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 // // Rem32 returns the remainder of (hi, lo) divided by y. Rem32 panics
 // // for y == 0 (division by zero) but, unlike Div32, it doesn't panic
 // // on a quotient overflow.
-// func Rem32(hi, lo, y uint32) uint32 {
+// fn Rem32(hi, lo, y uint32) uint32 {
 // 	return uint32((uint64(hi)<<32 | uint64(lo)) % uint64(y))
 // }
 
 // // Rem64 returns the remainder of (hi, lo) divided by y. Rem64 panics
 // // for y == 0 (division by zero) but, unlike Div64, it doesn't panic
 // // on a quotient overflow.
-// func Rem64(hi, lo, y uint64) uint64 {
+// fn Rem64(hi, lo, y uint64) uint64 {
 // 	// We scale down hi so that hi < y, then use Div64 to compute the
 // 	// rem with the guarantee that it won't panic on quotient overflow.
 // 	// Given that

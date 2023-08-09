@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -236,7 +236,7 @@ where
 // 		crc1 := crcFunc1(crcInit, p)
 // 		crc2 := crcFunc2(crcInit, p)
 // 		if crc1 != crc2 {
-// 			t.Errorf("mismatch: 0x%x vs 0x%x (buffer length %d)", crc1, crc2, length)
+// 			t.Errorf("mismatch: 0x%x vs 0x%x (buffer length {})", crc1, crc2, length)
 // 		}
 // 	}
 // }
@@ -260,11 +260,11 @@ fn test_simple() {
 // 			h := New(IEEETable)
 // 			h2 := New(IEEETable)
 
-// 			io.writeString(h, g.in[:len(g.in)/2])
+// 			io.writeString(h, g.in[..len(g.in)/2])
 
 // 			state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
 // 			if err != nil {
-// 				t.Errorf("could not marshal: %v", err)
+// 				t.Errorf("could not marshal: {}", err)
 // 				continue
 // 			}
 
@@ -274,7 +274,7 @@ fn test_simple() {
 // 			}
 
 // 			if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
-// 				t.Errorf("could not unmarshal: %v", err)
+// 				t.Errorf("could not unmarshal: {}", err)
 // 				continue
 // 			}
 
@@ -292,11 +292,11 @@ fn test_simple() {
 // 			h := New(table)
 // 			h2 := New(table)
 
-// 			io.writeString(h, g.in[:len(g.in)/2])
+// 			io.writeString(h, g.in[..len(g.in)/2])
 
 // 			state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
 // 			if err != nil {
-// 				t.Errorf("could not marshal: %v", err)
+// 				t.Errorf("could not marshal: {}", err)
 // 				continue
 // 			}
 
@@ -306,7 +306,7 @@ fn test_simple() {
 // 			}
 
 // 			if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
-// 				t.Errorf("could not unmarshal: %v", err)
+// 				t.Errorf("could not unmarshal: {}", err)
 // 				continue
 // 			}
 
@@ -326,7 +326,7 @@ fn test_simple() {
 
 // 	state1, err := h1.(encoding.BinaryMarshaler).MarshalBinary()
 // 	if err != nil {
-// 		t.Errorf("could not marshal: %v", err)
+// 		t.Errorf("could not marshal: {}", err)
 // 	}
 
 // 	if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state1); err == nil {
@@ -421,7 +421,7 @@ fn test_golden() {
     // 			if d >= b.len() {
     // 				d = b.len()
     // 			}
-    // 			castagnoli.write(b[:d])
+    // 			castagnoli.write(b[..d])
     // 			castagnoli.write(b[d:])
     // 			return castagnoli.Sum32()
     // 		})
@@ -443,7 +443,7 @@ fn test_golden() {
 // 			}
 // 			b.Run("size="+name, func(b *testing.B) {
 // 				for align := 0; align <= 1; align++ {
-// 					b.Run(fmt.Sprintf("align=%d", align), func(b *testing.B) {
+// 					b.Run(fmt.Sprintf("align={}", align), func(b *testing.B) {
 // 						benchmark(b, h, int64(size), int64(align))
 // 					})
 // 				}
@@ -466,13 +466,13 @@ fn test_golden() {
 // 	h.write(data)
 // 	h.Sum(in)
 // 	// Avoid further allocations
-// 	in = in[:0]
+// 	in = in[..0]
 
 // 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		h.Reset()
 // 		h.write(data)
 // 		h.Sum(in)
-// 		in = in[:0]
+// 		in = in[..0]
 // 	}
 // }

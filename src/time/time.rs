@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -722,23 +722,23 @@ impl Time {
 // 			prec = 6
 // 			buf[w] = 'm'
 // 		}
-// 		w, u = fmtFrac(buf[:w], u, prec)
-// 		w = fmtInt(buf[:w], u)
+// 		w, u = fmtFrac(buf[..w], u, prec)
+// 		w = fmtInt(buf[..w], u)
 // 	} else {
 // 		w--
 // 		buf[w] = 's'
 
-// 		w, u = fmtFrac(buf[:w], u, 9)
+// 		w, u = fmtFrac(buf[..w], u, 9)
 
 // 		// u is now integer seconds
-// 		w = fmtInt(buf[:w], u%60)
+// 		w = fmtInt(buf[..w], u%60)
 // 		u /= 60
 
 // 		// u is now integer minutes
 // 		if u > 0 {
 // 			w--
 // 			buf[w] = 'm'
-// 			w = fmtInt(buf[:w], u%60)
+// 			w = fmtInt(buf[..w], u%60)
 // 			u /= 60
 
 // 			// u is now integer hours
@@ -746,7 +746,7 @@ impl Time {
 // 			if u > 0 {
 // 				w--
 // 				buf[w] = 'h'
-// 				w = fmtInt(buf[:w], u)
+// 				w = fmtInt(buf[..w], u)
 // 			}
 // 		}
 // 	}
@@ -767,7 +767,7 @@ impl Time {
 // 	// Omit trailing zeros up to and including decimal point.
 // 	w := len(buf)
 // 	print := false
-// 	for i := 0; i < prec; i++ {
+// 	for i := 0; i < prec; i += 1 {
 // 		digit := v % 10
 // 		print = print || digit != 0
 // 		if print {

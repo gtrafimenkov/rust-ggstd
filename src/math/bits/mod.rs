@@ -8,5 +8,9 @@
 //! architecture and the Go release.
 
 mod bits;
+mod bits_tables;
 
-pub use bits::rotate_left32;
+pub use bits::{reverse16, reverse8, rotate_left32};
+
+#[cfg(test)]
+mod bits_test;

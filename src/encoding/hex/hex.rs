@@ -1,26 +1,26 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 const HEXTABLE: &[u8; 16] = b"0123456789abcdef";
-// 	reverseHexTable = "" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\x0a\x0b\x0c\x0d\x0e\x0f\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\x0a\x0b\x0c\x0d\x0e\x0f\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-// 		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+const REVERSE_HEX_TABLE: &[u8; 256] = b"\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\xff\xff\xff\xff\xff\xff\
+		\xff\x0a\x0b\x0c\x0d\x0e\x0f\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\x0a\x0b\x0c\x0d\x0e\x0f\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\
+		\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
 
 /// encoded_len returns the length of an encoding of n source bytes.
 /// Specifically, it returns n * 2.
@@ -28,9 +28,9 @@ pub fn encoded_len(n: usize) -> usize {
     return n * 2;
 }
 
-// encode encodes src into encoded_len(len(src))
+// encode encodes src into encoded_len(src.len())
 // bytes of dst. As a convenience, it returns the number
-// of bytes written to dst, but this value is always encoded_len(len(src)).
+// of bytes written to dst, but this value is always encoded_len(src.len()).
 // encode implements hexadecimal encoding.
 pub fn encode(dst: &mut [u8], src: &[u8]) -> usize {
     let mut j = 0;
@@ -42,56 +42,67 @@ pub fn encode(dst: &mut [u8], src: &[u8]) -> usize {
     return src.len() * 2;
 }
 
-// // ErrLength reports an attempt to decode an odd-length input
-// // using Decode or DecodeString.
-// // The stream-based Decoder returns io.ErrUnexpectedEOF instead of ErrLength.
-// var ErrLength = errors.New("encoding/hex: odd length hex string")
+#[derive(Debug)]
+pub enum Error {
+    /// ErrLength reports an attempt to decode an odd-length input
+    // using Decode or decode_string.
+    // The stream-based Decoder returns ggio::Error::ErrUnexpectedEOF instead of ErrLength.
+    ErrLength,
+    /// InvalidByteError values describe errors resulting from an invalid byte in a hex string.
+    InvalidByteError(u8),
+}
 
-// // InvalidByteError values describe errors resulting from an invalid byte in a hex string.
-// type InvalidByteError byte
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::ErrLength => write!(f, "{}", "encoding/hex: odd length hex string"),
+            Error::InvalidByteError(v) => write!(f, "encoding/hex: invalid byte: {:02x}", v),
+        }
+    }
+}
 
-// func (e InvalidByteError) Error() string {
-// 	return fmt.Sprintf("encoding/hex: invalid byte: %#U", rune(e))
-// }
+/// decoded_len returns the length of a decoding of x source bytes.
+/// Specifically, it returns x / 2.
+pub fn decoded_len(x: usize) -> usize {
+    return x / 2;
+}
 
-// // DecodedLen returns the length of a decoding of x source bytes.
-// // Specifically, it returns x / 2.
-// func DecodedLen(x usize) -> usize { return x / 2 }
+/// decode decodes src into decoded_len(src.len()) bytes,
+/// returning the actual number of bytes written to dst.
+///
+/// decode expects that src contains only hexadecimal
+/// characters and that src has even length.
+/// If the input is malformed, decode returns the number
+/// of bytes decoded before the error.
+pub fn decode(dst: &mut [u8], src: &[u8]) -> (usize, Option<Error>) {
+    let mut i = 0;
+    let mut j = 1;
+    while j < src.len() {
+        let p = src[j - 1];
+        let q = src[j];
 
-// // Decode decodes src into DecodedLen(len(src)) bytes,
-// // returning the actual number of bytes written to dst.
-// //
-// // Decode expects that src contains only hexadecimal
-// // characters and that src has even length.
-// // If the input is malformed, Decode returns the number
-// // of bytes decoded before the error.
-// func Decode(dst, src: &[u8]) (usize, error) {
-// 	i, j := 0, 1
-// 	for ; j < len(src); j += 2 {
-// 		p := src[j-1]
-// 		q := src[j]
-
-// 		a := reverseHexTable[p]
-// 		b := reverseHexTable[q]
-// 		if a > 0x0f {
-// 			return i, InvalidByteError(p)
-// 		}
-// 		if b > 0x0f {
-// 			return i, InvalidByteError(q)
-// 		}
-// 		dst[i] = (a << 4) | b
-// 		i++
-// 	}
-// 	if len(src)%2 == 1 {
-// 		// Check for invalid char before reporting bad length,
-// 		// since the invalid char (if present) is an earlier problem.
-// 		if reverseHexTable[src[j-1]] > 0x0f {
-// 			return i, InvalidByteError(src[j-1])
-// 		}
-// 		return i, ErrLength
-// 	}
-// 	return i, nil
-// }
+        let a = REVERSE_HEX_TABLE[p as usize];
+        let b = REVERSE_HEX_TABLE[q as usize];
+        if a > 0x0f {
+            return (i, Some(Error::InvalidByteError(p)));
+        }
+        if b > 0x0f {
+            return (i, Some(Error::InvalidByteError(q)));
+        }
+        dst[i] = (a << 4) | b;
+        i += 1;
+        j += 2
+    }
+    if src.len() % 2 == 1 {
+        // Check for invalid char before reporting bad length,
+        // since the invalid char (if present) is an earlier problem.
+        if REVERSE_HEX_TABLE[src[j - 1] as usize] > 0x0f {
+            return (i, Some(Error::InvalidByteError(src[j - 1])));
+        }
+        return (i, Some(Error::ErrLength));
+    }
+    return (i, None);
+}
 
 // encode_to_string returns the hexadecimal encoding of src.
 pub fn encode_to_string(src: &[u8]) -> String {
@@ -100,23 +111,23 @@ pub fn encode_to_string(src: &[u8]) -> String {
     return String::from_utf8_lossy(&dst).to_string();
 }
 
-// // DecodeString returns the bytes represented by the hexadecimal string s.
-// //
-// // DecodeString expects that src contains only hexadecimal
-// // characters and that src has even length.
-// // If the input is malformed, DecodeString returns
-// // the bytes decoded before the error.
-// func DecodeString(s string) ([]byte, error) {
-// 	src := []byte(s)
-// 	// We can use the source slice itself as the destination
-// 	// because the decode loop increments by one and then the 'seen' byte is not used anymore.
-// 	n, err := Decode(src, src)
-// 	return src[:n], err
-// }
+/// decode_string returns the bytes represented by the hexadecimal string s.
+///
+/// decode_string expects that src contains only hexadecimal
+/// characters and that src has even length.
+/// If the input is malformed, decode_string returns
+/// the bytes decoded before the error.
+pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
+    let sbytes = s.as_bytes();
+    let mut buf = vec![0_u8; decoded_len(sbytes.len())];
+    let (n, err) = decode(&mut buf, sbytes);
+    buf.truncate(n);
+    return (buf, err);
+}
 
 // // Dump returns a string that contains a hex dump of the given data. The format
 // // of the hex dump matches the output of `hexdump -C` on the command line.
-// func Dump(data []byte) string {
+// fn Dump(data []byte) string {
 // 	if len(data) == 0 {
 // 		return ""
 // 	}
@@ -143,11 +154,11 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // }
 
 // // NewEncoder returns an io.Writer that writes lowercase hexadecimal characters to w.
-// func NewEncoder(w io.Writer) io.Writer {
+// fn NewEncoder(w io.Writer) io.Writer {
 // 	return &encoder{w: w}
 // }
 
-// func (e *encoder) Write(p []byte) (n usize, err error) {
+// fn (e *encoder) Write(p []byte) (n usize, err error) {
 // 	for len(p) > 0 && e.err == nil {
 // 		chunkSize := bufferSize / 2
 // 		if len(p) < chunkSize {
@@ -155,8 +166,8 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 		}
 
 // 		var written usize
-// 		encoded := encode(e.out[:], p[:chunkSize])
-// 		written, e.err = e.w.Write(e.out[:encoded])
+// 		encoded := encode(e.out[..], p[..chunkSize])
+// 		written, e.err = e.w.write(e.out[..encoded])
 // 		n += written / 2
 // 		p = p[chunkSize:]
 // 	}
@@ -172,32 +183,32 @@ pub fn encode_to_string(src: &[u8]) -> String {
 
 // // NewDecoder returns an io.Reader that decodes hexadecimal characters from r.
 // // NewDecoder expects that r contain only an even number of hexadecimal characters.
-// func NewDecoder(r io.Reader) io.Reader {
+// fn NewDecoder(r io.Reader) io.Reader {
 // 	return &decoder{r: r}
 // }
 
-// func (d *decoder) Read(p []byte) (n usize, err error) {
+// fn (d *decoder) Read(p []byte) (n usize, err error) {
 // 	// Fill internal buffer with sufficient bytes to decode
 // 	if len(d.in) < 2 && d.err == nil {
 // 		var numCopy, numRead usize
-// 		numCopy = copy(d.arr[:], d.in) // Copies either 0 or 1 bytes
+// 		numCopy = copy(d.arr[..], d.in) // Copies either 0 or 1 bytes
 // 		numRead, d.err = d.r.Read(d.arr[numCopy:])
-// 		d.in = d.arr[:numCopy+numRead]
+// 		d.in = d.arr[..numCopy+numRead]
 // 		if d.err == io.EOF && len(d.in)%2 != 0 {
 
-// 			if a := reverseHexTable[d.in[len(d.in)-1]]; a > 0x0f {
+// 			if a := REVERSE_HEX_TABLE[d.in[len(d.in)-1]]; a > 0x0f {
 // 				d.err = InvalidByteError(d.in[len(d.in)-1])
 // 			} else {
-// 				d.err = io.ErrUnexpectedEOF
+// 				d.err = ggio::Error::ErrUnexpectedEOF
 // 			}
 // 		}
 // 	}
 
 // 	// Decode internal buffer into output buffer
 // 	if numAvail := len(d.in) / 2; len(p) > numAvail {
-// 		p = p[:numAvail]
+// 		p = p[..numAvail]
 // 	}
-// 	numDec, err := Decode(p, d.in[:len(p)*2])
+// 	numDec, err := Decode(p, d.in[..len(p)*2])
 // 	d.in = d.in[2*numDec:]
 // 	if err != nil {
 // 		d.in, d.err = nil, err // Decode error; discard input remainder
@@ -212,7 +223,7 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // // Dumper returns a WriteCloser that writes a hex dump of all written data to
 // // w. The format of the dump matches the output of `hexdump -C` on the command
 // // line.
-// func Dumper(w io.Writer) io.WriteCloser {
+// fn Dumper(w io.Writer) io.WriteCloser {
 // 	return &dumper{w: w}
 // }
 
@@ -225,14 +236,14 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 	closed     bool
 // }
 
-// func toChar(b byte) byte {
+// fn toChar(b byte) byte {
 // 	if b < 32 || b > 126 {
 // 		return '.'
 // 	}
 // 	return b
 // }
 
-// func (h *dumper) Write(data []byte) (n int, err error) {
+// fn (h *dumper) Write(data []byte) (n int, err error) {
 // 	if h.closed {
 // 		return 0, errors.New("encoding/hex: dumper closed")
 // 	}
@@ -248,15 +259,15 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 			h.buf[1] = byte(h.n >> 16)
 // 			h.buf[2] = byte(h.n >> 8)
 // 			h.buf[3] = byte(h.n)
-// 			encode(h.buf[4:], h.buf[:4])
+// 			encode(h.buf[4:], h.buf[..4])
 // 			h.buf[12] = ' '
 // 			h.buf[13] = ' '
-// 			_, err = h.w.Write(h.buf[4:])
+// 			_, err = h.w.write(h.buf[4:])
 // 			if err != nil {
 // 				return
 // 			}
 // 		}
-// 		encode(h.buf[:], data[i:i+1])
+// 		encode(h.buf[..], data[i:i+1])
 // 		h.buf[2] = ' '
 // 		l := 3
 // 		if h.used == 7 {
@@ -270,7 +281,7 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 			h.buf[4] = '|'
 // 			l = 5
 // 		}
-// 		_, err = h.w.Write(h.buf[:l])
+// 		_, err = h.w.write(h.buf[..l])
 // 		if err != nil {
 // 			return
 // 		}
@@ -281,7 +292,7 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 		if h.used == 16 {
 // 			h.rightChars[16] = '|'
 // 			h.rightChars[17] = '\n'
-// 			_, err = h.w.Write(h.rightChars[:])
+// 			_, err = h.w.write(h.rightChars[..])
 // 			if err != nil {
 // 				return
 // 			}
@@ -291,7 +302,7 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 	return
 // }
 
-// func (h *dumper) Close() (err error) {
+// fn (h *dumper) Close() (err error) {
 // 	// See the comments in Write() for the details of this format.
 // 	if h.closed {
 // 		return
@@ -313,7 +324,7 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 		} else if h.used == 15 {
 // 			l = 5
 // 		}
-// 		_, err = h.w.Write(h.buf[:l])
+// 		_, err = h.w.write(h.buf[..l])
 // 		if err != nil {
 // 			return
 // 		}
@@ -321,7 +332,7 @@ pub fn encode_to_string(src: &[u8]) -> String {
 // 	}
 // 	h.rightChars[nBytes] = '|'
 // 	h.rightChars[nBytes+1] = '\n'
-// 	_, err = h.w.Write(h.rightChars[:nBytes+2])
+// 	_, err = h.w.write(h.rightChars[..nBytes+2])
 // 	return
 // }
 

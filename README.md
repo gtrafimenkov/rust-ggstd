@@ -5,24 +5,34 @@ extensive and well tested.  It would be great to have something like that in Rus
 
 ## Usage examples
 
-Usage examples can be found in [src/bin](./src/bin) folder.
-They can be run with `cargo run --bin NAME` command, for example:
+- flate: [examples/flate.rs](examples/flate.rs), [goexamples/flate/main.go](goexamples/flate/main.go)
+
+You can run these using following commands:
 
 ```
-cargo run --bin time
+cargo run --example flate
+go run goexamples/flate/main.go
 ```
+
+See all Rust examples in [examples](./examples) folder and
+corresponding Go examples in [goexamples](./goexamples) folder.
 
 ## Partially implemented modules
 
+- bufio
+- builtin
 - bytes
+- compat
+- compress::flate
 - crypto::sha256
 - encoding::binary
 - encoding::hex
-- hash
+- errors
 - hash::adler32
 - hash::crc32
+- io
 - math::bits
-- time::time
+- time
   - limitations:
     - no time zone support
     - no duration support
@@ -34,6 +44,13 @@ cargo run --bin time
 When a piece of functionality is needed, appropriate Go source code is copied from
 [go1.20.6](https://github.com/golang/go/tree/go1.20.6/src) and translated to Rust.
 Structures and functions are renamed to meet Rust naming conventions.
+
+## Gotchas
+
+### Different priority of '<<' operator
+
+Go: ` 1 << 1 + 1 == 3`
+Rust: `1 << 1 + 1 == 4`
 
 ## License
 

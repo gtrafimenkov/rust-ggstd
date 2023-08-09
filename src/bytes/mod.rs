@@ -6,8 +6,14 @@
 //! It is analogous to the facilities of the strings package.
 
 mod buffer;
+mod bytes;
+mod reader;
 
 pub use buffer::{new_buffer, new_buffer_string, Buffer};
+pub use bytes::{equal, has_suffix};
+pub use reader::{new_reader, Reader};
 
 #[cfg(test)]
 mod buffer_test;
+#[cfg(test)]
+mod reader_test;

@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -29,7 +29,7 @@ use crate::time::time::{self, Month, Weekday};
 // 	lt := Now()
 // 	// PST is 8 hours west, PDT is 7 hours west. We could use the name but it's not unique.
 // 	if name, off := lt.Zone(); off != -8*60*60 && off != -7*60*60 {
-// 		t.Errorf("Unable to find US Pacific time zone data for testing; time zone is %q offset %d", name, off)
+// 		t.Errorf("Unable to find US Pacific time zone data for testing; time zone is %q offset {}", name, off)
 // 		t.Error("Likely problem: the time zone files have not been installed.")
 // 	}
 // }
@@ -251,10 +251,10 @@ fn test_nanoseconds_to_utc() {
 // 		tm := unix(sec, 0)
 // 		newsec := tm.unix()
 // 		if newsec != sec {
-// 			t.Errorf("SecondsToLocalTime(%d).Seconds() = %d", sec, newsec)
+// 			t.Errorf("SecondsToLocalTime({}).Seconds() = {}", sec, newsec)
 // 		}
 // 		if !same(tm, golden) {
-// 			t.Errorf("SecondsToLocalTime(%d):", sec)
+// 			t.Errorf("SecondsToLocalTime({}):", sec)
 // 			t.Errorf("  want=%+v", *golden)
 // 			t.Errorf("  have=%+v", tm.Format(RFC3339+" MST"))
 // 		}
@@ -268,10 +268,10 @@ fn test_nanoseconds_to_utc() {
 // 		tm := unix(0, nsec)
 // 		newnsec := tm.unix()*1e9 + i64(tm.nanosecond())
 // 		if newnsec != nsec {
-// 			t.Errorf("NanosecondsToLocalTime(%d).Seconds() = %d", nsec, newnsec)
+// 			t.Errorf("NanosecondsToLocalTime({}).Seconds() = {}", nsec, newnsec)
 // 		}
 // 		if !same(tm, golden) {
-// 			t.Errorf("NanosecondsToLocalTime(%d):", nsec)
+// 			t.Errorf("NanosecondsToLocalTime({}):", nsec)
 // 			t.Errorf("  want=%+v", *golden)
 // 			t.Errorf("  have=%+v", tm.Format(RFC3339+" MST"))
 // 		}
@@ -359,9 +359,9 @@ fn test_nanoseconds_to_utc() {
 // 			nsec += 1e9
 // 			sec--
 // 		}
-// 		return fmt.Sprintf("-%d%09d", sec, nsec)
+// 		return fmt.Sprintf("-{}%09d", sec, nsec)
 // 	}
-// 	return fmt.Sprintf("%d%09d", sec, nsec)
+// 	return fmt.Sprintf("{}%09d", sec, nsec)
 // }
 
 // var truncateRoundTests = []struct {
@@ -419,7 +419,7 @@ fn test_nanoseconds_to_utc() {
 // 		// Check that time.Truncate works.
 // 		if trunc := t0.Truncate(d); trunc != t1 {
 // 			t.Errorf("Time.Truncate(%s, %s) = %s, want %s\n"+
-// 				"%v trunc %v =\n%v want\n%v",
+// 				"{} trunc {} =\n{} want\n{}",
 // 				t0.Format(RFC3339Nano), d, trunc, t1.Format(RFC3339Nano),
 // 				absString(t0), i64(d), absString(trunc), absString(t1))
 // 			return false
@@ -435,7 +435,7 @@ fn test_nanoseconds_to_utc() {
 // 		// Check that time.Round works.
 // 		if rnd := t0.Round(d); rnd != t1 {
 // 			t.Errorf("Time.Round(%s, %s) = %s, want %s\n"+
-// 				"%v round %v =\n%v want\n%v",
+// 				"{} round {} =\n{} want\n{}",
 // 				t0.Format(RFC3339Nano), d, rnd, t1.Format(RFC3339Nano),
 // 				absString(t0), i64(d), absString(rnd), absString(t1))
 // 			return false
@@ -449,7 +449,7 @@ fn test_nanoseconds_to_utc() {
 // 	}
 
 // 	// exhaustive near 0
-// 	for i := 0; i < 100; i++ {
+// 	for i := 0; i < 100; i += 1 {
 // 		for j := 1; j < 100; j++ {
 // 			testOne(unixToZero, i64(i), i64(j))
 // 			testOne(unixToZero, -i64(i), i64(j))
@@ -474,7 +474,7 @@ fn test_nanoseconds_to_utc() {
 // 		d := Duration(1)
 // 		a, b := uint(logdi%9), (logdi>>16)%9
 // 		d <<= a
-// 		for i := 0; i < isize(b); i++ {
+// 		for i := 0; i < isize(b); i += 1 {
 // 			d *= 5
 // 		}
 
@@ -572,7 +572,7 @@ fn test_nanoseconds_to_utc() {
 // 		dt := Date(wt.year, Month(wt.month), wt.day, 0, 0, 0, 0, UTC)
 // 		y, w := dt.ISOWeek()
 // 		if w != wt.wex || y != wt.yex {
-// 			t.Errorf("got %d/%d; expected %d/%d for %d-%02d-%02d",
+// 			t.Errorf("got {}/{}; expected {}/{} for {}-%02d-%02d",
 // 				y, w, wt.yex, wt.wex, wt.year, wt.month, wt.day)
 // 		}
 // 	}
@@ -580,7 +580,7 @@ fn test_nanoseconds_to_utc() {
 // 	// The only real invariant: Jan 04 is in week 1
 // 	for year := 1950; year < 2100; year++ {
 // 		if y, w := Date(year, January, 4, 0, 0, 0, 0, UTC).ISOWeek(); y != year || w != 1 {
-// 			t.Errorf("got %d/%d; expected %d/1 for Jan 04", y, w, year)
+// 			t.Errorf("got {}/{}; expected {}/1 for Jan 04", y, w, year)
 // 		}
 // 	}
 // }
@@ -696,11 +696,11 @@ fn test_year_day() {
         // 				ydt.year, ydt.month, ydt.day, ydt.yday, (i-2)*4)
         // 			dt1, err := Parse("2006-01-02 002 -0700", f)
         // 			if err != nil {
-        // 				t.Errorf(`Parse("2006-01-02 002 -0700", %q): %v`, f, err)
+        // 				t.Errorf(`Parse("2006-01-02 002 -0700", %q): {}`, f, err)
         // 				continue
         // 			}
         // 			if !dt1.Equal(dt) {
-        // 				t.Errorf(`Parse("2006-01-02 002 -0700", %q) = %v, want %v`, f, dt1, dt)
+        // 				t.Errorf(`Parse("2006-01-02 002 -0700", %q) = {}, want {}`, f, dt1, dt)
         // 			}
     }
     // }
@@ -726,11 +726,11 @@ fn test_year_day() {
 // fn TestDurationString() {
 // 	for _, tt := range durationTests {
 // 		if str := tt.d.String(); str != tt.str {
-// 			t.Errorf("Duration(%d).String() = %s, want %s", i64(tt.d), str, tt.str)
+// 			t.Errorf("Duration({}).String() = %s, want %s", i64(tt.d), str, tt.str)
 // 		}
 // 		if tt.d > 0 {
 // 			if str := (-tt.d).String(); str != "-"+tt.str {
-// 				t.Errorf("Duration(%d).String() = %s, want %s", i64(-tt.d), str, "-"+tt.str)
+// 				t.Errorf("Duration({}).String() = %s, want %s", i64(-tt.d), str, "-"+tt.str)
 // 			}
 // 		}
 // 	}
@@ -770,7 +770,7 @@ fn test_year_day() {
 // 		time := Date(tt.year, Month(tt.month), tt.day, tt.hour, tt.min, tt.sec, tt.nsec, tt.z)
 // 		want := unix(tt.unix, 0)
 // 		if !time.Equal(want) {
-// 			t.Errorf("Date(%d, %d, %d, %d, %d, %d, %d, %s) = %v, want %v",
+// 			t.Errorf("Date({}, {}, {}, {}, {}, {}, {}, %s) = {}, want {}",
 // 				tt.year, tt.month, tt.day, tt.hour, tt.min, tt.sec, tt.nsec, tt.z,
 // 				time, want)
 // 		}
@@ -796,7 +796,7 @@ fn test_year_day() {
 // 	for _, at := range addDateTests {
 // 		time := t0.AddDate(at.years, at.months, at.days)
 // 		if !time.Equal(t1) {
-// 			t.Errorf("AddDate(%d, %d, %d) = %v, want %v",
+// 			t.Errorf("AddDate({}, {}, {}) = {}, want {}",
 // 				at.years, at.months, at.days,
 // 				time, t1)
 // 		}
@@ -852,7 +852,7 @@ fn test_days_in() {
 // 	t2 := t1.Add(Second - Duration(t1.nanosecond()))
 // 	sec := (t1.second() + 1) % 60
 // 	if t2.second() != sec || t2.nanosecond() != 0 {
-// 		t.Errorf("sec = %d, nsec = %d, want sec = %d, nsec = 0", t2.second(), t2.nanosecond(), sec)
+// 		t.Errorf("sec = {}, nsec = {}, want sec = {}, nsec = 0", t2.second(), t2.nanosecond(), sec)
 // 	}
 // }
 
@@ -872,19 +872,19 @@ fn test_days_in() {
 // }
 
 // fn TestTimeGob() {
-// 	var b bytes.Buffer
+// 	let mut b = bytes::Buffer::new();
 // 	enc := gob.NewEncoder(&b)
 // 	dec := gob.NewDecoder(&b)
 // 	for _, tt := range gobTests {
 // 		var gobtt Time
 // 		if err := enc.Encode(&tt); err != nil {
-// 			t.Errorf("%v gob Encode error = %q, want nil", tt, err)
+// 			t.Errorf("{} gob Encode error = %q, want nil", tt, err)
 // 		} else if err := dec.Decode(&gobtt); err != nil {
-// 			t.Errorf("%v gob Decode error = %q, want nil", tt, err)
+// 			t.Errorf("{} gob Decode error = %q, want nil", tt, err)
 // 		} else if !equalTimeAndZone(gobtt, tt) {
-// 			t.Errorf("Decoded time = %v, want %v", gobtt, tt)
+// 			t.Errorf("Decoded time = {}, want {}", gobtt, tt)
 // 		}
-// 		b.Reset()
+// 		b.reset()
 // 	}
 // }
 
@@ -902,11 +902,11 @@ fn test_days_in() {
 // 		var ignored Time
 // 		err := ignored.GobDecode(tt.bytes)
 // 		if err == nil || err.Error() != tt.want {
-// 			t.Errorf("time.GobDecode(%#v) error = %v, want %v", tt.bytes, err, tt.want)
+// 			t.Errorf("time.GobDecode(%#v) error = {}, want {}", tt.bytes, err, tt.want)
 // 		}
 // 		err = ignored.UnmarshalBinary(tt.bytes)
 // 		if err == nil || err.Error() != tt.want {
-// 			t.Errorf("time.UnmarshalBinary(%#v) error = %v, want %v", tt.bytes, err, tt.want)
+// 			t.Errorf("time.UnmarshalBinary(%#v) error = {}, want {}", tt.bytes, err, tt.want)
 // 		}
 // 	}
 // }
@@ -924,11 +924,11 @@ fn test_days_in() {
 // 	for _, tt := range notEncodableTimes {
 // 		_, err := tt.time.GobEncode()
 // 		if err == nil || err.Error() != tt.want {
-// 			t.Errorf("%v GobEncode error = %v, want %v", tt.time, err, tt.want)
+// 			t.Errorf("{} GobEncode error = {}, want {}", tt.time, err, tt.want)
 // 		}
 // 		_, err = tt.time.MarshalBinary()
 // 		if err == nil || err.Error() != tt.want {
-// 			t.Errorf("%v MarshalBinary error = %v, want %v", tt.time, err, tt.want)
+// 			t.Errorf("{} MarshalBinary error = {}, want {}", tt.time, err, tt.want)
 // 		}
 // 	}
 // }
@@ -948,13 +948,13 @@ fn test_days_in() {
 // 		var jsonTime Time
 
 // 		if jsonBytes, err := json.Marshal(tt.time); err != nil {
-// 			t.Errorf("%v json.Marshal error = %v, want nil", tt.time, err)
+// 			t.Errorf("{} json.Marshal error = {}, want nil", tt.time, err)
 // 		} else if string(jsonBytes) != tt.json {
-// 			t.Errorf("%v JSON = %#q, want %#q", tt.time, string(jsonBytes), tt.json)
+// 			t.Errorf("{} JSON = %#q, want %#q", tt.time, string(jsonBytes), tt.json)
 // 		} else if err = json.Unmarshal(jsonBytes, &jsonTime); err != nil {
-// 			t.Errorf("%v json.Unmarshal error = %v, want nil", tt.time, err)
+// 			t.Errorf("{} json.Unmarshal error = {}, want nil", tt.time, err)
 // 		} else if !equalTimeAndZone(jsonTime, tt.time) {
-// 			t.Errorf("Unmarshaled time = %v, want %v", jsonTime, tt.time)
+// 			t.Errorf("Unmarshaled time = {}, want {}", jsonTime, tt.time)
 // 		}
 // 	}
 // }
@@ -979,13 +979,13 @@ fn test_days_in() {
 // 		want := tt.want
 // 		err := json.Unmarshal([]byte(tt.in), &ts)
 // 		if fmt.Sprint(err) != want {
-// 			t.Errorf("Time.UnmarshalJSON(%s) = %v, want %v", tt.in, err, want)
+// 			t.Errorf("Time.UnmarshalJSON(%s) = {}, want {}", tt.in, err, want)
 // 		}
 
-// 		if strings.HasPrefix(tt.in, `"`) && strings.HasSuffix(tt.in, `"`) {
+// 		if strings.HasPrefix(tt.in, `"`) && strings.has_suffix(tt.in, `"`) {
 // 			err = ts.UnmarshalText([]byte(strings.Trim(tt.in, `"`)))
 // 			if fmt.Sprint(err) != want {
-// 				t.Errorf("Time.UnmarshalText(%s) = %v, want %v", tt.in, err, want)
+// 				t.Errorf("Time.UnmarshalText(%s) = {}, want {}", tt.in, err, want)
 // 			}
 // 		}
 // 	}
@@ -1008,18 +1008,18 @@ fn test_days_in() {
 // 		b, err := tt.time.MarshalJSON()
 // 		switch {
 // 		case b != nil:
-// 			t.Errorf("(%v).MarshalText() = %q, want nil", tt.time, b)
+// 			t.Errorf("({}).MarshalText() = %q, want nil", tt.time, b)
 // 		case err == nil || err.Error() != want:
-// 			t.Errorf("(%v).MarshalJSON() error = %v, want %v", tt.time, err, want)
+// 			t.Errorf("({}).MarshalJSON() error = {}, want {}", tt.time, err, want)
 // 		}
 
 // 		want = strings.ReplaceAll(tt.want, "JSON", "Text")
 // 		b, err = tt.time.MarshalText()
 // 		switch {
 // 		case b != nil:
-// 			t.Errorf("(%v).MarshalText() = %q, want nil", tt.time, b)
+// 			t.Errorf("({}).MarshalText() = %q, want nil", tt.time, b)
 // 		case err == nil || err.Error() != want:
-// 			t.Errorf("(%v).MarshalText() error = %v, want %v", tt.time, err, want)
+// 			t.Errorf("({}).MarshalText() error = {}, want {}", tt.time, err, want)
 // 		}
 // 	}
 // }
@@ -1090,7 +1090,7 @@ fn test_days_in() {
 // 	for _, tc := range parseDurationTests {
 // 		d, err := ParseDuration(tc.in)
 // 		if err != nil || d != tc.want {
-// 			t.Errorf("ParseDuration(%q) = %v, %v, want %v, nil", tc.in, d, err, tc.want)
+// 			t.Errorf("ParseDuration(%q) = {}, {}, want {}, nil", tc.in, d, err, tc.want)
 // 		}
 // 	}
 // }
@@ -1140,23 +1140,23 @@ fn test_days_in() {
 // 	max0 := Duration(math.MaxInt64)
 // 	max1, err := ParseDuration(max0.String())
 // 	if err != nil || max0 != max1 {
-// 		t.Errorf("round-trip failed: %d => %q => %d, %v", max0, max0.String(), max1, err)
+// 		t.Errorf("round-trip failed: {} => %q => {}, {}", max0, max0.String(), max1, err)
 // 	}
 
 // 	min0 := Duration(math.MinInt64)
 // 	min1, err := ParseDuration(min0.String())
 // 	if err != nil || min0 != min1 {
-// 		t.Errorf("round-trip failed: %d => %q => %d, %v", min0, min0.String(), min1, err)
+// 		t.Errorf("round-trip failed: {} => %q => {}, {}", min0, min0.String(), min1, err)
 // 	}
 
-// 	for i := 0; i < 100; i++ {
+// 	for i := 0; i < 100; i += 1 {
 // 		// Resolutions finer than milliseconds will result in
 // 		// imprecise round-trips.
 // 		d0 := Duration(rand.Int31()) * Millisecond
 // 		s := d0.String()
 // 		d1, err := ParseDuration(s)
 // 		if err != nil || d0 != d1 {
-// 			t.Errorf("round-trip failed: %d => %q => %d, %v", d0, s, d1, err)
+// 			t.Errorf("round-trip failed: {} => %q => {}, {}", d0, s, d1, err)
 // 		}
 // 	}
 // }
@@ -1203,7 +1203,7 @@ fn test_days_in() {
 // 	for _, mt := range mallocTest {
 // 		allocs := isize(testing.AllocsPerRun(100, mt.fn))
 // 		if allocs > mt.count {
-// 			t.Errorf("%s: %d allocs, want %d", mt.desc, allocs, mt.count)
+// 			t.Errorf("%s: {} allocs, want {}", mt.desc, allocs, mt.count)
 // 		}
 // 	}
 // }
@@ -1222,7 +1222,7 @@ fn test_days_in() {
 // 	// The zone abbreviation is "-01" since tzdata-2016g, and "GMT+1"
 // 	// on earlier versions; we accept both. (Issue #17276).
 // 	if !(name == "GMT+1" || name == "-01") || offset != -1*60*60 {
-// 		t.Errorf("Now().In(loc).Zone() = %q, %d, want %q or %q, %d",
+// 		t.Errorf("Now().In(loc).Zone() = %q, {}, want %q or %q, {}",
 // 			name, offset, "GMT+1", "-01", -1*60*60)
 // 	}
 // }
@@ -1259,7 +1259,7 @@ fn test_days_in() {
 // 	for i, st := range subTests {
 // 		got := st.t.Sub(st.u)
 // 		if got != st.d {
-// 			t.Errorf("#%d: Sub(%v, %v): got %v; want %v", i, st.t, st.u, got, st.d)
+// 			t.Errorf("#{}: Sub({}, {}): got {}; want {}", i, st.t, st.u, got, st.d)
 // 		}
 // 	}
 // }
@@ -1277,7 +1277,7 @@ fn test_days_in() {
 // fn TestDurationNanoseconds() {
 // 	for _, tt := range nsDurationTests {
 // 		if got := tt.d.Nanoseconds(); got != tt.want {
-// 			t.Errorf("Duration(%s).Nanoseconds() = %d; want: %d", tt.d, got, tt.want)
+// 			t.Errorf("Duration(%s).Nanoseconds() = {}; want: {}", tt.d, got, tt.want)
 // 		}
 // 	}
 // }
@@ -1293,7 +1293,7 @@ fn test_days_in() {
 // fn TestDurationMicroseconds() {
 // 	for _, tt := range usDurationTests {
 // 		if got := tt.d.Microseconds(); got != tt.want {
-// 			t.Errorf("Duration(%s).Microseconds() = %d; want: %d", tt.d, got, tt.want)
+// 			t.Errorf("Duration(%s).Microseconds() = {}; want: {}", tt.d, got, tt.want)
 // 		}
 // 	}
 // }
@@ -1309,7 +1309,7 @@ fn test_days_in() {
 // fn TestDurationMilliseconds() {
 // 	for _, tt := range msDurationTests {
 // 		if got := tt.d.Milliseconds(); got != tt.want {
-// 			t.Errorf("Duration(%s).Milliseconds() = %d; want: %d", tt.d, got, tt.want)
+// 			t.Errorf("Duration(%s).Milliseconds() = {}; want: {}", tt.d, got, tt.want)
 // 		}
 // 	}
 // }
@@ -1512,22 +1512,22 @@ fn test_days_in() {
 // 	{"MarshalBinary", fn(t1, t2 Time) bool {
 // 		a1, b1 := t1.MarshalBinary()
 // 		a2, b2 := t2.MarshalBinary()
-// 		return bytes.Equal(a1, a2) && b1 == b2
+// 		return bytes::equal(a1, a2) && b1 == b2
 // 	}},
 // 	{"GobEncode", fn(t1, t2 Time) bool {
 // 		a1, b1 := t1.GobEncode()
 // 		a2, b2 := t2.GobEncode()
-// 		return bytes.Equal(a1, a2) && b1 == b2
+// 		return bytes::equal(a1, a2) && b1 == b2
 // 	}},
 // 	{"MarshalJSON", fn(t1, t2 Time) bool {
 // 		a1, b1 := t1.MarshalJSON()
 // 		a2, b2 := t2.MarshalJSON()
-// 		return bytes.Equal(a1, a2) && b1 == b2
+// 		return bytes::equal(a1, a2) && b1 == b2
 // 	}},
 // 	{"MarshalText", fn(t1, t2 Time) bool {
 // 		a1, b1 := t1.MarshalText()
 // 		a2, b2 := t2.MarshalText()
-// 		return bytes.Equal(a1, a2) && b1 == b2
+// 		return bytes::equal(a1, a2) && b1 == b2
 // 	}},
 
 // 	{"Truncate", fn(t1, t2 Time) bool { return t1.Truncate(Hour).Equal(t2.Truncate(Hour)) }},
@@ -1549,46 +1549,46 @@ fn test_days_in() {
 // }
 
 // fn BenchmarkNow(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t = Now()
 // 	}
 // }
 
 // fn BenchmarkNowUnixNano(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		u = Now().UnixNano()
 // 	}
 // }
 
 // fn BenchmarkNowUnixMilli(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		u = Now().UnixMilli()
 // 	}
 // }
 
 // fn BenchmarkNowUnixMicro(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		u = Now().UnixMicro()
 // 	}
 // }
 
 // fn BenchmarkFormat(b *testing.B) {
 // 	t := unix(1265346057, 0)
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t.Format("Mon Jan  2 15:04:05 2006")
 // 	}
 // }
 
 // fn BenchmarkFormatRFC3339(b *testing.B) {
 // 	t := unix(1265346057, 0)
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t.Format("2006-01-02T15:04:05Z07:00")
 // 	}
 // }
 
 // fn BenchmarkFormatRFC3339Nano(b *testing.B) {
 // 	t := unix(1265346057, 0)
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t.Format("2006-01-02T15:04:05.999999999Z07:00")
 // 	}
 // }
@@ -1597,27 +1597,27 @@ fn test_days_in() {
 // 	// Like BenchmarkFormat, but easier, because the time zone
 // 	// lookup cache is optimized for the present.
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t.Format("Mon Jan  2 15:04:05 2006")
 // 	}
 // }
 
 // fn BenchmarkMarshalJSON(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t.MarshalJSON()
 // 	}
 // }
 
 // fn BenchmarkMarshalText(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t.MarshalText()
 // 	}
 // }
 
 // fn BenchmarkParse(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Parse(ANSIC, "Mon Jan  2 15:04:05 2006")
 // 	}
 // }
@@ -1625,7 +1625,7 @@ fn test_days_in() {
 // const testdataRFC3339UTC = "2020-08-22T11:27:43.123456789Z"
 
 // fn BenchmarkParseRFC3339UTC(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Parse(RFC3339, testdataRFC3339UTC)
 // 	}
 // }
@@ -1633,7 +1633,7 @@ fn test_days_in() {
 // var testdataRFC3339UTCBytes = []byte(testdataRFC3339UTC)
 
 // fn BenchmarkParseRFC3339UTCBytes(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Parse(RFC3339, string(testdataRFC3339UTCBytes))
 // 	}
 // }
@@ -1641,7 +1641,7 @@ fn test_days_in() {
 // const testdataRFC3339TZ = "2020-08-22T11:27:43.123456789-02:00"
 
 // fn BenchmarkParseRFC3339TZ(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Parse(RFC3339, testdataRFC3339TZ)
 // 	}
 // }
@@ -1649,13 +1649,13 @@ fn test_days_in() {
 // var testdataRFC3339TZBytes = []byte(testdataRFC3339TZ)
 
 // fn BenchmarkParseRFC3339TZBytes(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Parse(RFC3339, string(testdataRFC3339TZBytes))
 // 	}
 // }
 
 // fn BenchmarkParseDuration(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		ParseDuration("9007199254.740993ms")
 // 		ParseDuration("9007199254740993ns")
 // 	}
@@ -1663,42 +1663,42 @@ fn test_days_in() {
 
 // fn BenchmarkHour(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		_ = t.hour()
 // 	}
 // }
 
 // fn BenchmarkSecond(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		_ = t.second()
 // 	}
 // }
 
 // fn BenchmarkYear(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		_ = t.year()
 // 	}
 // }
 
 // fn BenchmarkDay(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		_ = t.day()
 // 	}
 // }
 
 // fn BenchmarkISOWeek(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		_, _ = t.ISOWeek()
 // 	}
 // }
 
 // fn BenchmarkGoString(b *testing.B) {
 // 	t := Now()
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		_ = t.GoString()
 // 	}
 // }
@@ -1706,7 +1706,7 @@ fn test_days_in() {
 // fn BenchmarkUnmarshalText(b *testing.B) {
 // 	var t Time
 // 	in := []byte("2020-08-22T11:27:43.123456789-02:00")
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		t.UnmarshalText(in)
 // 	}
 // }
@@ -1729,22 +1729,22 @@ fn test_days_in() {
 // fn TestMarshalBinaryVersion2() {
 // 	t0, err := Parse(RFC3339, "1880-01-01T00:00:00Z")
 // 	if err != nil {
-// 		t.Errorf("Failed to parse time, error = %v", err)
+// 		t.Errorf("Failed to parse time, error = {}", err)
 // 	}
 // 	loc, err := LoadLocation("US/Eastern")
 // 	if err != nil {
-// 		t.Errorf("Failed to load location, error = %v", err)
+// 		t.Errorf("Failed to load location, error = {}", err)
 // 	}
 // 	t1 := t0.In(loc)
 // 	b, err := t1.MarshalBinary()
 // 	if err != nil {
-// 		t.Errorf("Failed to Marshal, error = %v", err)
+// 		t.Errorf("Failed to Marshal, error = {}", err)
 // 	}
 
 // 	t2 := Time{}
 // 	err = t2.UnmarshalBinary(b)
 // 	if err != nil {
-// 		t.Errorf("Failed to Unmarshal, error = %v", err)
+// 		t.Errorf("Failed to Unmarshal, error = {}", err)
 // 	}
 
 // 	if !(t0.Equal(t1) && t1.Equal(t2)) {
@@ -1763,7 +1763,7 @@ fn test_days_in() {
 // 		var t Time
 // 		t.UnmarshalText(in)
 // 	}); allocs != 0 {
-// 		t.Errorf("got %v allocs, want 0 allocs", allocs)
+// 		t.Errorf("got {} allocs, want 0 allocs", allocs)
 // 	}
 // }
 
@@ -1791,7 +1791,7 @@ fn test_days_in() {
 // 	}
 // 	_, err := ReadFile(zero)
 // 	if err == nil || !strings.Contains(err.Error(), "is too large") {
-// 		t.Errorf("readFile(%q) error = %v; want error containing 'is too large'", zero, err)
+// 		t.Errorf("readFile(%q) error = {}; want error containing 'is too large'", zero, err)
 // 	}
 // }
 
@@ -1806,7 +1806,7 @@ fn test_days_in() {
 // 	var wg sync.WaitGroup
 // 	wg.Add(goroutines)
 // 	timer := NewTimer(Hour)
-// 	for i := 0; i < goroutines; i++ {
+// 	for i := 0; i < goroutines; i += 1 {
 // 		go fn(i isize) {
 // 			defer wg.Done()
 // 			for j := 0; j < tries; j++ {
@@ -1824,7 +1824,7 @@ fn test_days_in() {
 // 	var wg sync.WaitGroup
 // 	wg.Add(goroutines * 2)
 // 	timer := NewTimer(Hour)
-// 	for i := 0; i < goroutines; i++ {
+// 	for i := 0; i < goroutines; i += 1 {
 // 		go fn(i isize) {
 // 			defer wg.Done()
 // 			for j := 0; j < tries; j++ {
@@ -1845,11 +1845,11 @@ fn test_days_in() {
 
 // 	tzWithDST, err := LoadLocation("Australia/Sydney")
 // 	if err != nil {
-// 		t.Fatalf("could not load tz 'Australia/Sydney': %v", err)
+// 		t.Fatalf("could not load tz 'Australia/Sydney': {}", err)
 // 	}
 // 	tzWithoutDST, err := LoadLocation("Australia/Brisbane")
 // 	if err != nil {
-// 		t.Fatalf("could not load tz 'Australia/Brisbane': %v", err)
+// 		t.Fatalf("could not load tz 'Australia/Brisbane': {}", err)
 // 	}
 // 	tzFixed := FixedZone("FIXED_TIME", 12345)
 
@@ -1870,7 +1870,7 @@ fn test_days_in() {
 // 	for i, tt := range tests {
 // 		got := tt.time.IsDST()
 // 		if got != tt.want {
-// 			t.Errorf("#%d:: (%#v).IsDST()=%t, want %t", i, tt.time.Format(RFC3339), got, tt.want)
+// 			t.Errorf("#{}:: (%#v).IsDST()=%t, want %t", i, tt.time.Format(RFC3339), got, tt.want)
 // 		}
 // 	}
 // }
@@ -1880,11 +1880,11 @@ fn test_days_in() {
 // 	var maxInt64 i64 = 1<<63 - 1
 // 	timeExt := maxInt64 - UnixToInternal - 50
 // 	notMonoTime := unix(timeExt, 0)
-// 	for i := i64(0); i < 100; i++ {
+// 	for i := i64(0); i < 100; i += 1 {
 // 		sec := notMonoTime.unix()
 // 		notMonoTime = notMonoTime.Add(Duration(i * 1e9))
 // 		if newSec := notMonoTime.unix(); newSec != sec+i && newSec+UnixToInternal != maxInt64 {
-// 			t.Fatalf("time ext: %d overflows with positive delta, overflow threshold: %d", newSec, maxInt64)
+// 			t.Fatalf("time ext: {} overflows with positive delta, overflow threshold: {}", newSec, maxInt64)
 // 		}
 // 	}
 
@@ -1895,7 +1895,7 @@ fn test_days_in() {
 // 		sec := notMonoTime.unix()
 // 		notMonoTime = notMonoTime.Add(Duration(i * 1e9))
 // 		if newSec := notMonoTime.unix(); newSec != sec+i && newSec+UnixToInternal != maxInt64 {
-// 			t.Fatalf("time ext: %d overflows with positive delta, overflow threshold: %d", newSec, maxInt64)
+// 			t.Fatalf("time ext: {} overflows with positive delta, overflow threshold: {}", newSec, maxInt64)
 // 		}
 // 	}
 // }
@@ -1937,7 +1937,7 @@ fn test_days_in() {
 
 // 	for i, tt := range tests {
 // 		if !tt.give.Equal(tt.want) {
-// 			t.Errorf("#%d:: %#v is not equal to %#v", i, tt.give.Format(RFC3339), tt.want.Format(RFC3339))
+// 			t.Errorf("#{}:: %#v is not equal to %#v", i, tt.give.Format(RFC3339), tt.want.Format(RFC3339))
 // 		}
 // 	}
 // }
@@ -1957,7 +1957,7 @@ fn test_days_in() {
 // 		tm := unix(sec, 0).UTC()
 // 		start, end := tm.ZoneBounds()
 // 		if !(start.IsZero() && end.IsZero()) {
-// 			t.Errorf("ZoneBounds of %+v expects two zero Time, got:\n  start=%v\n  end=%v", *golden, start, end)
+// 			t.Errorf("ZoneBounds of %+v expects two zero Time, got:\n  start={}\n  end={}", *golden, start, end)
 // 		}
 // 	}
 
@@ -1966,7 +1966,7 @@ fn test_days_in() {
 // 	beginTime := Date(math.MinInt32, January, 1, 0, 0, 0, 0, loc)
 // 	start, end := beginTime.ZoneBounds()
 // 	if !start.IsZero() || end.IsZero() {
-// 		t.Errorf("ZoneBounds of %v expects start is zero Time, got:\n  start=%v\n  end=%v", beginTime, start, end)
+// 		t.Errorf("ZoneBounds of {} expects start is zero Time, got:\n  start={}\n  end={}", beginTime, start, end)
 // 	}
 
 // 	// If the zone goes on forever, end will be returned as a zero Time.
@@ -1974,7 +1974,7 @@ fn test_days_in() {
 // 	foreverTime := Date(math.MaxInt32, January, 1, 0, 0, 0, 0, loc)
 // 	start, end = foreverTime.ZoneBounds()
 // 	if start.IsZero() || !end.IsZero() {
-// 		t.Errorf("ZoneBounds of %v expects end is zero Time, got:\n  start=%v\n  end=%v", foreverTime, start, end)
+// 		t.Errorf("ZoneBounds of {} expects end is zero Time, got:\n  start={}\n  end={}", foreverTime, start, end)
 // 	}
 
 // 	// Check some real-world cases to make sure we're getting the right bounds.
@@ -2020,7 +2020,7 @@ fn test_days_in() {
 // 	for i, tt := range realTests {
 // 		start, end := tt.giveTime.ZoneBounds()
 // 		if !start.Equal(tt.wantStart) || !end.Equal(tt.wantEnd) {
-// 			t.Errorf("#%d:: ZoneBounds of %v expects right bounds:\n  got start=%v\n  want start=%v\n  got end=%v\n  want end=%v",
+// 			t.Errorf("#{}:: ZoneBounds of {} expects right bounds:\n  got start={}\n  want start={}\n  got end={}\n  want end={}",
 // 				i, tt.giveTime, start, tt.wantStart, end, tt.wantEnd)
 // 		}
 // 	}

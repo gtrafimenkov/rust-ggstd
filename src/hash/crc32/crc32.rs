@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -227,10 +227,10 @@ impl hash::Hash32 for Digest<'_> {
 // }
 
 // func (d *digest) UnmarshalBinary(b []byte) error {
-// 	if len(b) < len(magic) || string(b[:len(magic)]) != magic {
+// 	if b.len() < len(magic) || string(b[..len(magic)]) != magic {
 // 		return errors.New("hash/crc32: invalid hash state identifier")
 // 	}
-// 	if len(b) != marshaledSize {
+// 	if b.len() != marshaledSize {
 // 		return errors.New("hash/crc32: invalid hash state size")
 // 	}
 // 	if tableSum(d.tab) != readUint32(b[4:]) {
@@ -247,7 +247,7 @@ impl hash::Hash32 for Digest<'_> {
 // 		byte(x >> 8),
 // 		byte(x),
 // 	}
-// 	return append(b, a[:]...)
+// 	return append(b, a[..]...)
 // }
 
 // func readUint32(b []byte) uint32 {
@@ -311,7 +311,7 @@ pub fn checksum_ieee(data: &[u8]) -> u32 {
 // // tableSum returns the IEEE checksum of table t.
 // func tableSum(t *Table) uint32 {
 // 	var a [1024]byte
-// 	b := a[:0]
+// 	b := a[..0]
 // 	if t != nil {
 // 		for _, x := range t {
 // 			b = appendUint32(b, x)

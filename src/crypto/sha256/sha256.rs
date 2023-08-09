@@ -1,3 +1,4 @@
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -89,17 +90,17 @@ impl Digest {
 // 	b = binary.BigEndian.AppendUint32(b, d.h[5])
 // 	b = binary.BigEndian.AppendUint32(b, d.h[6])
 // 	b = binary.BigEndian.AppendUint32(b, d.h[7])
-// 	b = append(b, d.x[:d.nx]...)
-// 	b = b[:len(b)+len(d.x)-d.nx] // already zero
+// 	b = append(b, d.x[..d.nx]...)
+// 	b = b[..b.len()+len(d.x)-d.nx] // already zero
 // 	b = binary.BigEndian.AppendUint64(b, d.len)
 // 	return b, nil
 // }
 
 // fn (d *Digest) UnmarshalBinary(b []u8) error {
-// 	if len(b) < len(magic224) || (d.is224 && string(b[:len(magic224)]) != magic224) || (!d.is224 && string(b[:len(magic256)]) != magic256) {
+// 	if b.len() < len(magic224) || (d.is224 && string(b[..len(magic224)]) != magic224) || (!d.is224 && string(b[..len(magic256)]) != magic256) {
 // 		return errors.New("crypto/sha256: invalid hash state identifier")
 // 	}
-// 	if len(b) != marshaledSize {
+// 	if b.len() != marshaledSize {
 // 		return errors.New("crypto/sha256: invalid hash state size")
 // 	}
 // 	b = b[len(magic224):]
@@ -111,7 +112,7 @@ impl Digest {
 // 	b, d.h[5] = consumeUint32(b)
 // 	b, d.h[6] = consumeUint32(b)
 // 	b, d.h[7] = consumeUint32(b)
-// 	b = b[copy(d.x[:], b):]
+// 	b = b[copy(d.x[..], b):]
 // 	b, d.len = consumeUint64(b)
 // 	d.nx = isize(d.len % chunk)
 // 	return nil
@@ -242,9 +243,9 @@ impl Digest {
     // 	d0 := *d
     // 	hash := d0.checksum()
     // 	if d0.is224 {
-    // 		return append(in, hash[:Size224]...)
+    // 		return append(in, hash[..Size224]...)
     // 	}
-    // 	return append(in, hash[:]...)
+    // 	return append(in, hash[..]...)
     // }
 
     fn checksum(&mut self) -> [u8; SIZE] {
@@ -306,7 +307,7 @@ pub fn sum256(data: &[u8]) -> [u8; SIZE] {
 // 	d.Reset()
 // 	d.Write(data)
 // 	sum := d.checksum()
-// 	ap := (*[Size224]u8)(sum[:])
+// 	ap := (*[Size224]u8)(sum[..])
 // 	return *ap
 // }
 

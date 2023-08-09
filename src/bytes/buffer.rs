@@ -1,9 +1,13 @@
-// Copyright (c) 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 //! Simple byte buffer for marshaling data.
+
+use crate::compat;
+use crate::io as ggio;
+use std::io::Write;
 
 const SMALL_BUFFER_SIZE: usize = 64;
 
@@ -36,8 +40,8 @@ pub struct Buffer {
 // )
 
 // // ErrTooLarge is passed to panic if memory cannot be allocated to store data in a buffer.
-// var ErrTooLarge = errors.New("bytes.Buffer: too large")
-// var errNegativeRead = errors.New("bytes.Buffer: reader returned negative count from Read")
+// var ErrTooLarge = errors.New("bytes::Buffer::new(): too large")
+// var errNegativeRead = errors.New("bytes::Buffer::new(): reader returned negative count from Read")
 
 // const maxInt = int(^uint(0) >> 1)
 
@@ -76,7 +80,7 @@ impl Buffer {
     }
 
     /// len returns the number of bytes of the unread portion of the buffer;
-    /// b.Len() == len(b.Bytes()).
+    /// b.Len() == len(b.bytes()).
     pub fn len(&self) -> usize {
         self.buf.len() - self.off
     }
@@ -97,7 +101,7 @@ impl Buffer {
         }
         // self.lastRead = opInvalid
         if n > self.len() {
-            panic!("bytes.Buffer: truncation out of range");
+            panic!("bytes::Buffer::new(): truncation out of range");
         }
         self.buf.truncate(n + self.off);
     }
@@ -142,26 +146,71 @@ impl Buffer {
     pub fn grow(&mut self, n: usize) {
         self.guarantee_space(n);
     }
+}
 
+impl ggio::ReadWriter for Buffer {}
+impl ggio::Reader for Buffer {
+    /// Read reads the next p.len() bytes from the buffer or until the buffer
+    /// is drained. The return value n is the number of bytes read. If the
+    /// buffer has no data to return, err is io.EOF (unless p.len() is zero);
+    /// otherwise it is nil.
+    fn read(&mut self, p: &mut [u8]) -> (usize, Option<ggio::Error>) {
+        // b.lastRead = opInvalid
+        if self.empty() {
+            // Buffer is empty, reset to recover space.
+            self.reset();
+            if p.len() == 0 {
+                return (0, None);
+            }
+            return (0, Some(ggio::Error::EOF));
+        }
+        let n = compat::copy(p, &self.buf[self.off..]);
+        self.off += n;
+        if n > 0 {
+            // self.lastRead = opRead
+        }
+        return (n, None);
+    }
+}
+
+impl std::io::Read for Buffer {
+    /// Read reads the next p.len() bytes from the buffer or until the buffer
+    /// is drained. The return value n is the number of bytes read.
+    fn read(&mut self, p: &mut [u8]) -> std::io::Result<usize> {
+        Ok(self::ggio::Reader::read(self, p).0)
+    }
+}
+
+impl ggio::Writer for Buffer {
+    fn write(&mut self, p: &[u8]) -> (usize, Option<ggio::Error>) {
+        let n = p.len();
+        self.guarantee_space(n);
+        self.buf.extend_from_slice(p);
+        (n, None)
+    }
+}
+
+impl std::io::Write for Buffer {
     /// write appends the contents of p to the buffer, growing the buffer as
     /// needed. The return value n is the length of p.
-    pub fn write(&mut self, p: &[u8]) -> std::io::Result<usize> {
+    fn write(&mut self, p: &[u8]) -> std::io::Result<usize> {
         self.guarantee_space(p.len());
         self.buf.extend_from_slice(p);
         Ok(p.len())
     }
 
-    // // WriteString appends the contents of s to the buffer, growing the buffer as
-    // // needed. The return value n is the length of s; err is always nil. If the
-    // // buffer becomes too large, WriteString will panic with ErrTooLarge.
-    // fn WriteString(&self, s string) (n: usize, err error) {
-    // 	b.lastRead = opInvalid
-    // 	m, ok := b.tryGrowByReslice(len(s))
-    // 	if !ok {
-    // 		m = b.guarantee_space(len(s))
-    // 	}
-    // 	return copy(self.buf[m:], s), nil
-    // }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+impl Buffer {
+    /// write_string appends the contents of s to the buffer, growing the buffer as
+    /// needed. The return value n is the length of s.
+    pub fn write_string(&mut self, s: &str) -> std::io::Result<usize> {
+        // b.lastRead = opInvalid
+        self.write(s.as_bytes())
+    }
 
     // // MinRead is the minimum slice size passed to a Read call by
     // // Buffer.ReadFrom. As long as the Buffer has at least MinRead bytes beyond
@@ -177,13 +226,13 @@ impl Buffer {
     // 	b.lastRead = opInvalid
     // 	for {
     // 		i := b.guarantee_space(MinRead)
-    // 		self.buf = self.buf[:i]
+    // 		self.buf = self.buf[..i]
     // 		m, e := r.Read(self.buf[i:cap(self.buf)])
     // 		if m < 0 {
     // 			panic(errNegativeRead)
     // 		}
 
-    // 		self.buf = self.buf[:i+m]
+    // 		self.buf = self.buf[..i+m]
     // 		n += int64(m)
     // 		if e == io.EOF {
     // 			return n, nil // e is EOF, so return nil explicitly
@@ -201,9 +250,9 @@ impl Buffer {
     // fn WriteTo(&self, w io.Writer) (n int64, err error) {
     // 	b.lastRead = opInvalid
     // 	if nBytes := b.Len(); nBytes > 0 {
-    // 		m, e := w.Write(self.buf[self.off..])
+    // 		m, e := w.write(self.buf[self.off..])
     // 		if m > nBytes {
-    // 			panic("bytes.Buffer.WriteTo: invalid Write count")
+    // 			panic("bytes::Buffer::new().WriteTo: invalid Write count")
     // 		}
     // 		self.off += m
     // 		n = int64(m)
@@ -217,7 +266,7 @@ impl Buffer {
     // 		}
     // 	}
     // 	// Buffer is now empty; reset.
-    // 	b.Reset()
+    // 	b.reset()
     // 	return n, nil
     // }
 
@@ -244,26 +293,9 @@ impl Buffer {
     // 	if !ok {
     // 		m = b.guarantee_space(utf8.UTFMax)
     // 	}
-    // 	self.buf = utf8.AppendRune(self.buf[:m], r)
+    // 	self.buf = utf8.AppendRune(self.buf[..m], r)
     // 	return self.buf.len() - m, nil
     // }
-
-    /// Read reads the next p.len() bytes from the buffer or until the buffer
-    /// is drained. The return value n is the number of bytes read. If the
-    /// buffer has no data to return, err is io.EOF (unless p.len() is zero);
-    /// otherwise it is nil.
-    pub fn read(&mut self, p: &mut [u8]) -> std::io::Result<usize> {
-        // 	self.lastRead = opInvalid
-        if self.empty() {
-            // Buffer is empty, reset to recover space.
-            self.reset();
-            return Ok(0);
-        }
-        let bytes_to_copy = self.len().min(p.len());
-        p[0..bytes_to_copy].copy_from_slice(&self.bytes()[0..bytes_to_copy]);
-        self.off += bytes_to_copy;
-        Ok(bytes_to_copy)
-    }
 
     // // Next returns a slice containing the next n bytes from the buffer,
     // // advancing the buffer as if the bytes had been returned by read.
@@ -305,7 +337,7 @@ impl Buffer {
     // pub fn ReadRune(&self) (r rune, size int, err error) {
     // 	if b.empty() {
     // 		// Buffer is empty, reset to recover space.
-    // 		b.Reset()
+    // 		b.reset()
     // 		return 0, 0, io.EOF
     // 	}
     // 	c := self.buf[self.off]
@@ -327,7 +359,7 @@ impl Buffer {
     // // from any read operation.)
     // pub fn UnreadRune(&self) error {
     // 	if b.lastRead <= opInvalid {
-    // 		return errors.New("bytes.Buffer: UnreadRune: previous operation was not a successful ReadRune")
+    // 		return errors.New("bytes::Buffer::new(): UnreadRune: previous operation was not a successful ReadRune")
     // 	}
     // 	if self.off >= int(b.lastRead) {
     // 		self.off -= int(b.lastRead)
@@ -336,7 +368,7 @@ impl Buffer {
     // 	return nil
     // }
 
-    // var errUnreadByte = errors.New("bytes.Buffer: UnreadByte: previous operation was not a successful read")
+    // var errUnreadByte = errors.New("bytes::Buffer::new(): UnreadByte: previous operation was not a successful read")
 
     // // UnreadByte unreads the last byte returned by the most recent successful
     // // read operation that read at least one byte. If a write has happened since

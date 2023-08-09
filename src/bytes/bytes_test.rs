@@ -19,10 +19,10 @@
 // )
 
 // func eq(a, b []string) bool {
-// 	if len(a) != len(b) {
+// 	if len(a) != b.len() {
 // 		return false
 // 	}
-// 	for i := 0; i < len(a); i++ {
+// 	for i := 0; i < len(a); i += 1 {
 // 		if a[i] != b[i] {
 // 			return false
 // 		}
@@ -58,12 +58,12 @@
 // 		for _, tt := range compareTests {
 // 			eql := Equal(tt.a, tt.b)
 // 			if eql != (tt.i == 0) {
-// 				t.Errorf(`Equal(%q, %q) = %v`, tt.a, tt.b, eql)
+// 				t.Errorf(`Equal(%q, %q) = {}`, tt.a, tt.b, eql)
 // 			}
 // 		}
 // 	})
 // 	if allocs > 0 {
-// 		t.Errorf("Equal allocated %v times", allocs)
+// 		t.Errorf("Equal allocated {} times", allocs)
 // 	}
 // }
 
@@ -76,7 +76,7 @@
 // 	b := make([]byte, size)
 // 	b_init := make([]byte, size)
 // 	// randomish but deterministic data
-// 	for i := 0; i < size; i++ {
+// 	for i := 0; i < size; i += 1 {
 // 		a[i] = byte(17 * i)
 // 		b_init[i] = byte(23*i + 100)
 // 	}
@@ -87,7 +87,7 @@
 // 				copy(b, b_init)
 // 				copy(b[y:y+len], a[x:x+len])
 // 				if !Equal(a[x:x+len], b[y:y+len]) || !Equal(b[y:y+len], a[x:x+len]) {
-// 					t.Errorf("Equal(%d, %d, %d) = false", len, x, y)
+// 					t.Errorf("Equal({}, {}, {}) = false", len, x, y)
 // 				}
 // 			}
 // 		}
@@ -110,7 +110,7 @@
 // 				for diffpos := x; diffpos < x+len; diffpos++ {
 // 					a[diffpos] = 1
 // 					if Equal(a[x:x+len], b[y:y+len]) || Equal(b[y:y+len], a[x:x+len]) {
-// 						t.Errorf("NotEqual(%d, %d, %d, %d) = true", len, x, y, diffpos)
+// 						t.Errorf("NotEqual({}, {}, {}, {}) = true", len, x, y, diffpos)
 // 					}
 // 					a[diffpos] = 0
 // 				}
@@ -243,7 +243,7 @@
 // 		b := []byte(test.b)
 // 		actual := f(a, b)
 // 		if actual != test.i {
-// 			t.Errorf("%s(%q,%q) = %v; want %v", funcName, a, b, actual, test.i)
+// 			t.Errorf("%s(%q,%q) = {}; want {}", funcName, a, b, actual, test.i)
 // 		}
 // 	}
 // 	var allocTests = []struct {
@@ -258,10 +258,10 @@
 // 	}
 // 	allocs := testing.AllocsPerRun(100, func() {
 // 		if i := Index(allocTests[1].a, allocTests[1].b); i != allocTests[1].i {
-// 			t.Errorf("Index([]byte(%q), []byte(%q)) = %v; want %v", allocTests[1].a, allocTests[1].b, i, allocTests[1].i)
+// 			t.Errorf("Index([]byte(%q), []byte(%q)) = {}; want {}", allocTests[1].a, allocTests[1].b, i, allocTests[1].i)
 // 		}
 // 		if i := LastIndex(allocTests[0].a, allocTests[0].b); i != allocTests[0].i {
-// 			t.Errorf("LastIndex([]byte(%q), []byte(%q)) = %v; want %v", allocTests[0].a, allocTests[0].b, i, allocTests[0].i)
+// 			t.Errorf("LastIndex([]byte(%q), []byte(%q)) = {}; want {}", allocTests[0].a, allocTests[0].b, i, allocTests[0].i)
 // 		}
 // 	})
 // 	if allocs != 0 {
@@ -274,7 +274,7 @@
 // 		a := []byte(test.a)
 // 		actual := f(a, test.b)
 // 		if actual != test.i {
-// 			t.Errorf("%s(%q,%q) = %v; want %v", funcName, a, test.b, actual, test.i)
+// 			t.Errorf("%s(%q,%q) = {}; want {}", funcName, a, test.b, actual, test.i)
 // 		}
 // 	}
 // }
@@ -295,11 +295,11 @@
 // 		b := tt.b[0]
 // 		pos := IndexByte(a, b)
 // 		if pos != tt.i {
-// 			t.Errorf(`IndexByte(%q, '%c') = %v`, tt.a, b, pos)
+// 			t.Errorf(`IndexByte(%q, '%c') = {}`, tt.a, b, pos)
 // 		}
 // 		posp := IndexBytePortable(a, b)
 // 		if posp != tt.i {
-// 			t.Errorf(`indexBytePortable(%q, '%c') = %v`, tt.a, b, posp)
+// 			t.Errorf(`indexBytePortable(%q, '%c') = {}`, tt.a, b, posp)
 // 		}
 // 	}
 // }
@@ -316,7 +316,7 @@
 // 	for _, test := range testCases {
 // 		actual := LastIndexByte([]byte(test.a), test.b[0])
 // 		if actual != test.i {
-// 			t.Errorf("LastIndexByte(%q,%c) = %v; want %v", test.a, test.b[0], actual, test.i)
+// 			t.Errorf("LastIndexByte(%q,%c) = {}; want {}", test.a, test.b[0], actual, test.i)
 // 		}
 // 	}
 // }
@@ -328,33 +328,33 @@
 // 		n = 128
 // 	}
 // 	b := make([]byte, n)
-// 	for i := 0; i < n; i++ {
+// 	for i := 0; i < n; i += 1 {
 // 		// different start alignments
 // 		b1 := b[i:]
 // 		for j := 0; j < len(b1); j++ {
 // 			b1[j] = 'x'
 // 			pos := IndexByte(b1, 'x')
 // 			if pos != j {
-// 				t.Errorf("IndexByte(%q, 'x') = %v", b1, pos)
+// 				t.Errorf("IndexByte(%q, 'x') = {}", b1, pos)
 // 			}
 // 			b1[j] = 0
 // 			pos = IndexByte(b1, 'x')
 // 			if pos != -1 {
-// 				t.Errorf("IndexByte(%q, 'x') = %v", b1, pos)
+// 				t.Errorf("IndexByte(%q, 'x') = {}", b1, pos)
 // 			}
 // 		}
 // 		// different end alignments
-// 		b1 = b[:i]
+// 		b1 = b[..i]
 // 		for j := 0; j < len(b1); j++ {
 // 			b1[j] = 'x'
 // 			pos := IndexByte(b1, 'x')
 // 			if pos != j {
-// 				t.Errorf("IndexByte(%q, 'x') = %v", b1, pos)
+// 				t.Errorf("IndexByte(%q, 'x') = {}", b1, pos)
 // 			}
 // 			b1[j] = 0
 // 			pos = IndexByte(b1, 'x')
 // 			if pos != -1 {
-// 				t.Errorf("IndexByte(%q, 'x') = %v", b1, pos)
+// 				t.Errorf("IndexByte(%q, 'x') = {}", b1, pos)
 // 			}
 // 		}
 // 		// different start and end alignments
@@ -363,12 +363,12 @@
 // 			b1[j] = 'x'
 // 			pos := IndexByte(b1, 'x')
 // 			if pos != j {
-// 				t.Errorf("IndexByte(%q, 'x') = %v", b1, pos)
+// 				t.Errorf("IndexByte(%q, 'x') = {}", b1, pos)
 // 			}
 // 			b1[j] = 0
 // 			pos = IndexByte(b1, 'x')
 // 			if pos != -1 {
-// 				t.Errorf("IndexByte(%q, 'x') = %v", b1, pos)
+// 				t.Errorf("IndexByte(%q, 'x') = {}", b1, pos)
 // 			}
 // 		}
 // 	}
@@ -378,14 +378,14 @@
 // func TestIndexByteSmall(t *testing.T) {
 // 	b := make([]byte, 5015) // bigger than a page
 // 	// Make sure we find the correct byte even when straddling a page.
-// 	for i := 0; i <= len(b)-15; i++ {
+// 	for i := 0; i <= b.len()-15; i += 1 {
 // 		for j := 0; j < 15; j++ {
 // 			b[i+j] = byte(100 + j)
 // 		}
 // 		for j := 0; j < 15; j++ {
 // 			p := IndexByte(b[i:i+15], byte(100+j))
 // 			if p != j {
-// 				t.Errorf("IndexByte(%q, %d) = %d", b[i:i+15], 100+j, p)
+// 				t.Errorf("IndexByte(%q, {}) = {}", b[i:i+15], 100+j, p)
 // 			}
 // 		}
 // 		for j := 0; j < 15; j++ {
@@ -393,14 +393,14 @@
 // 		}
 // 	}
 // 	// Make sure matches outside the slice never trigger.
-// 	for i := 0; i <= len(b)-15; i++ {
+// 	for i := 0; i <= b.len()-15; i += 1 {
 // 		for j := 0; j < 15; j++ {
 // 			b[i+j] = 1
 // 		}
 // 		for j := 0; j < 15; j++ {
 // 			p := IndexByte(b[i:i+15], byte(0))
 // 			if p != -1 {
-// 				t.Errorf("IndexByte(%q, %d) = %d", b[i:i+15], 0, p)
+// 				t.Errorf("IndexByte(%q, {}) = {}", b[i:i+15], 0, p)
 // 			}
 // 		}
 // 		for j := 0; j < 15; j++ {
@@ -441,17 +441,17 @@
 // 	}
 // 	for _, tt := range tests {
 // 		if got := IndexRune([]byte(tt.in), tt.rune); got != tt.want {
-// 			t.Errorf("IndexRune(%q, %d) = %v; want %v", tt.in, tt.rune, got, tt.want)
+// 			t.Errorf("IndexRune(%q, {}) = {}; want {}", tt.in, tt.rune, got, tt.want)
 // 		}
 // 	}
 
 // 	haystack := []byte("test世界")
 // 	allocs := testing.AllocsPerRun(1000, func() {
 // 		if i := IndexRune(haystack, 's'); i != 2 {
-// 			t.Fatalf("'s' at %d; want 2", i)
+// 			t.Fatalf("'s' at {}; want 2", i)
 // 		}
 // 		if i := IndexRune(haystack, '世'); i != 4 {
-// 			t.Fatalf("'世' at %d; want 4", i)
+// 			t.Fatalf("'世' at {}; want 4", i)
 // 		}
 // 	})
 // 	if allocs != 0 {
@@ -468,14 +468,14 @@
 // 			b[i+j] = byte(100)
 // 			p := Count(b[i:i+window], []byte{100})
 // 			if p != j+1 {
-// 				t.Errorf("TestCountByte.Count(%q, 100) = %d", b[i:i+window], p)
+// 				t.Errorf("TestCountByte.Count(%q, 100) = {}", b[i:i+window], p)
 // 			}
 // 		}
 // 	}
 
 // 	maxWnd := windows[len(windows)-1]
 
-// 	for i := 0; i <= 2*maxWnd; i++ {
+// 	for i := 0; i <= 2*maxWnd; i += 1 {
 // 		for _, window := range windows {
 // 			if window > len(b[i:]) {
 // 				window = len(b[i:])
@@ -486,7 +486,7 @@
 // 			}
 // 		}
 // 	}
-// 	for i := 4096 - (maxWnd + 1); i < len(b); i++ {
+// 	for i := 4096 - (maxWnd + 1); i < b.len(); i += 1 {
 // 		for _, window := range windows {
 // 			if window > len(b[i:]) {
 // 				window = len(b[i:])
@@ -503,7 +503,7 @@
 // func TestCountByteNoMatch(t *testing.T) {
 // 	b := make([]byte, 5015)
 // 	windows := []int{1, 2, 3, 4, 15, 16, 17, 31, 32, 33, 63, 64, 65, 128}
-// 	for i := 0; i <= len(b); i++ {
+// 	for i := 0; i <= b.len(); i += 1 {
 // 		for _, window := range windows {
 // 			if window > len(b[i:]) {
 // 				window = len(b[i:])
@@ -515,7 +515,7 @@
 // 			// Try to find something that doesn't exist
 // 			p := Count(b[i:i+window], []byte{0})
 // 			if p != 0 {
-// 				t.Errorf("TestCountByteNoMatch(%q, 0) = %d", b[i:i+window], p)
+// 				t.Errorf("TestCountByteNoMatch(%q, 0) = {}", b[i:i+window], p)
 // 			}
 // 			for j := 0; j < window; j++ {
 // 				b[i+j] = byte(0)
@@ -553,7 +553,7 @@
 
 // var indexSizes = []int{10, 32, 4 << 10, 4 << 20, 64 << 20}
 
-// var isRaceBuilder = strings.HasSuffix(testenv.Builder(), "-race")
+// var isRaceBuilder = strings.has_suffix(testenv.Builder(), "-race")
 
 // func BenchmarkIndexByte(b *testing.B) {
 // 	benchBytes(b, indexSizes, bmIndexByte(IndexByte))
@@ -567,7 +567,7 @@
 // 	return func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := index(buf, 'x')
 // 			if j != n-1 {
 // 				b.Fatal("bad index", j)
@@ -589,7 +589,7 @@
 // 	return func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := index(buf, 'x')
 // 			if j != n-1 {
 // 				b.Fatal("bad index", j)
@@ -603,7 +603,7 @@
 // 	return func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		utf8.EncodeRune(buf[n-3:], '世')
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := index(buf, '世')
 // 			if j != n-3 {
 // 				b.Fatal("bad index", j)
@@ -620,7 +620,7 @@
 // 		var buf [4]byte
 // 		buf1 := buf[0:0]
 // 		buf2 := buf[1:1]
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			eq := Equal(buf1, buf2)
 // 			if !eq {
 // 				b.Fatal("bad equal")
@@ -641,7 +641,7 @@
 // 		buf2 := bmbuf[n : 2*n]
 // 		buf1[n-1] = 'x'
 // 		buf2[n-1] = 'x'
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			eq := equal(buf1, buf2)
 // 			if !eq {
 // 				b.Fatal("bad equal")
@@ -656,7 +656,7 @@
 // 	benchBytes(b, indexSizes, func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := Index(buf, buf[n-7:])
 // 			if j != n-7 {
 // 				b.Fatal("bad index", j)
@@ -671,7 +671,7 @@
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
 // 		buf[n-7] = 'x'
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := Index(buf, buf[n-7:])
 // 			if j != n-7 {
 // 				b.Fatal("bad index", j)
@@ -686,7 +686,7 @@
 // 	benchBytes(b, indexSizes, func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := Count(buf, buf[n-7:])
 // 			if j != 1 {
 // 				b.Fatal("bad count", j)
@@ -701,7 +701,7 @@
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
 // 		buf[n-7] = 'x'
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := Count(buf, buf[n-7:])
 // 			if j != 1 {
 // 				b.Fatal("bad count", j)
@@ -720,13 +720,13 @@
 // 			buf[i] = 1
 // 		}
 // 		expect := (len(buf) + (step - 1)) / step
-// 		for i := 0; i < b.N; i++ {
+// 		for i := 0; i < b.N; i += 1 {
 // 			j := Count(buf, []byte{1})
 // 			if j != expect {
 // 				b.Fatal("bad count", j, expect)
 // 			}
 // 		}
-// 		for i := 0; i < len(buf); i++ {
+// 		for i := 0; i < len(buf); i += 1 {
 // 			buf[i] = 0
 // 		}
 // 	})
@@ -772,7 +772,7 @@
 
 // 		result := sliceOfString(a)
 // 		if !eq(result, tt.a) {
-// 			t.Errorf(`Split(%q, %q, %d) = %v; want %v`, tt.s, tt.sep, tt.n, result, tt.a)
+// 			t.Errorf(`Split(%q, %q, {}) = {}; want {}`, tt.s, tt.sep, tt.n, result, tt.a)
 // 			continue
 // 		}
 // 		if tt.n == 0 || len(a) == 0 {
@@ -785,17 +785,17 @@
 
 // 		s := Join(a, []byte(tt.sep))
 // 		if string(s) != tt.s {
-// 			t.Errorf(`Join(Split(%q, %q, %d), %q) = %q`, tt.s, tt.sep, tt.n, tt.sep, s)
+// 			t.Errorf(`Join(Split(%q, %q, {}), %q) = %q`, tt.s, tt.sep, tt.n, tt.sep, s)
 // 		}
 // 		if tt.n < 0 {
 // 			b := Split([]byte(tt.s), []byte(tt.sep))
 // 			if !reflect.DeepEqual(a, b) {
-// 				t.Errorf("Split disagrees withSplitN(%q, %q, %d) = %v; want %v", tt.s, tt.sep, tt.n, b, a)
+// 				t.Errorf("Split disagrees withSplitN(%q, %q, {}) = {}; want {}", tt.s, tt.sep, tt.n, b, a)
 // 			}
 // 		}
 // 		if len(a) > 0 {
 // 			in, out := a[0], s
-// 			if cap(in) == cap(out) && &in[:1][0] == &out[:1][0] {
+// 			if cap(in) == cap(out) && &in[..1][0] == &out[..1][0] {
 // 				t.Errorf("Join(%#v, %q) didn't copy", a, tt.sep)
 // 			}
 // 		}
@@ -830,7 +830,7 @@
 
 // 		result := sliceOfString(a)
 // 		if !eq(result, tt.a) {
-// 			t.Errorf(`Split(%q, %q, %d) = %v; want %v`, tt.s, tt.sep, tt.n, result, tt.a)
+// 			t.Errorf(`Split(%q, %q, {}) = {}; want {}`, tt.s, tt.sep, tt.n, result, tt.a)
 // 			continue
 // 		}
 
@@ -840,12 +840,12 @@
 
 // 		s := Join(a, nil)
 // 		if string(s) != tt.s {
-// 			t.Errorf(`Join(Split(%q, %q, %d), %q) = %q`, tt.s, tt.sep, tt.n, tt.sep, s)
+// 			t.Errorf(`Join(Split(%q, %q, {}), %q) = %q`, tt.s, tt.sep, tt.n, tt.sep, s)
 // 		}
 // 		if tt.n < 0 {
 // 			b := SplitAfter([]byte(tt.s), []byte(tt.sep))
 // 			if !reflect.DeepEqual(a, b) {
-// 				t.Errorf("SplitAfter disagrees withSplitAfterN(%q, %q, %d) = %v; want %v", tt.s, tt.sep, tt.n, b, a)
+// 				t.Errorf("SplitAfter disagrees withSplitAfterN(%q, %q, {}) = {}; want {}", tt.s, tt.sep, tt.n, b, a)
 // 			}
 // 		}
 // 	}
@@ -883,7 +883,7 @@
 
 // 		result := sliceOfString(a)
 // 		if !eq(result, tt.a) {
-// 			t.Errorf("Fields(%q) = %v; want %v", tt.s, a, tt.a)
+// 			t.Errorf("Fields(%q) = {}; want {}", tt.s, a, tt.a)
 // 			continue
 // 		}
 
@@ -903,7 +903,7 @@
 // 		a := FieldsFunc([]byte(tt.s), unicode.IsSpace)
 // 		result := sliceOfString(a)
 // 		if !eq(result, tt.a) {
-// 			t.Errorf("FieldsFunc(%q, unicode.IsSpace) = %v; want %v", tt.s, a, tt.a)
+// 			t.Errorf("FieldsFunc(%q, unicode.IsSpace) = {}; want {}", tt.s, a, tt.a)
 // 			continue
 // 		}
 // 	}
@@ -926,7 +926,7 @@
 
 // 		result := sliceOfString(a)
 // 		if !eq(result, tt.a) {
-// 			t.Errorf("FieldsFunc(%q) = %v, want %v", tt.s, a, tt.a)
+// 			t.Errorf("FieldsFunc(%q) = {}, want {}", tt.s, a, tt.a)
 // 		}
 
 // 		if string(b) != tt.s {
@@ -1098,7 +1098,7 @@
 // 	for _, tc := range upperTests {
 // 		tin := []byte(tc.in)
 // 		b.Run(tc.in, func(b *testing.B) {
-// 			for i := 0; i < b.N; i++ {
+// 			for i := 0; i < b.N; i += 1 {
 // 				actual := ToUpper(tin)
 // 				if !Equal(actual, tc.out) {
 // 					b.Errorf("ToUpper(%q) = %q; want %q", tc.in, actual, tc.out)
@@ -1112,7 +1112,7 @@
 // 	for _, tc := range lowerTests {
 // 		tin := []byte(tc.in)
 // 		b.Run(tc.in, func(b *testing.B) {
-// 			for i := 0; i < b.N; i++ {
+// 			for i := 0; i < b.N; i += 1 {
 // 				actual := ToLower(tin)
 // 				if !Equal(actual, tc.out) {
 // 					b.Errorf("ToLower(%q) = %q; want %q", tc.in, actual, tc.out)
@@ -1180,7 +1180,7 @@
 // 		tout := []byte(tt.out)
 // 		a := Repeat(tin, tt.count)
 // 		if !Equal(a, tout) {
-// 			t.Errorf("Repeat(%q, %d) = %q; want %q", tin, tt.count, a, tout)
+// 			t.Errorf("Repeat(%q, {}) = %q; want %q", tin, tt.count, a, tout)
 // 			continue
 // 		}
 // 	}
@@ -1223,19 +1223,19 @@
 // 		err := repeat([]byte(tt.s), tt.count)
 // 		if tt.errStr == "" {
 // 			if err != nil {
-// 				t.Errorf("#%d panicked %v", i, err)
+// 				t.Errorf("#{} panicked {}", i, err)
 // 			}
 // 			continue
 // 		}
 
 // 		if err == nil || !strings.Contains(err.Error(), tt.errStr) {
-// 			t.Errorf("#%d expected %q got %q", i, tt.errStr, err)
+// 			t.Errorf("#{} expected %q got %q", i, tt.errStr, err)
 // 		}
 // 	}
 // }
 
 // func runesEqual(a, b []rune) bool {
-// 	if len(a) != len(b) {
+// 	if len(a) != b.len() {
 // 		return false
 // 	}
 // 	for i, r := range a {
@@ -1267,7 +1267,7 @@
 // 		tin := []byte(tt.in)
 // 		a := Runes(tin)
 // 		if !runesEqual(a, tt.out) {
-// 			t.Errorf("Runes(%q) = %v; want %v", tin, a, tt.out)
+// 			t.Errorf("Runes(%q) = {}; want {}", tin, a, tt.out)
 // 			continue
 // 		}
 // 		if !tt.lossy {
@@ -1554,11 +1554,11 @@
 // 	for _, tc := range indexFuncTests {
 // 		first := IndexFunc([]byte(tc.in), tc.f.f)
 // 		if first != tc.first {
-// 			t.Errorf("IndexFunc(%q, %s) = %d; want %d", tc.in, tc.f.name, first, tc.first)
+// 			t.Errorf("IndexFunc(%q, %s) = {}; want {}", tc.in, tc.f.name, first, tc.first)
 // 		}
 // 		last := LastIndexFunc([]byte(tc.in), tc.f.f)
 // 		if last != tc.last {
-// 			t.Errorf("LastIndexFunc(%q, %s) = %d; want %d", tc.in, tc.f.name, last, tc.last)
+// 			t.Errorf("LastIndexFunc(%q, %s) = {}; want {}", tc.in, tc.f.name, last, tc.last)
 // 		}
 // 	}
 // }
@@ -1595,13 +1595,13 @@
 // func TestReplace(t *testing.T) {
 // 	for _, tt := range ReplaceTests {
 // 		in := append([]byte(tt.in), "<spare>"...)
-// 		in = in[:len(tt.in)]
+// 		in = in[..len(tt.in)]
 // 		out := Replace(in, []byte(tt.old), []byte(tt.new), tt.n)
 // 		if s := string(out); s != tt.out {
-// 			t.Errorf("Replace(%q, %q, %q, %d) = %q, want %q", tt.in, tt.old, tt.new, tt.n, s, tt.out)
+// 			t.Errorf("Replace(%q, %q, %q, {}) = %q, want %q", tt.in, tt.old, tt.new, tt.n, s, tt.out)
 // 		}
-// 		if cap(in) == cap(out) && &in[:1][0] == &out[:1][0] {
-// 			t.Errorf("Replace(%q, %q, %q, %d) didn't copy", tt.in, tt.old, tt.new, tt.n)
+// 		if cap(in) == cap(out) && &in[..1][0] == &out[..1][0] {
+// 			t.Errorf("Replace(%q, %q, %q, {}) didn't copy", tt.in, tt.old, tt.new, tt.n)
 // 		}
 // 		if tt.n == -1 {
 // 			out := ReplaceAll(in, []byte(tt.old), []byte(tt.new))
@@ -1674,10 +1674,10 @@
 // func TestEqualFold(t *testing.T) {
 // 	for _, tt := range EqualFoldTests {
 // 		if out := EqualFold([]byte(tt.s), []byte(tt.t)); out != tt.out {
-// 			t.Errorf("EqualFold(%#q, %#q) = %v, want %v", tt.s, tt.t, out, tt.out)
+// 			t.Errorf("EqualFold(%#q, %#q) = {}, want {}", tt.s, tt.t, out, tt.out)
 // 		}
 // 		if out := EqualFold([]byte(tt.t), []byte(tt.s)); out != tt.out {
-// 			t.Errorf("EqualFold(%#q, %#q) = %v, want %v", tt.t, tt.s, out, tt.out)
+// 			t.Errorf("EqualFold(%#q, %#q) = {}, want {}", tt.t, tt.s, out, tt.out)
 // 		}
 // 	}
 // }
@@ -1700,7 +1700,7 @@
 // func TestCut(t *testing.T) {
 // 	for _, tt := range cutTests {
 // 		if before, after, found := Cut([]byte(tt.s), []byte(tt.sep)); string(before) != tt.before || string(after) != tt.after || found != tt.found {
-// 			t.Errorf("Cut(%q, %q) = %q, %q, %v, want %q, %q, %v", tt.s, tt.sep, before, after, found, tt.before, tt.after, tt.found)
+// 			t.Errorf("Cut(%q, %q) = %q, %q, {}, want %q, %q, {}", tt.s, tt.sep, before, after, found, tt.before, tt.after, tt.found)
 // 		}
 // 	}
 // }
@@ -1721,7 +1721,7 @@
 // func TestCutPrefix(t *testing.T) {
 // 	for _, tt := range cutPrefixTests {
 // 		if after, found := CutPrefix([]byte(tt.s), []byte(tt.sep)); string(after) != tt.after || found != tt.found {
-// 			t.Errorf("CutPrefix(%q, %q) = %q, %v, want %q, %v", tt.s, tt.sep, after, found, tt.after, tt.found)
+// 			t.Errorf("CutPrefix(%q, %q) = %q, {}, want %q, {}", tt.s, tt.sep, after, found, tt.after, tt.found)
 // 		}
 // 	}
 // }
@@ -1742,7 +1742,7 @@
 // func TestCutSuffix(t *testing.T) {
 // 	for _, tt := range cutSuffixTests {
 // 		if after, found := CutSuffix([]byte(tt.s), []byte(tt.sep)); string(after) != tt.after || found != tt.found {
-// 			t.Errorf("CutSuffix(%q, %q) = %q, %v, want %q, %v", tt.s, tt.sep, after, found, tt.after, tt.found)
+// 			t.Errorf("CutSuffix(%q, %q) = %q, {}, want %q, {}", tt.s, tt.sep, after, found, tt.after, tt.found)
 // 		}
 // 	}
 // }
@@ -1791,7 +1791,7 @@
 // func TestContains(t *testing.T) {
 // 	for _, tt := range containsTests {
 // 		if got := Contains(tt.b, tt.subslice); got != tt.want {
-// 			t.Errorf("Contains(%q, %q) = %v, want %v", tt.b, tt.subslice, got, tt.want)
+// 			t.Errorf("Contains(%q, %q) = {}, want {}", tt.b, tt.subslice, got, tt.want)
 // 		}
 // 	}
 // }
@@ -1817,7 +1817,7 @@
 // func TestContainsAny(t *testing.T) {
 // 	for _, ct := range ContainsAnyTests {
 // 		if ContainsAny(ct.b, ct.substr) != ct.expected {
-// 			t.Errorf("ContainsAny(%s, %s) = %v, want %v",
+// 			t.Errorf("ContainsAny(%s, %s) = {}, want {}",
 // 				ct.b, ct.substr, !ct.expected, ct.expected)
 // 		}
 // 	}
@@ -1841,7 +1841,7 @@
 // func TestContainsRune(t *testing.T) {
 // 	for _, ct := range ContainsRuneTests {
 // 		if ContainsRune(ct.b, ct.r) != ct.expected {
-// 			t.Errorf("ContainsRune(%q, %q) = %v, want %v",
+// 			t.Errorf("ContainsRune(%q, %q) = {}, want {}",
 // 				ct.b, ct.r, !ct.expected, ct.expected)
 // 		}
 // 	}
@@ -1892,11 +1892,11 @@
 // 	for _, sd := range bytesdata {
 // 		b.Run(sd.name, func(b *testing.B) {
 // 			for j := 1 << 4; j <= 1<<20; j <<= 4 {
-// 				b.Run(fmt.Sprintf("%d", j), func(b *testing.B) {
+// 				b.Run(fmt.Sprintf("{}", j), func(b *testing.B) {
 // 					b.ReportAllocs()
 // 					b.SetBytes(int64(j))
-// 					data := sd.data[:j]
-// 					for i := 0; i < b.N; i++ {
+// 					data := sd.data[..j]
+// 					for i := 0; i < b.N; i += 1 {
 // 						Fields(data)
 // 					}
 // 				})
@@ -1909,11 +1909,11 @@
 // 	for _, sd := range bytesdata {
 // 		b.Run(sd.name, func(b *testing.B) {
 // 			for j := 1 << 4; j <= 1<<20; j <<= 4 {
-// 				b.Run(fmt.Sprintf("%d", j), func(b *testing.B) {
+// 				b.Run(fmt.Sprintf("{}", j), func(b *testing.B) {
 // 					b.ReportAllocs()
 // 					b.SetBytes(int64(j))
-// 					data := sd.data[:j]
-// 					for i := 0; i < b.N; i++ {
+// 					data := sd.data[..j]
+// 					for i := 0; i < b.N; i += 1 {
 // 						FieldsFunc(data, unicode.IsSpace)
 // 					}
 // 				})
@@ -1934,7 +1934,7 @@
 // 	}
 // 	for _, test := range tests {
 // 		b.Run(test.name, func(b *testing.B) {
-// 			for i := 0; i < b.N; i++ {
+// 			for i := 0; i < b.N; i += 1 {
 // 				TrimSpace(test.input)
 // 			}
 // 		})
@@ -1954,7 +1954,7 @@
 // 	b.ResetTimer()
 // 	for _, test := range tests {
 // 		b.Run(test.name, func(b *testing.B) {
-// 			for i := 0; i < b.N; i++ {
+// 			for i := 0; i < b.N; i += 1 {
 // 				ToValidUTF8(test.input, replacement)
 // 			}
 // 		})
@@ -1981,19 +1981,19 @@
 // var benchInputHard = makeBenchInputHard()
 
 // func benchmarkIndexHard(b *testing.B, sep []byte) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Index(benchInputHard, sep)
 // 	}
 // }
 
 // func benchmarkLastIndexHard(b *testing.B, sep []byte) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		LastIndex(benchInputHard, sep)
 // 	}
 // }
 
 // func benchmarkCountHard(b *testing.B, sep []byte) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Count(benchInputHard, sep)
 // 	}
 // }
@@ -2014,41 +2014,41 @@
 // func BenchmarkCountHard3(b *testing.B) { benchmarkCountHard(b, []byte("<b>hello world</b>")) }
 
 // func BenchmarkSplitEmptySeparator(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Split(benchInputHard, nil)
 // 	}
 // }
 
 // func BenchmarkSplitSingleByteSeparator(b *testing.B) {
 // 	sep := []byte("/")
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Split(benchInputHard, sep)
 // 	}
 // }
 
 // func BenchmarkSplitMultiByteSeparator(b *testing.B) {
 // 	sep := []byte("hello")
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Split(benchInputHard, sep)
 // 	}
 // }
 
 // func BenchmarkSplitNSingleByteSeparator(b *testing.B) {
 // 	sep := []byte("/")
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		SplitN(benchInputHard, sep, 10)
 // 	}
 // }
 
 // func BenchmarkSplitNMultiByteSeparator(b *testing.B) {
 // 	sep := []byte("hello")
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		SplitN(benchInputHard, sep, 10)
 // 	}
 // }
 
 // func BenchmarkRepeat(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Repeat([]byte("-"), 80)
 // 	}
 // }
@@ -2057,13 +2057,13 @@
 // 	s := Repeat([]byte("@"), 8*1024)
 // 	for j := 8; j <= 30; j++ {
 // 		for _, k := range []int{1, 16, 4097} {
-// 			s := s[:k]
+// 			s := s[..k]
 // 			n := (1 << j) / k
 // 			if n == 0 {
 // 				continue
 // 			}
-// 			b.Run(fmt.Sprintf("%d/%d", 1<<j, k), func(b *testing.B) {
-// 				for i := 0; i < b.N; i++ {
+// 			b.Run(fmt.Sprintf("{}/{}", 1<<j, k), func(b *testing.B) {
+// 				for i := 0; i < b.N; i += 1 {
 // 					Repeat(s, n)
 // 				}
 // 				b.SetBytes(int64(n * len(s)))
@@ -2078,16 +2078,16 @@
 // 			var x = make([]byte, n)
 // 			var y = make([]byte, n)
 
-// 			for i := 0; i < n; i++ {
+// 			for i := 0; i < n; i += 1 {
 // 				x[i] = 'a'
 // 			}
 
-// 			for i := 0; i < n; i++ {
+// 			for i := 0; i < n; i += 1 {
 // 				y[i] = 'a'
 // 			}
 
 // 			b.ResetTimer()
-// 			for i := 0; i < b.N; i++ {
+// 			for i := 0; i < b.N; i += 1 {
 // 				Compare(x, y)
 // 			}
 // 		})
@@ -2099,9 +2099,9 @@
 // 	cs := "0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
-// 			b.Run(fmt.Sprintf("%d:%d", k, j), func(b *testing.B) {
-// 				for i := 0; i < b.N; i++ {
-// 					IndexAny(x[:k], cs[:j])
+// 			b.Run(fmt.Sprintf("{}:{}", k, j), func(b *testing.B) {
+// 				for i := 0; i < b.N; i += 1 {
+// 					IndexAny(x[..k], cs[..j])
 // 				}
 // 			})
 // 		}
@@ -2113,9 +2113,9 @@
 // 	cs := "你好世界, hello world. 你好世界, hello world. 你好世界, hello world."
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
-// 			b.Run(fmt.Sprintf("%d:%d", k, j), func(b *testing.B) {
-// 				for i := 0; i < b.N; i++ {
-// 					IndexAny(x[:k], cs[:j])
+// 			b.Run(fmt.Sprintf("{}:{}", k, j), func(b *testing.B) {
+// 				for i := 0; i < b.N; i += 1 {
+// 					IndexAny(x[..k], cs[..j])
 // 				}
 // 			})
 // 		}
@@ -2127,9 +2127,9 @@
 // 	cs := "0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
-// 			b.Run(fmt.Sprintf("%d:%d", k, j), func(b *testing.B) {
-// 				for i := 0; i < b.N; i++ {
-// 					LastIndexAny(x[:k], cs[:j])
+// 			b.Run(fmt.Sprintf("{}:{}", k, j), func(b *testing.B) {
+// 				for i := 0; i < b.N; i += 1 {
+// 					LastIndexAny(x[..k], cs[..j])
 // 				}
 // 			})
 // 		}
@@ -2141,9 +2141,9 @@
 // 	cs := "你好世界, hello world. 你好世界, hello world. 你好世界, hello world."
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
-// 			b.Run(fmt.Sprintf("%d:%d", k, j), func(b *testing.B) {
-// 				for i := 0; i < b.N; i++ {
-// 					LastIndexAny(x[:k], cs[:j])
+// 			b.Run(fmt.Sprintf("{}:{}", k, j), func(b *testing.B) {
+// 				for i := 0; i < b.N; i += 1 {
+// 					LastIndexAny(x[..k], cs[..j])
 // 				}
 // 			})
 // 		}
@@ -2154,10 +2154,10 @@
 // 	cs := "0123456789abcdef"
 // 	for k := 1; k <= 4096; k <<= 4 {
 // 		for j := 1; j <= 16; j <<= 1 {
-// 			b.Run(fmt.Sprintf("%d:%d", k, j), func(b *testing.B) {
-// 				x := Repeat([]byte(cs[:j]), k) // Always matches set
-// 				for i := 0; i < b.N; i++ {
-// 					Trim(x[:k], cs[:j])
+// 			b.Run(fmt.Sprintf("{}:{}", k, j), func(b *testing.B) {
+// 				x := Repeat([]byte(cs[..j]), k) // Always matches set
+// 				for i := 0; i < b.N; i += 1 {
+// 					Trim(x[..k], cs[..j])
 // 				}
 // 			})
 // 		}
@@ -2166,7 +2166,7 @@
 
 // func BenchmarkTrimByte(b *testing.B) {
 // 	x := []byte("  the quick brown fox   ")
-// 	for i := 0; i < b.N; i++ {
+// 	for i := 0; i < b.N; i += 1 {
 // 		Trim(x, " ")
 // 	}
 // }
@@ -2174,12 +2174,12 @@
 // func BenchmarkIndexPeriodic(b *testing.B) {
 // 	key := []byte{1, 1}
 // 	for _, skip := range [...]int{2, 4, 8, 16, 32, 64} {
-// 		b.Run(fmt.Sprintf("IndexPeriodic%d", skip), func(b *testing.B) {
+// 		b.Run(fmt.Sprintf("IndexPeriodic{}", skip), func(b *testing.B) {
 // 			buf := make([]byte, 1<<16)
 // 			for i := 0; i < len(buf); i += skip {
 // 				buf[i] = 1
 // 			}
-// 			for i := 0; i < b.N; i++ {
+// 			for i := 0; i < b.N; i += 1 {
 // 				Index(buf, key)
 // 			}
 // 		})
@@ -2191,8 +2191,8 @@
 // 		[]byte(nil),
 // 		[]byte{},
 // 		Clone([]byte{}),
-// 		[]byte(strings.Repeat("a", 42))[:0],
-// 		[]byte(strings.Repeat("a", 42))[:0:0],
+// 		[]byte(strings.Repeat("a", 42))[..0],
+// 		[]byte(strings.Repeat("a", 42))[..0:0],
 // 		[]byte("short"),
 // 		[]byte(strings.Repeat("a", 42)),
 // 	}
