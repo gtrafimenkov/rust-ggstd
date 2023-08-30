@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 use super::deflatefast::DeflateFast;
-use super::huffman_bit_writer::HuffmanBitWriter;
+use super::huffman_bit_writer::HuffmanBitWriteFilter;
 use super::token::{literal_token, match_token, Token};
 use crate::compat;
 use crate::io as ggio;
@@ -23,7 +23,7 @@ pub const DEFAULT_COMPRESSION: isize = -1;
 // Note that HUFFMAN_ONLY produces a compressed output that is
 // RFC 1951 compliant. That is, any valid DEFLATE decompressor will
 // continue to be able to decompress this output.
-const HUFFMAN_ONLY: isize = -2;
+pub const HUFFMAN_ONLY: isize = -2;
 
 const LOG_WINDOW_SIZE: usize = 15;
 pub(super) const WINDOW_SIZE: usize = 1 << LOG_WINDOW_SIZE;
@@ -82,8 +82,8 @@ impl CompressionLevel {
 }
 
 const LEVELS: &[CompressionLevel] = &[
-    CompressionLevel::new(0, 0, 0, 0, 0, 0), // NoCompression.
-    CompressionLevel::new(1, 0, 0, 0, 0, 0), // BestSpeed uses a custom algorithm; see deflatefast.go.
+    CompressionLevel::new(0, 0, 0, 0, 0, 0), // NO_COMPRESSION.
+    CompressionLevel::new(1, 0, 0, 0, 0, 0), // BEST_SPEED uses a custom algorithm; see deflatefast.go.
     // For levels 2-3 we don't bother trying with lazy matches.
     CompressionLevel::new(2, 4, 0, 16, 8, 5),
     CompressionLevel::new(3, 4, 0, 32, 32, 6),
@@ -98,49 +98,11 @@ const LEVELS: &[CompressionLevel] = &[
 ];
 
 pub(super) struct Compressor<'a> {
-    compression_level: &'a CompressionLevel,
-    w: HuffmanBitWriter<'a>,
-    bulk_hasher: Option<fn(&[u8], &mut [u32])>,
-
-    // compression algorithm
-    fill: fn(&mut Compressor, &[u8]) -> usize, // copy data to window
-    step: fn(&mut Compressor),                 // process window
-    sync: bool,                                // requesting flush
-
-    best_speed: Option<DeflateFast>, // Encoder for BestSpeed
-
-    // Input hash chains
-    // hashHead[hashValue] contains the largest inputIndex with the specified hash value
-    // If hashHead[hashValue] is within the current window, then
-    // hashPrev[hashHead[hashValue] & windowMask] contains the previous index
-    // with the same hash value.
-    chain_head: isize,
-    hash_head: Vec<u32>,
-    hash_prev: Vec<u32>,
-    hash_offset: usize,
-
-    // input window: unprocessed data is window[index:windowEnd]
-    index: usize,
-    window: Vec<u8>,
-    window_end: usize,
-    block_start: usize,   // window index where current tokens start
-    byte_available: bool, // if true, still need to process window[index-1].
-
-    // queued output tokens
-    tokens: Vec<Token>,
-
-    // deflate state
-    length: usize,
-    offset: usize,
-    max_insert_index: isize,
-    err: std::io::Result<usize>,
-    // hash_match must be able to contain hashes for the maximum match length.
-    hash_match: Vec<u32>,
-
-    writer_closed: bool,
+    writer: &'a mut dyn std::io::Write,
+    compressor: CompressFilter<'a>,
 }
 
-fn fill_deflate(d: &mut Compressor, b: &[u8]) -> usize {
+fn fill_deflate(d: &mut CompressFilter, b: &[u8]) -> usize {
     if d.index >= 2 * WINDOW_SIZE - (MIN_MATCH_LENGTH + MAX_MATCH_LENGTH) {
         // shift the window by WINDOW_SIZE
         compat::copy_within(&mut d.window, WINDOW_SIZE..2 * WINDOW_SIZE, 0);
@@ -180,23 +142,354 @@ fn fill_deflate(d: &mut Compressor, b: &[u8]) -> usize {
     return n;
 }
 
-impl Compressor<'_> {
+const HASHMUL: u32 = 0x1e35a7bd;
+
+/// hash4 returns a hash representation of the first 4 bytes
+/// of the supplied slice.
+/// The caller must ensure that b.len() >= 4.
+pub(super) fn hash4(b: &[u8]) -> u32 {
+    return ((b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24)
+        .overflowing_mul(HASHMUL)
+        .0
+        >> (32 - HASH_BITS);
+}
+
+/// bulkHash4 will compute hashes using the same
+/// algorithm as hash4.
+pub(super) fn bulk_hash4(b: &[u8], dst: &mut [u32]) {
+    if b.len() < MIN_MATCH_LENGTH {
+        return;
+    }
+    let mut hb = (b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24;
+    dst[0] = hb.overflowing_mul(HASHMUL).0 >> (32 - HASH_BITS);
+    let end = b.len() - MIN_MATCH_LENGTH + 1;
+    for i in 1..end {
+        hb = (hb << 8) | (b[i + 3] as u32);
+        dst[i] = hb.overflowing_mul(HASHMUL).0 >> (32 - HASH_BITS);
+    }
+}
+
+/// match_len returns the number of matching bytes in a and b
+/// up to length 'max'. Both slices must be at least 'max'
+/// bytes in size.
+fn match_len(a: &[u8], b: &[u8], max: usize) -> usize {
+    // 	a = a[..max]
+    // 	b = b[..len(a)]
+    for i in 0..max {
+        if b[i] != a[i] {
+            return i;
+        }
+    }
+    return max;
+}
+
+/// enc_speed will compress and store the currently added data,
+/// if enough has been accumulated or we at the end of the stream.
+fn enc_speed(d: &mut CompressFilter, writer: &mut dyn std::io::Write) {
+    // We only compress if we have MAX_STORE_BLOCK_SIZE.
+    if d.window_end < MAX_STORE_BLOCK_SIZE {
+        if !d.sync {
+            return;
+        }
+
+        // Handle small sizes.
+        if d.window_end < 128 {
+            if d.window_end == 0 {
+                return;
+            } else if d.window_end <= 16 {
+                d.write_stored_block(writer);
+            } else {
+                d.hbw
+                    .write_block_huff(writer, false, &d.window[..d.window_end]);
+            }
+            d.window_end = 0;
+            d.best_speed.as_mut().unwrap().reset();
+            return;
+        }
+    }
+    // Encode the block.
+    d.tokens.truncate(0);
+    d.best_speed
+        .as_mut()
+        .unwrap()
+        .encode(&mut d.tokens, &d.window[..d.window_end]);
+
+    // If we removed less than 1/16th, Huffman compress the block.
+    if d.tokens.len() > d.window_end - (d.window_end >> 4) {
+        d.hbw
+            .write_block_huff(writer, false, &d.window[..d.window_end]);
+    } else {
+        d.hbw
+            .write_block_dynamic(writer, &d.tokens, false, Some(&d.window[..d.window_end]));
+    }
+    d.window_end = 0;
+}
+
+fn deflate(d: &mut CompressFilter, writer: &mut dyn std::io::Write) {
+    if d.window_end - d.index < MIN_MATCH_LENGTH + MAX_MATCH_LENGTH && !d.sync {
+        return;
+    }
+
+    d.max_insert_index = d.window_end as isize - (MIN_MATCH_LENGTH as isize - 1);
+
+    'Loop: loop {
+        if d.index > d.window_end {
+            panic!("index > windowEnd");
+        }
+        let lookahead = d.window_end - d.index;
+        if lookahead < MIN_MATCH_LENGTH + MAX_MATCH_LENGTH {
+            if !d.sync {
+                break 'Loop;
+            }
+            if d.index > d.window_end {
+                panic!("index > windowEnd");
+            }
+            if lookahead == 0 {
+                // Flush current output block if any.
+                if d.byte_available {
+                    // There is still one pending token that needs to be flushed
+                    d.tokens.push(literal_token(d.window[d.index - 1] as u32));
+                    d.byte_available = false;
+                }
+                if d.tokens.len() > 0 {
+                    d.write_block(writer, d.index);
+                    if d.error().is_err() {
+                        return;
+                    }
+                    d.tokens.truncate(0);
+                }
+                break 'Loop;
+            }
+        }
+        if (d.index as isize) < d.max_insert_index {
+            // Update the hash
+            let hash = hash4(&d.window[d.index..d.index + MIN_MATCH_LENGTH]);
+            let hh = &mut d.hash_head[(hash & HASH_MASK) as usize];
+            d.chain_head = *hh as isize;
+            d.hash_prev[d.index & WINDOW_MASK] = d.chain_head as u32;
+            *hh = (d.index + d.hash_offset) as u32;
+        }
+        let prev_length = d.length;
+        let prev_offset = d.offset;
+        d.length = MIN_MATCH_LENGTH - 1;
+        d.offset = 0;
+        let mut min_index = d.index as isize - WINDOW_SIZE as isize;
+        if min_index < 0 {
+            min_index = 0;
+        }
+
+        let cl = d.compression_level;
+
+        if d.chain_head - d.hash_offset as isize >= min_index
+            && (cl.fast_skip_hashing != SKIP_NEVER && lookahead > MIN_MATCH_LENGTH - 1
+                || cl.fast_skip_hashing == SKIP_NEVER
+                    && lookahead > prev_length
+                    && prev_length < cl.lazy)
+        {
+            let (new_length, new_offset, ok) = d.find_match(
+                d.index,
+                d.chain_head as usize - d.hash_offset,
+                MIN_MATCH_LENGTH - 1,
+                lookahead,
+            );
+            if ok {
+                d.length = new_length;
+                d.offset = new_offset;
+            }
+        }
+        if cl.fast_skip_hashing != SKIP_NEVER && d.length >= MIN_MATCH_LENGTH
+            || cl.fast_skip_hashing == SKIP_NEVER
+                && prev_length >= MIN_MATCH_LENGTH
+                && d.length <= prev_length
+        {
+            // There was a match at the previous step, and the current match is
+            // not better. Output the previous match.
+            if cl.fast_skip_hashing != SKIP_NEVER {
+                d.tokens.push(match_token(
+                    (d.length - BASE_MATCH_LENGTH) as u32,
+                    (d.offset - BASE_MATCH_OFFSET) as u32,
+                ));
+            } else {
+                d.tokens.push(match_token(
+                    (prev_length - BASE_MATCH_LENGTH) as u32,
+                    (prev_offset - BASE_MATCH_OFFSET) as u32,
+                ));
+            }
+            // Insert in the hash table all strings up to the end of the match.
+            // index and index-1 are already inserted. If there is not enough
+            // lookahead, the last two strings are not inserted into the hash
+            // table.
+            if d.length <= cl.fast_skip_hashing {
+                let new_index = if cl.fast_skip_hashing != SKIP_NEVER {
+                    d.index + d.length
+                } else {
+                    d.index + prev_length - 1
+                };
+                let mut index = d.index;
+                index += 1;
+                while index < new_index {
+                    if (index as isize) < d.max_insert_index {
+                        let hash = hash4(&d.window[index..index + MIN_MATCH_LENGTH]);
+                        // Get previous value with the same hash.
+                        // Our chain should point to the previous value.
+                        let hh = &mut d.hash_head[(hash & HASH_MASK) as usize];
+                        d.hash_prev[index & WINDOW_MASK] = *hh;
+                        // Set the head of the hash chain to us.
+                        *hh = (index + d.hash_offset) as u32;
+                    }
+                    index += 1;
+                }
+                d.index = index;
+
+                if cl.fast_skip_hashing == SKIP_NEVER {
+                    d.byte_available = false;
+                    d.length = MIN_MATCH_LENGTH - 1;
+                }
+            } else {
+                // For matches this long, we don't bother inserting each individual
+                // item into the table.
+                d.index += d.length;
+            }
+            if d.tokens.len() == MAX_FLATE_BLOCK_TOKENS {
+                // The block includes the current character
+                d.write_block(writer, d.index);
+                if d.error().is_err() {
+                    return;
+                }
+                d.tokens.truncate(0);
+            }
+        } else {
+            if cl.fast_skip_hashing != SKIP_NEVER || d.byte_available {
+                let i = if cl.fast_skip_hashing != SKIP_NEVER {
+                    d.index
+                } else {
+                    d.index - 1
+                };
+                d.tokens.push(literal_token(d.window[i] as u32));
+                if d.tokens.len() == MAX_FLATE_BLOCK_TOKENS {
+                    d.write_block(writer, i + 1);
+                    if d.error().is_err() {
+                        return;
+                    }
+                    d.tokens.truncate(0);
+                }
+            }
+            d.index += 1;
+            if cl.fast_skip_hashing == SKIP_NEVER {
+                d.byte_available = true;
+            }
+        }
+    }
+}
+
+fn fill_store(d: &mut CompressFilter, b: &[u8]) -> usize {
+    let n = compat::copy(&mut d.window[d.window_end..], b);
+    d.window_end += n;
+    return n;
+}
+
+fn store(d: &mut CompressFilter, writer: &mut dyn std::io::Write) {
+    if d.window_end > 0 && (d.window_end == MAX_STORE_BLOCK_SIZE || d.sync) {
+        d.write_stored_block(writer);
+        d.window_end = 0;
+    }
+}
+
+/// storeHuff compresses and stores the currently added data
+/// when the self.window is full or we are at the end of the stream.
+/// Any error that occurred will be in self.err
+fn store_huff(d: &mut CompressFilter, writer: &mut dyn std::io::Write) {
+    if d.window_end < d.window.len() && !d.sync || d.window_end == 0 {
+        return;
+    }
+    d.hbw
+        .write_block_huff(writer, false, &d.window[..d.window_end]);
+    d.window_end = 0;
+}
+
+#[allow(dead_code)]
+impl<'a> Compressor<'a> {
+    fn new(w: &'a mut dyn std::io::Write, level: isize) -> Self {
+        Self {
+            writer: w,
+            compressor: CompressFilter::new(level),
+        }
+    }
+
+    fn reset(&mut self, w: &'a mut dyn std::io::Write) {
+        self.writer = w;
+        self.compressor.reset();
+    }
+
+    fn close(&mut self) -> std::io::Result<()> {
+        self.compressor.close(self.writer)
+    }
+}
+
+/// CompressFilter is like Compressor, but it doesn't hold the underlying writer,
+/// which is a writer where compressed data will be written.  Whenever necessary
+/// the underlying writer is passed as a method parameter.  It is responsibility
+/// of the caller, to always pass the correct writer.
+pub(super) struct CompressFilter<'a> {
+    compression_level: &'a CompressionLevel,
+    hbw: HuffmanBitWriteFilter,
+    bulk_hasher: Option<fn(&[u8], &mut [u32])>,
+
+    // compression algorithm
+    fill: fn(&mut CompressFilter, &[u8]) -> usize, // copy data to window
+    step: fn(&mut CompressFilter, &mut dyn std::io::Write), // process window
+    sync: bool,                                    // requesting flush
+
+    best_speed: Option<DeflateFast>, // Encoder for BestSpeed
+
+    // Input hash chains
+    // hashHead[hashValue] contains the largest inputIndex with the specified hash value
+    // If hashHead[hashValue] is within the current window, then
+    // hashPrev[hashHead[hashValue] & windowMask] contains the previous index
+    // with the same hash value.
+    chain_head: isize,
+    hash_head: Vec<u32>,
+    hash_prev: Vec<u32>,
+    hash_offset: usize,
+
+    // input window: unprocessed data is window[index:windowEnd]
+    index: usize,
+    window: Vec<u8>,
+    window_end: usize,
+    block_start: usize,   // window index where current tokens start
+    byte_available: bool, // if true, still need to process window[index-1].
+
+    // queued output tokens
+    tokens: Vec<Token>,
+
+    // deflate state
+    length: usize,
+    offset: usize,
+    max_insert_index: isize,
+    err: std::io::Result<usize>,
+    // hash_match must be able to contain hashes for the maximum match length.
+    hash_match: Vec<u32>,
+
+    writer_closed: bool,
+}
+
+impl<'a> CompressFilter<'a> {
     fn error(&self) -> &std::io::Result<usize> {
-        let writer_error = self.w.error();
+        let writer_error = self.hbw.error();
         if writer_error.is_err() {
             return writer_error;
         }
         return &self.err;
     }
 
-    fn write_block(&mut self, index: usize) {
+    fn write_block(&mut self, w: &mut dyn std::io::Write, index: usize) {
         if index > 0 {
             let mut window = None;
             if self.block_start <= index {
                 window = Some(&self.window[self.block_start..index]);
             }
             self.block_start = index;
-            self.w.write_block(&self.tokens, false, window);
+            self.hbw.write_block(w, &self.tokens, false, window);
         }
     }
 
@@ -324,287 +617,24 @@ impl Compressor<'_> {
         return (length, offset, ok);
     }
 
-    fn write_stored_block(&mut self) {
-        self.w
-            .write_stored_header(self.window[..self.window_end].len(), false);
-        if self.w.error().is_err() {
+    fn write_stored_block(&mut self, w: &mut dyn std::io::Write) {
+        self.hbw
+            .write_stored_header(w, self.window[..self.window_end].len(), false);
+        if self.hbw.error().is_err() {
             return;
         }
-        self.w.write_bytes(&self.window[..self.window_end]);
-    }
-}
-
-const HASHMUL: u32 = 0x1e35a7bd;
-
-/// hash4 returns a hash representation of the first 4 bytes
-/// of the supplied slice.
-/// The caller must ensure that b.len() >= 4.
-pub(super) fn hash4(b: &[u8]) -> u32 {
-    return ((b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24)
-        .overflowing_mul(HASHMUL)
-        .0
-        >> (32 - HASH_BITS);
-}
-
-/// bulkHash4 will compute hashes using the same
-/// algorithm as hash4.
-pub(super) fn bulk_hash4(b: &[u8], dst: &mut [u32]) {
-    if b.len() < MIN_MATCH_LENGTH {
-        return;
-    }
-    let mut hb = (b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24;
-    dst[0] = hb.overflowing_mul(HASHMUL).0 >> (32 - HASH_BITS);
-    let end = b.len() - MIN_MATCH_LENGTH + 1;
-    for i in 1..end {
-        hb = (hb << 8) | (b[i + 3] as u32);
-        dst[i] = hb.overflowing_mul(HASHMUL).0 >> (32 - HASH_BITS);
-    }
-}
-
-/// match_len returns the number of matching bytes in a and b
-/// up to length 'max'. Both slices must be at least 'max'
-/// bytes in size.
-fn match_len(a: &[u8], b: &[u8], max: usize) -> usize {
-    // 	a = a[..max]
-    // 	b = b[..len(a)]
-    for i in 0..max {
-        if b[i] != a[i] {
-            return i;
-        }
-    }
-    return max;
-}
-
-/// enc_speed will compress and store the currently added data,
-/// if enough has been accumulated or we at the end of the stream.
-fn enc_speed(d: &mut Compressor) {
-    // We only compress if we have MAX_STORE_BLOCK_SIZE.
-    if d.window_end < MAX_STORE_BLOCK_SIZE {
-        if !d.sync {
-            return;
-        }
-
-        // Handle small sizes.
-        if d.window_end < 128 {
-            if d.window_end == 0 {
-                return;
-            } else if d.window_end <= 16 {
-                d.write_stored_block();
-            } else {
-                d.w.write_block_huff(false, &d.window[..d.window_end]);
-            }
-            d.window_end = 0;
-            d.best_speed.as_mut().unwrap().reset();
-            return;
-        }
-    }
-    // Encode the block.
-    d.tokens.truncate(0);
-    d.best_speed
-        .as_mut()
-        .unwrap()
-        .encode(&mut d.tokens, &d.window[..d.window_end]);
-
-    // If we removed less than 1/16th, Huffman compress the block.
-    if d.tokens.len() > d.window_end - (d.window_end >> 4) {
-        d.w.write_block_huff(false, &d.window[..d.window_end]);
-    } else {
-        d.w.write_block_dynamic(&d.tokens, false, Some(&d.window[..d.window_end]));
-    }
-    d.window_end = 0;
-}
-
-fn deflate(d: &mut Compressor) {
-    if d.window_end - d.index < MIN_MATCH_LENGTH + MAX_MATCH_LENGTH && !d.sync {
-        return;
+        self.hbw.write_bytes(w, &self.window[..self.window_end]);
     }
 
-    d.max_insert_index = d.window_end as isize - (MIN_MATCH_LENGTH as isize - 1);
-
-    'Loop: loop {
-        if d.index > d.window_end {
-            panic!("index > windowEnd");
-        }
-        let lookahead = d.window_end - d.index;
-        if lookahead < MIN_MATCH_LENGTH + MAX_MATCH_LENGTH {
-            if !d.sync {
-                break 'Loop;
-            }
-            if d.index > d.window_end {
-                panic!("index > windowEnd");
-            }
-            if lookahead == 0 {
-                // Flush current output block if any.
-                if d.byte_available {
-                    // There is still one pending token that needs to be flushed
-                    d.tokens.push(literal_token(d.window[d.index - 1] as u32));
-                    d.byte_available = false;
-                }
-                if d.tokens.len() > 0 {
-                    d.write_block(d.index);
-                    if d.error().is_err() {
-                        return;
-                    }
-                    d.tokens.truncate(0);
-                }
-                break 'Loop;
-            }
-        }
-        if (d.index as isize) < d.max_insert_index {
-            // Update the hash
-            let hash = hash4(&d.window[d.index..d.index + MIN_MATCH_LENGTH]);
-            let hh = &mut d.hash_head[(hash & HASH_MASK) as usize];
-            d.chain_head = *hh as isize;
-            d.hash_prev[d.index & WINDOW_MASK] = d.chain_head as u32;
-            *hh = (d.index + d.hash_offset) as u32;
-        }
-        let prev_length = d.length;
-        let prev_offset = d.offset;
-        d.length = MIN_MATCH_LENGTH - 1;
-        d.offset = 0;
-        let mut min_index = d.index as isize - WINDOW_SIZE as isize;
-        if min_index < 0 {
-            min_index = 0;
-        }
-
-        let cl = d.compression_level;
-
-        if d.chain_head - d.hash_offset as isize >= min_index
-            && (cl.fast_skip_hashing != SKIP_NEVER && lookahead > MIN_MATCH_LENGTH - 1
-                || cl.fast_skip_hashing == SKIP_NEVER
-                    && lookahead > prev_length
-                    && prev_length < cl.lazy)
-        {
-            let (new_length, new_offset, ok) = d.find_match(
-                d.index,
-                d.chain_head as usize - d.hash_offset,
-                MIN_MATCH_LENGTH - 1,
-                lookahead,
-            );
-            if ok {
-                d.length = new_length;
-                d.offset = new_offset;
-            }
-        }
-        if cl.fast_skip_hashing != SKIP_NEVER && d.length >= MIN_MATCH_LENGTH
-            || cl.fast_skip_hashing == SKIP_NEVER
-                && prev_length >= MIN_MATCH_LENGTH
-                && d.length <= prev_length
-        {
-            // There was a match at the previous step, and the current match is
-            // not better. Output the previous match.
-            if cl.fast_skip_hashing != SKIP_NEVER {
-                d.tokens.push(match_token(
-                    (d.length - BASE_MATCH_LENGTH) as u32,
-                    (d.offset - BASE_MATCH_OFFSET) as u32,
-                ));
-            } else {
-                d.tokens.push(match_token(
-                    (prev_length - BASE_MATCH_LENGTH) as u32,
-                    (prev_offset - BASE_MATCH_OFFSET) as u32,
-                ));
-            }
-            // Insert in the hash table all strings up to the end of the match.
-            // index and index-1 are already inserted. If there is not enough
-            // lookahead, the last two strings are not inserted into the hash
-            // table.
-            if d.length <= cl.fast_skip_hashing {
-                let new_index = if cl.fast_skip_hashing != SKIP_NEVER {
-                    d.index + d.length
-                } else {
-                    d.index + prev_length - 1
-                };
-                let mut index = d.index;
-                index += 1;
-                while index < new_index {
-                    if (index as isize) < d.max_insert_index {
-                        let hash = hash4(&d.window[index..index + MIN_MATCH_LENGTH]);
-                        // Get previous value with the same hash.
-                        // Our chain should point to the previous value.
-                        let hh = &mut d.hash_head[(hash & HASH_MASK) as usize];
-                        d.hash_prev[index & WINDOW_MASK] = *hh;
-                        // Set the head of the hash chain to us.
-                        *hh = (index + d.hash_offset) as u32;
-                    }
-                    index += 1;
-                }
-                d.index = index;
-
-                if cl.fast_skip_hashing == SKIP_NEVER {
-                    d.byte_available = false;
-                    d.length = MIN_MATCH_LENGTH - 1;
-                }
-            } else {
-                // For matches this long, we don't bother inserting each individual
-                // item into the table.
-                d.index += d.length;
-            }
-            if d.tokens.len() == MAX_FLATE_BLOCK_TOKENS {
-                // The block includes the current character
-                d.write_block(d.index);
-                if d.error().is_err() {
-                    return;
-                }
-                d.tokens.truncate(0);
-            }
-        } else {
-            if cl.fast_skip_hashing != SKIP_NEVER || d.byte_available {
-                let i = if cl.fast_skip_hashing != SKIP_NEVER {
-                    d.index
-                } else {
-                    d.index - 1
-                };
-                d.tokens.push(literal_token(d.window[i] as u32));
-                if d.tokens.len() == MAX_FLATE_BLOCK_TOKENS {
-                    d.write_block(i + 1);
-                    if d.error().is_err() {
-                        return;
-                    }
-                    d.tokens.truncate(0);
-                }
-            }
-            d.index += 1;
-            if cl.fast_skip_hashing == SKIP_NEVER {
-                d.byte_available = true;
-            }
-        }
-    }
-}
-
-fn fill_store(d: &mut Compressor, b: &[u8]) -> usize {
-    let n = compat::copy(&mut d.window[d.window_end..], b);
-    d.window_end += n;
-    return n;
-}
-
-fn store(d: &mut Compressor) {
-    if d.window_end > 0 && (d.window_end == MAX_STORE_BLOCK_SIZE || d.sync) {
-        d.write_stored_block();
-        d.window_end = 0;
-    }
-}
-
-/// storeHuff compresses and stores the currently added data
-/// when the self.window is full or we are at the end of the stream.
-/// Any error that occurred will be in self.err
-fn store_huff(d: &mut Compressor) {
-    if d.window_end < d.window.len() && !d.sync || d.window_end == 0 {
-        return;
-    }
-    d.w.write_block_huff(false, &d.window[..d.window_end]);
-    d.window_end = 0;
-}
-
-impl<'a> Compressor<'a> {
     // result of the operation will be stored in self.err, use self.error() to get it
-    fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+    fn write(&mut self, writer: &mut dyn std::io::Write, b: &[u8]) -> std::io::Result<usize> {
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
         let mut b = b;
         let n = b.len();
         while b.len() > 0 {
-            (self.step)(self);
+            (self.step)(self, writer);
             b = &b[(self.fill)(self, b)..];
             if let Err(e) = self.error() {
                 return Err(compat::copy_stdio_error(e));
@@ -613,20 +643,20 @@ impl<'a> Compressor<'a> {
         return Ok(n);
     }
 
-    fn sync_flush(&mut self) -> std::io::Result<()> {
+    fn sync_flush(&mut self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
         self.sync = true;
-        (self.step)(self);
+        (self.step)(self, w);
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
-        self.w.write_stored_header(0, false);
+        self.hbw.write_stored_header(w, 0, false);
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
-        self.w.flush();
+        self.hbw.flush(w);
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
@@ -634,12 +664,11 @@ impl<'a> Compressor<'a> {
         Ok(())
     }
 
-    fn new(w: &'a mut dyn std::io::Write, level: isize) -> Self {
+    fn new(level: isize) -> Self {
         let compression_level: &'a CompressionLevel;
         let mut bulk_hasher: Option<fn(&[u8], &mut [u32])> = None;
-        let fill: fn(&mut Compressor, &[u8]) -> usize;
-        let step: fn(&mut Compressor);
-        let sync: bool = false;
+        let fill: fn(&mut CompressFilter, &[u8]) -> usize;
+        let step: fn(&mut CompressFilter, &mut dyn std::io::Write);
         let mut best_speed: Option<DeflateFast> = None;
         let mut chain_head: isize = 0;
         let mut hash_offset: usize = 0;
@@ -690,11 +719,11 @@ impl<'a> Compressor<'a> {
         }
         return Self {
             compression_level,
-            w: HuffmanBitWriter::new(w),
+            hbw: HuffmanBitWriteFilter::new(),
             bulk_hasher,
             fill: fill,
             step: step,
-            sync: sync,
+            sync: false,
             best_speed,
             chain_head,
             hash_head: vec![0; HASH_SIZE],
@@ -715,34 +744,31 @@ impl<'a> Compressor<'a> {
         };
     }
 
-    fn reset(&mut self, w: &'a mut dyn std::io::Write) {
-        self.w.reset(w);
+    fn reset(&mut self) {
+        self.hbw.reset();
         self.sync = false;
         self.err = Ok(0);
-        let cl = self.compression_level;
-        if cl.level == NO_COMPRESSION {
-            self.window_end = 0;
-        } else if cl.level == BEST_SPEED {
-            self.window_end = 0;
-            self.tokens.truncate(0);
+        if self.best_speed.is_some() {
             self.best_speed.as_mut().unwrap().reset();
-        } else {
-            self.chain_head = -1;
-            self.hash_head.fill(0);
-            self.hash_prev.fill(0);
-            self.hash_offset = 1;
-            self.index = 0;
-            self.window_end = 0;
-            self.block_start = 0;
-            self.byte_available = false;
-            self.tokens.truncate(0);
-            self.length = MIN_MATCH_LENGTH - 1;
-            self.offset = 0;
-            self.max_insert_index = 0;
         }
+        self.chain_head = -1;
+        self.hash_head.fill(0);
+        self.hash_prev.fill(0);
+        self.hash_offset = 1;
+        self.index = 0;
+        self.window_end = 0;
+        self.block_start = 0;
+        self.byte_available = false;
+        self.tokens.truncate(0);
+        self.length = MIN_MATCH_LENGTH - 1;
+        self.offset = 0;
+        self.max_insert_index = 0;
+        self.err = Ok(0);
+        self.hash_match = vec![0; MAX_MATCH_LENGTH - 1];
+        self.writer_closed = false;
     }
 
-    fn close(&mut self) -> std::io::Result<()> {
+    fn close(&mut self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
         if self.writer_closed {
             return Ok(());
         }
@@ -750,15 +776,15 @@ impl<'a> Compressor<'a> {
             return Err(compat::copy_stdio_error(e));
         }
         self.sync = true;
-        (self.step)(self);
+        (self.step)(self, w);
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
-        self.w.write_stored_header(0, true);
+        self.hbw.write_stored_header(w, 0, true);
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
-        self.w.flush();
+        self.hbw.flush(w);
         if let Err(e) = self.error() {
             return Err(compat::copy_stdio_error(e));
         }
@@ -775,17 +801,17 @@ impl<'a> Compressor<'a> {
 // var errWriterClosed = errors.New("flate: closed writer")
 
 // A Writer takes data written to it and writes the compressed
-// form of that data to an underlying writer (see NewWriter).
+// form of that data to an underlying writer.
 pub struct Writer<'a> {
-    d: Compressor<'a>,
-    dict: Option<Vec<u8>>,
+    writer: &'a mut dyn std::io::Write,
+    tw: WriteFilter<'a>,
 }
 
 impl<'a> Writer<'a> {
     /// new returns a new Writer compressing data at the given level.
-    /// Following zlib, levels range from 1 (BestSpeed) to 9 (BestCompression);
+    /// Following zlib, levels range from 1 (BEST_SPEED) to 9 (BEST_COMPRESSION);
     /// higher levels typically run slower but compress more. Level 0
-    /// (NoCompression) does not attempt any compression; it only adds the
+    /// (NO_COMPRESSION) does not attempt any compression; it only adds the
     /// necessary DEFLATE framing.
     /// Level -1 (DEFAULT_COMPRESSION) uses the default compression level.
     /// Level -2 (HUFFMAN_ONLY) will use Huffman compression only, giving
@@ -795,6 +821,94 @@ impl<'a> Writer<'a> {
     /// If level is in the range [-2, 9] then the error returned will be nil.
     /// Otherwise the error returned will be non-nil.
     pub fn new(w: &'a mut dyn std::io::Write, level: isize) -> std::io::Result<Self> {
+        return Ok(Self {
+            writer: w,
+            tw: WriteFilter::new(level)?,
+        });
+    }
+
+    /// new_dict is like new but initializes the new
+    /// Writer with a preset dictionary. The returned Writer behaves
+    /// as if the dictionary had been written to it without producing
+    /// any compressed output. The compressed data written to w
+    /// can only be decompressed by a Reader initialized with the
+    /// same dictionary.
+    pub fn new_dict(
+        w: &'a mut dyn std::io::Write,
+        level: isize,
+        dict: &[u8],
+    ) -> std::io::Result<Self> {
+        return Ok(Self {
+            writer: w,
+            tw: WriteFilter::new_dict(level, dict)?,
+        });
+    }
+
+    /// close flushes and closes the writer.
+    pub fn close(&mut self) -> std::io::Result<()> {
+        return self.tw.close(self.writer);
+    }
+
+    /// reset discards the writer's state and makes it equivalent to
+    /// the result of new_writer or Writer::new_dict called with dst
+    /// and w's level and dictionary.
+    pub fn reset(&mut self, dst: &'a mut dyn std::io::Write) {
+        self.writer = dst;
+        self.tw.reset();
+    }
+}
+
+impl std::io::Write for Writer<'_> {
+    /// write writes data to w, which will eventually write the
+    /// compressed form of data to its underlying writer.
+    fn write(&mut self, data: &[u8]) -> std::io::Result<usize> {
+        self.tw.write(self.writer, data)
+    }
+
+    /// flush flushes any pending data to the underlying writer.
+    /// It is useful mainly in compressed network protocols, to ensure that
+    /// a remote reader has enough data to reconstruct a packet.
+    /// Flush does not return until the data has been written.
+    /// Calling Flush when there is no pending data still causes the Writer
+    /// to emit a sync marker of at least 4 bytes.
+    /// If the underlying writer returns an error, Flush returns that error.
+    ///
+    /// In the terminology of the zlib library, Flush is equivalent to Z_SYNC_FLUSH.
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.tw.flush(self.writer)
+    }
+}
+
+impl ggio::Writer for Writer<'_> {
+    fn write(&mut self, p: &[u8]) -> (usize, Option<ggio::Error>) {
+        match self.tw.d.write(self.writer, p) {
+            Ok(v) => (v, None),
+            Err(err) => (0, Some(ggio::Error::StdIo(err))),
+        }
+    }
+}
+
+/// WriteFilter is like a Writer, but doesn't keep reference
+/// to the underlying writer.
+pub struct WriteFilter<'a> {
+    d: CompressFilter<'a>,
+    dict: Option<Vec<u8>>,
+}
+
+impl<'a> WriteFilter<'a> {
+    /// new returns a new Writer compressing data at the given level.
+    /// Following zlib, levels range from 1 (BEST_SPEED) to 9 (BEST_COMPRESSION);
+    /// higher levels typically run slower but compress more. Level 0
+    /// (NO_COMPRESSION) does not attempt any compression; it only adds the
+    /// necessary DEFLATE framing.
+    /// Level -1 (DEFAULT_COMPRESSION) uses the default compression level.
+    /// Level -2 (HUFFMAN_ONLY) will use Huffman compression only, giving
+    /// a very fast compression for all types of input, but sacrificing considerable
+    /// compression efficiency.
+    ///
+    /// If level is in the range [-2, 9] then the error returned will be nil.
+    /// Otherwise the error returned will be non-nil.
+    pub fn new(level: isize) -> std::io::Result<Self> {
         if level == NO_COMPRESSION
             || level == HUFFMAN_ONLY
             || level == BEST_SPEED
@@ -810,35 +924,52 @@ impl<'a> Writer<'a> {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, msg));
         }
 
-        return Ok(Writer {
-            d: Compressor::new(w, level),
+        return Ok(Self {
+            d: CompressFilter::new(level),
             dict: None,
         });
     }
 
-    /// new_dict is like NewWriter but initializes the new
+    /// new_dict is like new but initializes the new
     /// Writer with a preset dictionary. The returned Writer behaves
     /// as if the dictionary had been written to it without producing
     /// any compressed output. The compressed data written to w
     /// can only be decompressed by a Reader initialized with the
     /// same dictionary.
-    pub fn new_dict(
-        w: &'a mut dyn std::io::Write,
-        level: isize,
-        dict: &[u8],
-    ) -> std::io::Result<Self> {
-        let mut zw = Writer::new(w, level)?;
+    pub fn new_dict(level: isize, dict: &[u8]) -> std::io::Result<Self> {
+        let mut zw = Self::new(level)?;
         zw.d.fill_window(dict);
         zw.dict = Some(dict.to_vec()); // duplicate dictionary for Reset method.
         Ok(zw)
     }
-}
 
-impl std::io::Write for Writer<'_> {
+    /// close flushes and closes the writer.
+    pub fn close(&mut self, writer: &mut dyn std::io::Write) -> std::io::Result<()> {
+        return self.d.close(writer);
+    }
+
+    /// reset discards the writer's state and makes it equivalent to
+    /// the result of new_writer or Writer::new_dict called with dst
+    /// and w's level and dictionary.
+    pub fn reset(&mut self) {
+        if self.dict.is_some() {
+            // w was created with Writer::new_dict
+            self.d.reset();
+            self.d.fill_window(&self.dict.as_ref().unwrap());
+        } else {
+            // w was created with new
+            self.d.reset()
+        }
+    }
+
     /// write writes data to w, which will eventually write the
     /// compressed form of data to its underlying writer.
-    fn write(&mut self, data: &[u8]) -> std::io::Result<usize> {
-        self.d.write(data)
+    pub fn write(
+        &mut self,
+        writer: &mut dyn std::io::Write,
+        data: &[u8],
+    ) -> std::io::Result<usize> {
+        self.d.write(writer, data)
     }
 
     /// flush flushes any pending data to the underlying writer.
@@ -850,39 +981,7 @@ impl std::io::Write for Writer<'_> {
     /// If the underlying writer returns an error, Flush returns that error.
     ///
     /// In the terminology of the zlib library, Flush is equivalent to Z_SYNC_FLUSH.
-    fn flush(&mut self) -> std::io::Result<()> {
-        // For more about flushing:
-        // https://www.bolet.org/~pornin/deflate-flush.html
-        self.d.sync_flush()
-    }
-}
-
-impl ggio::Writer for Writer<'_> {
-    fn write(&mut self, p: &[u8]) -> (usize, Option<ggio::Error>) {
-        match self.d.write(p) {
-            Ok(v) => (v, None),
-            Err(err) => (0, Some(ggio::Error::IO(Box::new(err)))),
-        }
-    }
-}
-
-impl<'a> Writer<'a> {
-    /// close flushes and closes the writer.
-    pub fn close(&mut self) -> std::io::Result<()> {
-        return self.d.close();
-    }
-
-    /// reset discards the writer's state and makes it equivalent to
-    /// the result of NewWriter or Writer::new_dict called with dst
-    /// and w's level and dictionary.
-    pub fn reset(&mut self, dst: &'a mut dyn std::io::Write) {
-        if self.dict.is_some() {
-            // w was created with Writer::new_dict
-            self.d.reset(dst);
-            self.d.fill_window(&self.dict.as_mut().unwrap());
-        } else {
-            // w was created with NewWriter
-            self.d.reset(dst)
-        }
+    pub fn flush(&mut self, writer: &mut dyn std::io::Write) -> std::io::Result<()> {
+        self.d.sync_flush(writer)
     }
 }

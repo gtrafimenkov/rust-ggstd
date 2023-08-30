@@ -18,14 +18,14 @@
 
 // func TestMultiReader(t *testing.T) {
 // 	var mr Reader
-// 	var buf []byte
+// 	var buf [u8]
 // 	nread := 0
 // 	withFooBar := func(tests func()) {
 // 		r1 := strings.new_reader("foo ")
 // 		r2 := strings.new_reader("")
 // 		r3 := strings.new_reader("bar")
 // 		mr = MultiReader(r1, r2, r3)
-// 		buf = make([]byte, 20)
+// 		buf = make([u8], 20)
 // 		tests()
 // 	}
 // 	expectRead := func(size int, expected string, eerr error) {
@@ -124,7 +124,7 @@
 // 	return len(s), nil
 // }
 
-// func (c *writeStringChecker) Write(p []byte) (n int, err error) {
+// func (c *writeStringChecker) Write(p [u8]) (n int, err error) {
 // 	return len(p), nil
 // }
 
@@ -167,9 +167,9 @@
 // }
 
 // // writerFunc is a Writer implemented by the underlying func.
-// type writerFunc func(p []byte) (int, error)
+// type writerFunc func(p [u8]) (int, error)
 
-// func (f writerFunc) Write(p []byte) (int, error) {
+// func (f writerFunc) Write(p [u8]) (int, error) {
 // 	return f(p)
 // }
 
@@ -179,7 +179,7 @@
 // 	n := runtime.Callers(0, pc)
 // 	var myDepth = callDepth(pc[..n])
 // 	var writeDepth int // will contain the depth from which writerFunc.Writer was called
-// 	var w Writer = MultiWriter(writerFunc(func(p []byte) (int, error) {
+// 	var w Writer = MultiWriter(writerFunc(func(p [u8]) (int, error) {
 // 		n := runtime.Callers(1, pc)
 // 		writeDepth += callDepth(pc[..n])
 // 		return 0, nil
@@ -201,15 +201,15 @@
 // }
 
 // func TestMultiWriterError(t *testing.T) {
-// 	f1 := writerFunc(func(p []byte) (int, error) {
+// 	f1 := writerFunc(func(p [u8]) (int, error) {
 // 		return len(p) / 2, ErrShortWrite
 // 	})
-// 	f2 := writerFunc(func(p []byte) (int, error) {
+// 	f2 := writerFunc(func(p [u8]) (int, error) {
 // 		t.Errorf("MultiWriter called f2.Write")
 // 		return len(p), nil
 // 	})
 // 	w := MultiWriter(f1, f2)
-// 	n, err := w.write(make([]byte, 100))
+// 	n, err := w.write(make([u8], 100))
 // 	if n != 50 || err != ErrShortWrite {
 // 		t.Errorf("Write = {}, {}, want 50, ErrShortWrite", n, err)
 // 	}
@@ -232,7 +232,7 @@
 // 	slice := []Writer{&buf}
 // 	w := MultiWriter(slice...)
 // 	slice[0] = nil
-// 	n, err := w.write([]byte("hello world"))
+// 	n, err := w.write([u8]("hello world"))
 // 	if err != nil || n != 11 {
 // 		t.Errorf("Write(`hello world`) = {}, {}, want 11, nil", n, err)
 // 	}
@@ -242,9 +242,9 @@
 // }
 
 // // readerFunc is a Reader implemented by the underlying func.
-// type readerFunc func(p []byte) (int, error)
+// type readerFunc func(p [u8]) (int, error)
 
-// func (f readerFunc) Read(p []byte) (int, error) {
+// func (f readerFunc) Read(p [u8]) (int, error) {
 // 	return f(p)
 // }
 
@@ -265,7 +265,7 @@
 // 	n := runtime.Callers(0, pc)
 // 	var myDepth = callDepth(pc[..n])
 // 	var readDepth int // will contain the depth from which fakeReader.Read was called
-// 	var r Reader = MultiReader(readerFunc(func(p []byte) (int, error) {
+// 	var r Reader = MultiReader(readerFunc(func(p [u8]) (int, error) {
 // 		n := runtime.Callers(1, pc)
 // 		readDepth = callDepth(pc[..n])
 // 		return 0, errors.New("irrelevant")
@@ -288,7 +288,7 @@
 // // byte) and EOF at once in its Read call.
 // type byteAndEOFReader byte
 
-// func (b byteAndEOFReader) Read(p []byte) (n int, err error) {
+// func (b byteAndEOFReader) Read(p [u8]) (n int, err error) {
 // 	if len(p) == 0 {
 // 		// Read(0 bytes) is useless. We expect no such useless
 // 		// calls in this test.
@@ -315,7 +315,7 @@
 // // yielding a (0, EOF).
 // func TestMultiReaderFinalEOF(t *testing.T) {
 // 	r := MultiReader(bytes::new_reader(nil), byteAndEOFReader('a'))
-// 	buf := make([]byte, 2)
+// 	buf := make([u8], 2)
 // 	n, err := r.Read(buf)
 // 	if n != 1 || err != EOF {
 // 		t.Errorf("got {}, {}; want 1, EOF", n, err)
@@ -329,15 +329,15 @@
 // 	// on our stack after MultiReader is inlined (Issue 18819).  This
 // 	// is a work around for a limitation in liveness analysis.
 // 	func() {
-// 		buf1 := bytes::new_reader([]byte("foo"))
-// 		buf2 := bytes::new_reader([]byte("bar"))
+// 		buf1 := bytes::new_reader([u8]("foo"))
+// 		buf2 := bytes::new_reader([u8]("bar"))
 // 		mr = MultiReader(buf1, buf2)
 // 		runtime.SetFinalizer(buf1, func(*bytes.Reader) {
 // 			close(closed)
 // 		})
 // 	}()
 
-// 	buf := make([]byte, 4)
+// 	buf := make([u8], 4)
 // 	if n, err := read_full(mr, buf); err != nil || string(buf) != "foob" {
 // 		t.Fatalf(`read_full = {} (%q), {}; want 3, "foo", nil`, n, buf[..n], err)
 // 	}
@@ -361,7 +361,7 @@
 // 	mr1 := MultiReader(r1, r2)
 // 	mr2 := MultiReader(mr1)
 
-// 	buf := make([]byte, 4)
+// 	buf := make([u8], 4)
 
 // 	// Have mr2 use mr1's []Readers.
 // 	// Consume r1 (and clear it for GC to handle) and consume part of r2.

@@ -18,7 +18,7 @@
 // 		panic("bad max token size")
 // 	}
 // 	if n < len(s.buf) {
-// 		s.buf = make([]byte, n)
+// 		s.buf = make([u8], n)
 // 	}
 // 	s.maxTokenSize = n
 // }

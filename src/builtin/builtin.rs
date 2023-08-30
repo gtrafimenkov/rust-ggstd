@@ -25,9 +25,9 @@
 // // Range: 0 through 255.
 // type uint8 uint8
 
-// // uint16 is the set of all unsigned 16-bit integers.
+// // u16 is the set of all unsigned 16-bit integers.
 // // Range: 0 through 65535.
-// type uint16 uint16
+// type u16 u16
 
 // // uint32 is the set of all unsigned 32-bit integers.
 // // Range: 0 through 4294967295.
@@ -145,7 +145,7 @@
 // //
 // // As a special case, it is legal to append a string to a byte slice, like this:
 // //
-// //	slice = append([]byte("hello "), "world"...)
+// //	slice = append([u8]("hello "), "world"...)
 // func append(slice []Type, elems ...Type) []Type
 
 // // The copy built-in function copies elements from a source slice into a

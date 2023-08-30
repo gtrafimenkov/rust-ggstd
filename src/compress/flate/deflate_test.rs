@@ -360,7 +360,7 @@ fn test_very_long_sparse_chunk() {
 //     // 	buf.WriteMode()
 //     // 	let mut w = Writer::new(io.MultiWriter(buf, buf1), level).unwrap();
 //     // 	if err != nil {
-//     // 		t.Errorf("NewWriter: {}", err)
+//     // 		t.Errorf("new_writer: {}", err)
 //     // 		return
 //     // 	}
 //     // 	r := new_reader(buf)
@@ -628,7 +628,7 @@ fn test_writer_reset() {
 
         // 		wref, err := Writer::new(ggio::Discard::new(), level)
         // 		if err != nil {
-        // 			t.Fatalf("NewWriter: {}", err)
+        // 			t.Fatalf("new_writer: {}", err)
         // 		}
 
         // 		// DeepEqual doesn't compare functions.
@@ -691,7 +691,7 @@ fn test_writer_reset() {
 // 		w, err = Writer::new_dict(buf, level, dict)
 // 	}
 // 	if err != nil {
-// 		t.Fatalf("NewWriter: {}", err)
+// 		t.Fatalf("new_writer: {}", err)
 // 	}
 
 // 	writeData(w)
@@ -766,9 +766,9 @@ fn test_writer_reset() {
 // 				let mut buf = bytes::Buffer::new();
 // 				want = want[..0]
 
-// 				let mut w = Writer::new(buf, BestSpeed).unwrap();
+// 				let mut w = Writer::new(buf, BEST_SPEED).unwrap();
 // 				if err != nil {
-// 					t.Errorf("i={}, firstN={}, flush=%t: NewWriter: {}", i, firstN, flush, err)
+// 					t.Errorf("i={}, firstN={}, flush=%t: new_writer: {}", i, firstN, flush, err)
 // 					continue
 // 				}
 // 				for _, n := range tc {
@@ -822,21 +822,21 @@ fn test_writer_reset() {
 
 // fn TestWriterPersistentWriteError() {
 // 	t.Parallel()
-// 	d, err := os.ReadFile("../../testdata/Isaac.Newton-Opticks.txt")
+// 	d, err := os.read_file("../../testdata/Isaac.Newton-Opticks.txt")
 // 	if err != nil {
-// 		t.Fatalf("ReadFile: {}", err)
+// 		t.Fatalf("read_file: {}", err)
 // 	}
 // 	d = d[..10000] // Keep this test short
 
 // 	zlet mut w = Writer::new(nil, DEFAULT_COMPRESSION).unwrap();
 // 	if err != nil {
-// 		t.Fatalf("NewWriter: {}", err)
+// 		t.Fatalf("new_writer: {}", err)
 // 	}
 
 // 	// Sweep over the threshold at which an error is returned.
 // 	// The variable i makes it such that the ith call to failWriter.Write will
 // 	// return errIO. Since failWriter errors are not persistent, we must ensure
-// 	// that flate.Writer errors are persistent.
+// 	// that flate::Writer errors are persistent.
 // 	for i := 0; i < 1000; i += 1 {
 // 		fw := &failWriter{i}
 // 		zw.Reset(fw)
@@ -863,7 +863,7 @@ fn test_writer_reset() {
 // fn TestWriterPersistentFlushError() {
 // 	zlet mut w = Writer::new(&failWriter{0}, DEFAULT_COMPRESSION).unwrap();
 // 	if err != nil {
-// 		t.Fatalf("NewWriter: {}", err)
+// 		t.Fatalf("new_writer: {}", err)
 // 	}
 // 	flushErr := zw.Flush()
 // 	closeErr := zw.Close()
@@ -875,7 +875,7 @@ fn test_writer_reset() {
 // 	// If underlying writer return error on closing stream we should persistent this error across all writer calls.
 // 	zlet mut w = Writer::new(&failWriter{0}, DEFAULT_COMPRESSION).unwrap();
 // 	if err != nil {
-// 		t.Fatalf("NewWriter: {}", err)
+// 		t.Fatalf("new_writer: {}", err)
 // 	}
 // 	closeErr := zw.Close()
 // 	flushErr := zw.Flush()
@@ -1080,9 +1080,9 @@ fn test_best_speed_match() {
 // 				copy(src[offset:], abc)
 
 // 				let mut buf = bytes::Buffer::new();
-// 				let mut w = Writer::new(buf, BestSpeed).unwrap();
+// 				let mut w = Writer::new(buf, BEST_SPEED).unwrap();
 // 				if err != nil {
-// 					report("NewWriter: ", err)
+// 					report("new_writer: ", err)
 // 					continue
 // 				}
 // 				if _, err := w.write(src); err != nil {
@@ -1209,7 +1209,7 @@ fn test_best_speed_shift_offsets() {
 //     // 	defer wg.Wait()
 
 //     // 	b := make([u8], 1<<20)
-//     // 	for level := HuffmanOnly; level <= BestCompression; level++ {
+//     // 	for level := HUFFMAN_ONLY; level <= BEST_COMPRESSION; level++ {
 //     // 		// Run in separate goroutine to increase probability of stack regrowth.
 //     // 		wg.Add(1)
 //     // 		go fn(level isize) {

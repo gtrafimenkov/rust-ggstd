@@ -43,23 +43,60 @@ pub enum Error {
     /// the appropriate error is either ErrUnexpectedEOF or some other error
     /// giving more detail.
     EOF,
-    /// ErrUnexpectedEOF means that EOF was encountered in the
-    /// middle of reading a fixed-size block or data structure.
-    ErrUnexpectedEOF,
     // // ErrNoProgress is returned by some clients of a Reader when
     // // many calls to read have failed to return any data or error,
     // // usually the sign of a broken Reader implementation.
     // var ErrNoProgress = errors.New("multiple read calls return no data or error")
-    IO(Box<std::io::Error>),
+    StdIo(std::io::Error),
     /// Any error implementing Error trait
     Other(Box<dyn std::error::Error>),
 }
 
+impl PartialEq for Error {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            Error::ErrShortWrite => match other {
+                Error::ErrShortWrite => true,
+                _ => false,
+            },
+            Error::ErrInvalidWrite => match other {
+                Error::ErrInvalidWrite => true,
+                _ => false,
+            },
+            Error::ErrShortBuffer => match other {
+                Error::ErrShortBuffer => true,
+                _ => false,
+            },
+            Error::EOF => match other {
+                Error::EOF => true,
+                _ => false,
+            },
+            Error::StdIo(e1) => match other {
+                Error::StdIo(e2) => e1.kind() == e2.kind(),
+                _ => false,
+            },
+            Error::Other(e1) => match other {
+                Error::Other(e2) => e1.to_string() == e2.to_string(),
+                _ => false,
+            },
+        }
+    }
+}
+
 impl std::error::Error for Error {}
 
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Self {
+        Error::StdIo(error)
+    }
+}
+
 impl Error {
+    pub fn new_unexpected_eof() -> Self {
+        Error::StdIo(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
+    }
     /// new_str_error crates a Error::Other error with the given text.
-    pub fn new_str_error(text: &str) -> Self {
+    pub fn new_str_error(text: &String) -> Self {
         Error::Other(Box::new(errors::ErrorString::new(text)))
     }
     /// new_static_str_error crates a Error::Other error with the given text.
@@ -80,7 +117,7 @@ impl Error {
     }
     pub fn is_unexpected_eof(&self) -> bool {
         match self {
-            Error::ErrUnexpectedEOF => true,
+            Error::StdIo(err) => err.kind() == std::io::ErrorKind::UnexpectedEof,
             _ => false,
         }
     }
@@ -92,8 +129,7 @@ impl Error {
             Error::ErrInvalidWrite => return Error::ErrInvalidWrite,
             Error::ErrShortBuffer => return Error::ErrShortBuffer,
             Error::EOF => return Error::EOF,
-            Error::ErrUnexpectedEOF => return Error::ErrUnexpectedEOF,
-            Error::IO(v) => return Error::new_str_error(&v.to_string()),
+            Error::StdIo(v) => return Error::StdIo(std::io::Error::new(v.kind(), v.to_string())),
             Error::Other(v) => return Error::new_str_error(&v.to_string()),
         }
     }
@@ -116,8 +152,7 @@ impl std::fmt::Display for Error {
             Error::ErrShortWrite => write!(f, "{}", "short write"),
             Error::ErrShortBuffer => write!(f, "{}", "short buffer"),
             Error::EOF => write!(f, "{}", "EOF"),
-            Error::ErrUnexpectedEOF => write!(f, "{}", "unexpected EOF"),
-            Error::IO(err) => write!(f, "{}", err),
+            Error::StdIo(err) => write!(f, "{}", err),
             Error::Other(err) => write!(f, "{}", err),
         }
     }
@@ -292,7 +327,7 @@ pub trait WriterTo {
 // //
 // // Implementations must not retain p.
 // type ReaderAt interface {
-// 	ReadAt(p []byte, off int64) -> IOResult
+// 	ReadAt(p [u8], off int64) -> IOResult
 // }
 
 // // WriterAt is the interface that wraps the basic WriteAt method.
@@ -311,7 +346,7 @@ pub trait WriterTo {
 // //
 // // Implementations must not retain p.
 // type WriterAt interface {
-// 	WriteAt(p []byte, off int64) -> IOResult
+// 	WriteAt(p [u8], off int64) -> IOResult
 // }
 
 /// ByteReader is the interface that wraps the read_byte method.
@@ -380,7 +415,7 @@ pub trait ByteReader {
 // 	if sw, ok := w.(StringWriter); ok {
 // 		return sw.write_string(s)
 // 	}
-// 	return w.write([]byte(s))
+// 	return w.write([u8](s))
 // }
 
 /// read_at_least reads from r into buf until it has read at least min bytes.
@@ -405,7 +440,7 @@ pub fn read_at_least(r: &mut dyn Reader, buf: &mut [u8], min: usize) -> (usize, 
     if n >= min {
         err = None;
     } else if n > 0 && err.is_some() && err.as_ref().unwrap().is_eof() {
-        err = Some(Error::ErrUnexpectedEOF);
+        err = Some(Error::new_unexpected_eof());
     }
     return (n, err);
 }
@@ -417,6 +452,8 @@ pub fn read_at_least(r: &mut dyn Reader, buf: &mut [u8], min: usize) -> (usize, 
 /// read_full returns ErrUnexpectedEOF.
 /// On return, n == buf.len() if and only if err == nil.
 /// If r returns an error having read at least buf.len() bytes, the error is dropped.
+///
+/// Rust analog of this is std::io::Read::read_exact
 pub fn read_full(r: &mut dyn Reader, buf: &mut [u8]) -> (usize, Option<Error>) {
     read_at_least(r, buf, buf.len())
 }
@@ -542,7 +579,7 @@ fn copy_buffer_int(
     // 				size = isize(l.N)
     // 			}
     // 		}
-    // 		buf = make([]byte, size)
+    // 		buf = make([u8], size)
     // 	}
 }
 
@@ -637,7 +674,7 @@ impl<'a> Reader for LimitedReader<'a> {
 // 	return offset - s.base, nil
 // }
 
-// fn (s *SectionReader) ReadAt(p []byte, off int64) -> IOResult {
+// fn (s *SectionReader) ReadAt(p [u8], off int64) -> IOResult {
 // 	if off < 0 || off >= s.limit-s.base {
 // 		return 0, EOF
 // 	}
@@ -675,7 +712,7 @@ impl<'a> Reader for LimitedReader<'a> {
 // 	return
 // }
 
-// fn (o *OffsetWriter) WriteAt(p []byte, off int64) -> IOResult {
+// fn (o *OffsetWriter) WriteAt(p [u8], off int64) -> IOResult {
 // 	off += o.base
 // 	return o.w.WriteAt(p, off)
 // }
@@ -759,13 +796,13 @@ impl std::io::Write for Discard {
 
 // var blackHolePool = sync.Pool{
 // 	New: fn() any {
-// 		b := make([]byte, 8192)
+// 		b := make([u8], 8192)
 // 		return &b
 // 	},
 // }
 
 // fn (discard) ReadFrom(r Reader) (n int64, err error) {
-// 	bufp := blackHolePool.Get().(*[]byte)
+// 	bufp := blackHolePool.Get().(*[u8])
 // 	readSize := 0
 // 	for {
 // 		readSize, err = r.read(*bufp)

@@ -90,12 +90,12 @@
 // // 	go fn() {
 // // 		defer wg.Done()
 
-// // 		zw, err := flate::Writer::new(wp, flate.BestSpeed)
+// // 		zw, err := flate::Writer::new(wp, flate.BEST_SPEED)
 // // 		if err != nil {
 // // 			log.Fatal(err)
 // // 		}
 
-// // 		b := make([]byte, 256)
+// // 		b := make([u8], 256)
 // // 		for _, m := range strings.Fields("A long time ago in a galaxy far, far away...") {
 // // 			// We use a simple framing format where the first byte is the
 // // 			// message length, followed the message itself.
@@ -123,7 +123,7 @@
 
 // // 		zr := flate.new_reader(rp)
 
-// // 		b := make([]byte, 256)
+// // 		b := make([u8], 256)
 // // 		for {
 // // 			// Read the message length.
 // // 			// This is guaranteed to return for every corresponding

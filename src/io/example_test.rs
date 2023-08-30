@@ -26,7 +26,7 @@
 // func ExampleCopyBuffer() {
 // 	r1 := strings.new_reader("first reader\n")
 // 	r2 := strings.new_reader("second reader\n")
-// 	buf := make([]byte, 8)
+// 	buf := make([u8], 8)
 
 // 	// buf is used here...
 // 	if _, err := io.CopyBuffer(os.Stdout, r1, buf); err != nil {
@@ -57,20 +57,20 @@
 // func ExampleReadAtLeast() {
 // 	r := strings.new_reader("some io.Reader stream to be read\n")
 
-// 	buf := make([]byte, 14)
+// 	buf := make([u8], 14)
 // 	if _, err := io.read_at_least(r, buf, 4); err != nil {
 // 		log.Fatal(err)
 // 	}
 // 	fmt.Printf("%s\n", buf)
 
 // 	// buffer smaller than minimal read size.
-// 	shortBuf := make([]byte, 3)
+// 	shortBuf := make([u8], 3)
 // 	if _, err := io.read_at_least(r, shortBuf, 4); err != nil {
 // 		fmt.Println("error:", err)
 // 	}
 
 // 	// minimal read size bigger than io.Reader stream
-// 	longBuf := make([]byte, 64)
+// 	longBuf := make([u8], 64)
 // 	if _, err := io.read_at_least(r, longBuf, 64); err != nil {
 // 		fmt.Println("error:", err)
 // 	}
@@ -84,14 +84,14 @@
 // func ExampleReadFull() {
 // 	r := strings.new_reader("some io.Reader stream to be read\n")
 
-// 	buf := make([]byte, 4)
+// 	buf := make([u8], 4)
 // 	if _, err := io.read_full(r, buf); err != nil {
 // 		log.Fatal(err)
 // 	}
 // 	fmt.Printf("%s\n", buf)
 
 // 	// minimal read size bigger than io.Reader stream
-// 	longBuf := make([]byte, 64)
+// 	longBuf := make([u8], 64)
 // 	if _, err := io.read_full(r, longBuf); err != nil {
 // 		fmt.Println("error:", err)
 // 	}
@@ -165,7 +165,7 @@
 // 	r := strings.new_reader("some io.Reader stream to be read\n")
 // 	s := io.NewSectionReader(r, 5, 17)
 
-// 	buf := make([]byte, 9)
+// 	buf := make([u8], 9)
 // 	if _, err := s.Read(buf); err != nil {
 // 		log.Fatal(err)
 // 	}
@@ -180,7 +180,7 @@
 // 	r := strings.new_reader("some io.Reader stream to be read\n")
 // 	s := io.NewSectionReader(r, 5, 17)
 
-// 	buf := make([]byte, 6)
+// 	buf := make([u8], 6)
 // 	if _, err := s.ReadAt(buf, 10); err != nil {
 // 		log.Fatal(err)
 // 	}

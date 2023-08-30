@@ -22,8 +22,8 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - bufio
 - builtin
 - bytes
-- compat
 - compress::flate
+- compress::zlib
 - crypto::sha256
 - encoding::binary
 - encoding::hex
@@ -32,6 +32,7 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - hash::crc32
 - io
 - math::bits
+- os
 - time
   - limitations:
     - no time zone support

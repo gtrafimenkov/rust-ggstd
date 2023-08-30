@@ -130,20 +130,20 @@ fn test_golden() {
 // 		io.write_string(h, g.input[len(g.input)/2:])
 // 		io.write_string(h2, g.input[len(g.input)/2:])
 
-// 		if h.Sum32() != h2.Sum32() {
-// 			t.Errorf("checksum(%q) = 0x%x != marshaled (0x%x)", g.input, h.Sum32(), h2.Sum32())
+// 		if h.sum32() != h2.sum32() {
+// 			t.Errorf("checksum(%q) = 0x%x != marshaled (0x%x)", g.input, h.sum32(), h2.sum32())
 // 		}
 // 	}
 // }
 
 // fn BenchmarkAdler32KB(b *testing.B) {
 // 	b.SetBytes(1024)
-// 	data := make([]byte, 1024)
+// 	data := make([u8], 1024)
 // 	for i := range data {
 // 		data[i] = byte(i)
 // 	}
 // 	h := New()
-// 	let in = make([]byte, 0, h.Size())
+// 	let in = make([u8], 0, h.Size())
 
 // 	b.ResetTimer()
 // 	for i := 0; i < b.N; i += 1 {

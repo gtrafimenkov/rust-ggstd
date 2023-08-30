@@ -889,12 +889,12 @@ fn test_days_in() {
 // }
 
 // var invalidEncodingTests = []struct {
-// 	bytes []byte
+// 	bytes [u8]
 // 	want  string
 // }{
-// 	{[]byte{}, "Time.UnmarshalBinary: no data"},
-// 	{[]byte{0, 2, 3}, "Time.UnmarshalBinary: unsupported version"},
-// 	{[]byte{1, 2, 3}, "Time.UnmarshalBinary: invalid length"},
+// 	{[u8]{}, "Time.UnmarshalBinary: no data"},
+// 	{[u8]{0, 2, 3}, "Time.UnmarshalBinary: unsupported version"},
+// 	{[u8]{1, 2, 3}, "Time.UnmarshalBinary: invalid length"},
 // }
 
 // fn TestInvalidTimeGob() {
@@ -977,13 +977,13 @@ fn test_days_in() {
 // 		var ts Time
 
 // 		want := tt.want
-// 		err := json.Unmarshal([]byte(tt.in), &ts)
+// 		err := json.Unmarshal([u8](tt.in), &ts)
 // 		if fmt.Sprint(err) != want {
 // 			t.Errorf("Time.UnmarshalJSON(%s) = {}, want {}", tt.in, err, want)
 // 		}
 
 // 		if strings.HasPrefix(tt.in, `"`) && strings.has_suffix(tt.in, `"`) {
-// 			err = ts.UnmarshalText([]byte(strings.Trim(tt.in, `"`)))
+// 			err = ts.UnmarshalText([u8](strings.Trim(tt.in, `"`)))
 // 			if fmt.Sprint(err) != want {
 // 				t.Errorf("Time.UnmarshalText(%s) = {}, want {}", tt.in, err, want)
 // 			}
@@ -1630,7 +1630,7 @@ fn test_days_in() {
 // 	}
 // }
 
-// var testdataRFC3339UTCBytes = []byte(testdataRFC3339UTC)
+// var testdataRFC3339UTCBytes = [u8](testdataRFC3339UTC)
 
 // fn BenchmarkParseRFC3339UTCBytes(b *testing.B) {
 // 	for i := 0; i < b.N; i += 1 {
@@ -1646,7 +1646,7 @@ fn test_days_in() {
 // 	}
 // }
 
-// var testdataRFC3339TZBytes = []byte(testdataRFC3339TZ)
+// var testdataRFC3339TZBytes = [u8](testdataRFC3339TZ)
 
 // fn BenchmarkParseRFC3339TZBytes(b *testing.B) {
 // 	for i := 0; i < b.N; i += 1 {
@@ -1705,7 +1705,7 @@ fn test_days_in() {
 
 // fn BenchmarkUnmarshalText(b *testing.B) {
 // 	var t Time
-// 	in := []byte("2020-08-22T11:27:43.123456789-02:00")
+// 	in := [u8]("2020-08-22T11:27:43.123456789-02:00")
 // 	for i := 0; i < b.N; i += 1 {
 // 		t.UnmarshalText(in)
 // 	}
@@ -1758,7 +1758,7 @@ fn test_days_in() {
 // }
 
 // fn TestUnmarshalTextAllocations() {
-// 	in := []byte(testdataRFC3339UTC) // short enough to be stack allocated
+// 	in := [u8](testdataRFC3339UTC) // short enough to be stack allocated
 // 	if allocs := testing.AllocsPerRun(100, fn() {
 // 		var t Time
 // 		t.UnmarshalText(in)
@@ -1789,7 +1789,7 @@ fn test_days_in() {
 // 	if _, err := os.Stat(zero); err != nil {
 // 		t.Skip("skipping test without a /dev/zero")
 // 	}
-// 	_, err := ReadFile(zero)
+// 	_, err := read_file(zero)
 // 	if err == nil || !strings.Contains(err.Error(), "is too large") {
 // 		t.Errorf("readFile(%q) error = {}; want error containing 'is too large'", zero, err)
 // 	}

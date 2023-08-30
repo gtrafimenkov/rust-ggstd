@@ -6,8 +6,11 @@ mod huffman_code;
 mod inflate;
 mod token;
 
-pub use deflate::{Writer, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, NO_COMPRESSION};
-pub use inflate::{new_reader, new_reader_dict, Decompressor};
+pub use deflate::{
+    WriteFilter, Writer, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, HUFFMAN_ONLY,
+    NO_COMPRESSION,
+};
+pub use inflate::{new_reader, new_reader_dict, Decompressor, DecompressorFilter, Error};
 
 #[cfg(test)]
 mod deflate_test;

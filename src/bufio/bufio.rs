@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//! Package bufio implements buffered I/O. It wraps an ggio::Reader or io.Writer
+//! Package bufio implements buffered I/O. It wraps an ggio::Reader or ggio::Writer
 //! object, creating another object (Reader or Writer) that also implements
 //! the interface but provides buffering and some help for textual I/O.
 
@@ -515,7 +515,7 @@ impl<'a> Reader<'a> {
     // // This may make multiple calls to the Read method of the underlying Reader.
     // // If the underlying reader supports the WriteTo method,
     // // this calls the underlying WriteTo without buffering.
-    // fn WriteTo(&mut self, w io.Writer) (n int64, err error) {
+    // fn WriteTo(&mut self, w ggio::Writer) (n int64, err error) {
     // 	b.lastByte = -1
     // 	b.lastRuneSize = -1
 
@@ -560,7 +560,7 @@ impl<'a> Reader<'a> {
     // var errNegativeWrite = errors.New("bufio: writer returned negative count from Write")
 
     // // writeBuf writes the Reader's buffer to the writer.
-    // fn writeBuf(&mut self, w io.Writer) (int64, error) {
+    // fn writeBuf(&mut self, w ggio::Writer) (int64, error) {
     // 	n, err := w.write(b.buf[b.r:b.w])
     // 	if n < 0 {
     // 		panic(errNegativeWrite)
@@ -572,23 +572,23 @@ impl<'a> Reader<'a> {
 
 // // buffered output
 
-// // Writer implements buffering for an io.Writer object.
+// // Writer implements buffering for an ggio::Writer object.
 // // If an error occurs writing to a Writer, no more data will be
 // // accepted and all subsequent writes, and Flush, will return the error.
 // // After all data has been written, the client should call the
 // // Flush method to guarantee all data has been forwarded to
-// // the underlying io.Writer.
+// // the underlying ggio::Writer.
 // type Writer struct {
 // 	err error
 // 	buf [u8]
 // 	n   int
-// 	wr  io.Writer
+// 	wr  ggio::Writer
 // }
 
 // // NewWriterSize returns a new Writer whose buffer has at least the specified
-// // size. If the argument io.Writer is already a Writer with large enough
+// // size. If the argument ggio::Writer is already a Writer with large enough
 // // size, it returns the underlying Writer.
-// fn NewWriterSize(w io.Writer, size int) *Writer {
+// fn NewWriterSize(w: &mut dyn ggio::Writer, size int) -> Writer {
 // 	// Is it already a Writer?
 // 	b, ok := w.(*Writer)
 // 	if ok && b.buf.len() >= size {
@@ -603,10 +603,10 @@ impl<'a> Reader<'a> {
 // 	}
 // }
 
-// // NewWriter returns a new Writer whose buffer has the default size.
-// // If the argument io.Writer is already a Writer with large enough buffer size,
+// // new_writer returns a new Writer whose buffer has the default size.
+// // If the argument ggio::Writer is already a Writer with large enough buffer size,
 // // it returns the underlying Writer.
-// fn NewWriter(w io.Writer) *Writer {
+// fn new_writer(w: &mut dyn ggio::Writer) -> Writer {
 // 	return NewWriterSize(w, defaultBufSize)
 // }
 
@@ -618,8 +618,8 @@ impl<'a> Reader<'a> {
 // // Calling Reset on the zero value of Writer initializes the internal buffer
 // // to the default size.
 // // Calling w.reset(w) (that is, resetting a Writer to itself) does nothing.
-// fn (b *Writer) Reset(w io.Writer) {
-// 	// If a Writer w is passed to NewWriter, NewWriter will return w.
+// fn (b *Writer) Reset(w: &mut dyn ggio::Writer) {
+// 	// If a Writer w is passed to new_writer, new_writer will return w.
 // 	// Different layers of code may do that, and then later pass w
 // 	// to Reset. Avoid infinite recursion in that case.
 // 	if b == w {
@@ -633,7 +633,7 @@ impl<'a> Reader<'a> {
 // 	b.wr = w
 // }
 
-// // Flush writes any buffered data to the underlying io.Writer.
+// // Flush writes any buffered data to the underlying ggio::Writer.
 // fn (b *Writer) Flush() error {
 // 	if b.err.is_some() {
 // 		return b.err

@@ -8,7 +8,7 @@ impl<R: std::io::Read> ggio::Reader for std::io::BufReader<R> {
     fn read(&mut self, p: &mut [u8]) -> (usize, Option<ggio::Error>) {
         let res = std::io::Read::read(self, p);
         if res.is_err() {
-            return (0, Some(ggio::Error::IO(Box::new(res.err().unwrap()))));
+            return (0, Some(ggio::Error::StdIo(res.err().unwrap())));
         }
         let bytes_read = res.unwrap();
         if bytes_read == 0 && p.len() > 0 {
@@ -22,7 +22,7 @@ impl<R: std::io::Read> ggio::ByteReader for std::io::BufReader<R> {
     fn read_byte(&mut self) -> ggio::Result<u8> {
         let buf = match self.fill_buf() {
             Ok(buf) => buf,
-            Err(err) => return Err(ggio::Error::IO(Box::new(err))),
+            Err(err) => return Err(ggio::Error::StdIo(err)),
         };
         if buf.len() == 0 {
             return Err(ggio::Error::EOF);

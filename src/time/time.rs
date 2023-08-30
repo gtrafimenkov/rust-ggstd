@@ -348,7 +348,7 @@ impl Month {
 // 	if January <= m && m <= December {
 // 		return longMonthNames[m-1]
 // 	}
-// 	buf := make([]byte, 20)
+// 	buf := make([u8], 20)
 // 	n := fmtInt(buf, u64(m))
 // 	return "%!Month(" + string(buf[n:]) + ")"
 // }
@@ -369,7 +369,7 @@ pub enum Weekday {
 // 	if Sunday <= d && d <= Saturday {
 // 		return longDayNames[d]
 // 	}
-// 	buf := make([]byte, 20)
+// 	buf := make([u8], 20)
 // 	n := fmtInt(buf, u64(d))
 // 	return "%!Weekday(" + string(buf[n:]) + ")"
 // }
@@ -763,7 +763,7 @@ impl Time {
 // // tail of buf, omitting trailing zeros. It omits the decimal
 // // point too when the fraction is 0. It returns the index where the
 // // output bytes begin and the value v/10**prec.
-// fn fmtFrac(buf []byte, v u64, prec isize) (nw isize, nv u64) {
+// fn fmtFrac(buf [u8], v u64, prec isize) (nw isize, nv u64) {
 // 	// Omit trailing zeros up to and including decimal point.
 // 	w := len(buf)
 // 	print := false
@@ -785,7 +785,7 @@ impl Time {
 
 // // fmtInt formats v into the tail of buf.
 // // It returns the index where the output begins.
-// fn fmtInt(buf []byte, v u64) -> isize {
+// fn fmtInt(buf [u8], v u64) -> isize {
 // 	w := len(buf)
 // 	if v == 0 {
 // 		w--
@@ -1312,7 +1312,7 @@ impl Time {
 // )
 
 // // MarshalBinary implements the encoding.BinaryMarshaler interface.
-// fn MarshalBinary(&self) ([]byte, error) {
+// fn MarshalBinary(&self) ([u8], error) {
 // 	var offsetMin int16 // minutes east of UTC. -1 is UTC.
 // 	var offsetSec int8
 // 	version := timeBinaryVersionV1
@@ -1335,7 +1335,7 @@ impl Time {
 
 // 	sec := t.sec()
 // 	nsec := t.nsec()
-// 	enc := []byte{
+// 	enc := [u8]{
 // 		version,         // byte 0 : version
 // 		byte(sec >> 56), // bytes 1-8: seconds
 // 		byte(sec >> 48),
@@ -1360,7 +1360,7 @@ impl Time {
 // }
 
 // // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
-// fn UnmarshalBinary(&selfdata []byte) error {
+// fn UnmarshalBinary(&selfdata [u8]) error {
 // 	buf := data
 // 	if len(buf) == 0 {
 // 		return errors.New("Time.UnmarshalBinary: no data")
@@ -1412,12 +1412,12 @@ impl Time {
 // // UnmarshalBinary, UnmarshalText.
 
 // // GobEncode implements the gob.GobEncoder interface.
-// fn GobEncode(&self) ([]byte, error) {
+// fn GobEncode(&self) ([u8], error) {
 // 	return t.MarshalBinary()
 // }
 
 // // GobDecode implements the gob.GobDecoder interface.
-// fn GobDecode(&selfdata []byte) error {
+// fn GobDecode(&selfdata [u8]) error {
 // 	return t.UnmarshalBinary(data)
 // }
 
@@ -1425,8 +1425,8 @@ impl Time {
 // // The time is a quoted string in the RFC 3339 format with sub-second precision.
 // // If the timestamp cannot be represented as valid RFC 3339
 // // (e.g., the year is out of range), then an error is reported.
-// fn MarshalJSON(&self) ([]byte, error) {
-// 	b := make([]byte, 0, len(RFC3339Nano)+len(`""`))
+// fn MarshalJSON(&self) ([u8], error) {
+// 	b := make([u8], 0, len(RFC3339Nano)+len(`""`))
 // 	b = append(b, '"')
 // 	b, err := t.appendStrictRFC3339(b)
 // 	b = append(b, '"')
@@ -1438,7 +1438,7 @@ impl Time {
 
 // // UnmarshalJSON implements the json.Unmarshaler interface.
 // // The time must be a quoted string in the RFC 3339 format.
-// fn UnmarshalJSON(&selfdata []byte) error {
+// fn UnmarshalJSON(&selfdata [u8]) error {
 // 	if string(data) == "null" {
 // 		return nil
 // 	}
@@ -1456,8 +1456,8 @@ impl Time {
 // // The time is formatted in RFC 3339 format with sub-second precision.
 // // If the timestamp cannot be represented as valid RFC 3339
 // // (e.g., the year is out of range), then an error is reported.
-// fn MarshalText(&self) ([]byte, error) {
-// 	b := make([]byte, 0, len(RFC3339Nano))
+// fn MarshalText(&self) ([u8], error) {
+// 	b := make([u8], 0, len(RFC3339Nano))
 // 	b, err := t.appendStrictRFC3339(b)
 // 	if err != nil {
 // 		return nil, errors.New("Time.MarshalText: " + err.Error())
@@ -1467,7 +1467,7 @@ impl Time {
 
 // // UnmarshalText implements the encoding.TextUnmarshaler interface.
 // // The time must be in the RFC 3339 format.
-// fn UnmarshalText(&selfdata []byte) error {
+// fn UnmarshalText(&selfdata [u8]) error {
 // 	var err error
 // 	*t, err = parseStrictRFC3339(data)
 // 	return err

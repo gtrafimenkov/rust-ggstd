@@ -23,7 +23,7 @@
 
 // // dangerousSlice returns a slice which is immediately
 // // preceded and followed by a faulting page.
-// func dangerousSlice(t *testing.T) []byte {
+// func dangerousSlice(t *testing.T) [u8] {
 // 	pagesize := syscall.Getpagesize()
 // 	b, err := syscall.Mmap(0, 0, 3*pagesize, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANONYMOUS|syscall.MAP_PRIVATE)
 // 	if err != nil {

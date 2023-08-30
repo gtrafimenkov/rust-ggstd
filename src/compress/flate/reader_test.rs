@@ -32,13 +32,13 @@ fn test_nlit_out_of_range() {
 // }
 
 // fn BenchmarkDecode(b *testing.B) {
-// 	doBench(b, fn(b *testing.B, buf0 []byte, level, n int) {
+// 	doBench(b, fn(b *testing.B, buf0 [u8], level, n int) {
 // 		b.ReportAllocs()
 // 		b.StopTimer()
 // 		b.SetBytes(int64(n))
 
 // 		compressed := new(bytes::Buffer::new())
-// 		w, err := NewWriter(compressed, level)
+// 		w, err := new_writer(compressed, level)
 // 		if err != nil {
 // 			b.Fatal(err)
 // 		}
@@ -63,10 +63,10 @@ fn test_nlit_out_of_range() {
 // 	name  string
 // 	level int
 // }{
-// 	{"Huffman", HuffmanOnly},
-// 	{"Speed", BestSpeed},
+// 	{"Huffman", HUFFMAN_ONLY},
+// 	{"Speed", BEST_SPEED},
 // 	{"Default", DEFAULT_COMPRESSION},
-// 	{"Compression", BestCompression},
+// 	{"Compression", BEST_COMPRESSION},
 // }
 
 // var sizes = []struct {
@@ -78,9 +78,9 @@ fn test_nlit_out_of_range() {
 // 	{"1e6", 1e6},
 // }
 
-// fn doBench(b *testing.B, f fn(b *testing.B, buf []byte, level, n int)) {
+// fn doBench(b *testing.B, f fn(b *testing.B, buf [u8], level, n int)) {
 // 	for _, suite := range suites {
-// 		buf, err := os.ReadFile(suite.file)
+// 		buf, err := os.read_file(suite.file)
 // 		if err != nil {
 // 			b.Fatal(err)
 // 		}

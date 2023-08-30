@@ -13,11 +13,11 @@ use crate::time;
 use std::io::Write;
 
 // fn BenchmarkEncode(b *testing.B) {
-// 	doBench(b, fn(b *testing.B, buf0 []byte, level, n int) {
+// 	doBench(b, fn(b *testing.B, buf0 [u8], level, n int) {
 // 		b.StopTimer()
 // 		b.SetBytes(int64(n))
 
-// 		buf1 := make([]byte, n)
+// 		buf1 := make([u8], n)
 // 		for i := 0; i < n; i += len(buf0) {
 // 			if len(buf0) > n-i {
 // 				buf0 = buf0[..n-i]

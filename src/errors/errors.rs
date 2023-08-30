@@ -58,7 +58,7 @@
 use crate::builtin;
 
 /// new returns an error that formats as the given text.
-pub fn new_str(text: &str) -> ErrorString {
+pub fn new_str(text: &String) -> ErrorString {
     ErrorString::new(text)
 }
 
@@ -74,10 +74,8 @@ pub struct ErrorString {
 }
 
 impl ErrorString {
-    pub fn new(text: &str) -> Self {
-        Self {
-            s: text.to_string(),
-        }
+    pub fn new(text: &String) -> Self {
+        Self { s: text.clone() }
     }
 }
 

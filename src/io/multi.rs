@@ -6,7 +6,7 @@
 
 // type eofReader struct{}
 
-// func (eofReader) Read([]byte) (int, error) {
+// func (eofReader) Read([u8]) (int, error) {
 // 	return 0, EOF
 // }
 
@@ -14,7 +14,7 @@
 // 	readers []Reader
 // }
 
-// func (mr *multiReader) Read(p []byte) (n int, err error) {
+// func (mr *multiReader) Read(p [u8]) (n int, err error) {
 // 	for len(mr.readers) > 0 {
 // 		// Optimization to flatten nested multiReaders (Issue 13558).
 // 		if len(mr.readers) == 1 {
@@ -42,10 +42,10 @@
 // }
 
 // func (mr *multiReader) WriteTo(w Writer) (sum int64, err error) {
-// 	return mr.writeToWithBuffer(w, make([]byte, 1024*32))
+// 	return mr.writeToWithBuffer(w, make([u8], 1024*32))
 // }
 
-// func (mr *multiReader) writeToWithBuffer(w Writer, buf []byte) (sum int64, err error) {
+// func (mr *multiReader) writeToWithBuffer(w Writer, buf [u8]) (sum int64, err error) {
 // 	for i, r := range mr.readers {
 // 		var n int64
 // 		if subMr, ok := r.(*multiReader); ok { // reuse buffer with nested multiReaders
@@ -80,7 +80,7 @@
 // 	writers []Writer
 // }
 
-// func (t *multiWriter) Write(p []byte) (n int, err error) {
+// func (t *multiWriter) Write(p [u8]) (n int, err error) {
 // 	for _, w := range t.writers {
 // 		n, err = w.write(p)
 // 		if err != nil {
@@ -97,13 +97,13 @@
 // var _ StringWriter = (*multiWriter)(nil)
 
 // func (t *multiWriter) write_string(s string) (n int, err error) {
-// 	var p []byte // lazily initialized if/when needed
+// 	var p [u8] // lazily initialized if/when needed
 // 	for _, w := range t.writers {
 // 		if sw, ok := w.(StringWriter); ok {
 // 			n, err = sw.write_string(s)
 // 		} else {
 // 			if p == nil {
-// 				p = []byte(s)
+// 				p = [u8](s)
 // 			}
 // 			n, err = w.write(p)
 // 		}

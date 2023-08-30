@@ -82,17 +82,17 @@ impl Digest {
 // 	} else {
 // 		b = append(b, magic256...)
 // 	}
-// 	b = binary.BigEndian.AppendUint32(b, d.h[0])
-// 	b = binary.BigEndian.AppendUint32(b, d.h[1])
-// 	b = binary.BigEndian.AppendUint32(b, d.h[2])
-// 	b = binary.BigEndian.AppendUint32(b, d.h[3])
-// 	b = binary.BigEndian.AppendUint32(b, d.h[4])
-// 	b = binary.BigEndian.AppendUint32(b, d.h[5])
-// 	b = binary.BigEndian.AppendUint32(b, d.h[6])
-// 	b = binary.BigEndian.AppendUint32(b, d.h[7])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[0])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[1])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[2])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[3])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[4])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[5])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[6])
+// 	b = binary::BigEndian.AppendUint32(b, d.h[7])
 // 	b = append(b, d.x[..d.nx]...)
 // 	b = b[..b.len()+len(d.x)-d.nx] // already zero
-// 	b = binary.BigEndian.AppendUint64(b, d.len)
+// 	b = binary::BigEndian.AppendUint64(b, d.len)
 // 	return b, nil
 // }
 

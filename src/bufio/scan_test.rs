@@ -140,7 +140,7 @@
 // 	buf io.Reader
 // }
 
-// func (sr *slowReader) Read(p []byte) (n int, err error) {
+// func (sr *slowReader) Read(p [u8]) (n int, err error) {
 // 	if len(p) > sr.max {
 // 		p = p[0:sr.max]
 // 	}
@@ -312,7 +312,7 @@
 // 	// Create a split function that delivers a little data, then a predictable error.
 // 	numSplits := 0
 // 	const okCount = 7
-// 	errorSplit := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// 	errorSplit := func(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 		if atEOF {
 // 			panic("didn't get enough data")
 // 		}
@@ -347,7 +347,7 @@
 // func TestErrAtEOF(t *testing.T) {
 // 	s := NewScanner(strings.new_reader("1 2 33"))
 // 	// This splitter will fail on last entry, after s.err==EOF.
-// 	split := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// 	split := func(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 		advance, token, err = ScanWords(data, atEOF)
 // 		if len(token) > 1 {
 // 			if s.ErrOrEOF() != io.EOF {
@@ -368,7 +368,7 @@
 // // Test for issue 5268.
 // type alwaysError struct{}
 
-// func (alwaysError) Read(p []byte) (int, error) {
+// func (alwaysError) Read(p [u8]) (int, error) {
 // 	return 0, ggio::Error::ErrUnexpectedEOF
 // }
 
@@ -386,7 +386,7 @@
 // // Test that Scan finishes if we have endless empty reads.
 // type endlessZeros struct{}
 
-// func (endlessZeros) Read(p []byte) (int, error) {
+// func (endlessZeros) Read(p [u8]) (int, error) {
 // 	return 0, nil
 // }
 
@@ -418,7 +418,7 @@
 // // Test that empty tokens, including at end of line or end of file, are found by the scanner.
 // // Issue 8672: Could miss final empty token.
 
-// func commaSplit(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// func commaSplit(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 	for i := 0; i < len(data); i += 1 {
 // 		if data[i] == ',' {
 // 			return i + 1, data[..i], nil
@@ -455,7 +455,7 @@
 // 	testEmptyTokens(t, "1,2,3", []string{"1", "2", "3"})
 // }
 
-// func loopAtEOFSplit(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// func loopAtEOFSplit(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 	if len(data) > 0 {
 // 		return 1, data[..1], nil
 // 	}
@@ -499,7 +499,7 @@
 
 // type countdown int
 
-// func (c *countdown) split(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// func (c *countdown) split(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 	if *c > 0 {
 // 		*c--
 // 		return 1, data[..1], nil
@@ -526,7 +526,7 @@
 // func TestHugeBuffer(t *testing.T) {
 // 	text := strings.Repeat("x", 2*MaxScanTokenSize)
 // 	s := NewScanner(strings.new_reader(text + "\n"))
-// 	s.Buffer(make([]byte, 100), 3*MaxScanTokenSize)
+// 	s.Buffer(make([u8], 100), 3*MaxScanTokenSize)
 // 	for s.Scan() {
 // 		token := s.Text()
 // 		if token != text {
@@ -542,7 +542,7 @@
 // // were wrapping the read system call.
 // type negativeEOFReader int
 
-// func (r *negativeEOFReader) Read(p []byte) (int, error) {
+// func (r *negativeEOFReader) Read(p [u8]) (int, error) {
 // 	if *r > 0 {
 // 		c := int(*r)
 // 		if c > len(p) {
@@ -580,7 +580,7 @@
 // // of bytes requested.
 // type largeReader struct{}
 
-// func (largeReader) Read(p []byte) (int, error) {
+// func (largeReader) Read(p [u8]) (int, error) {
 // 	return len(p) + 1, nil
 // }
 

@@ -50,7 +50,7 @@ const ENC_DEC_TESTS: &[EncDecTest] = &[
 
 // fn TestEncode() {
 // 	for (i, test) in ENC_DEC_TESTS.iter().enumerate() {
-// 		dst := make([]byte, EncodedLen(len(test.dec)))
+// 		dst := make([u8], EncodedLen(len(test.dec)))
 // 		n := Encode(dst, test.dec)
 // 		if n != len(dst) {
 // 			t.Errorf("#{}: bad return value: got: {} want: {}", i, n, len(dst))
@@ -64,10 +64,10 @@ const ENC_DEC_TESTS: &[EncDecTest] = &[
 // fn TestDecode() {
 // 	// Case for decoding uppercase hex characters, since
 // 	// Encode always uses lowercase.
-// 	decTests := append(ENC_DEC_TESTS, EncDecTest{"F8F9FAFBFCFDFEFF", []byte{0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff}})
+// 	decTests := append(ENC_DEC_TESTS, EncDecTest{"F8F9FAFBFCFDFEFF", [u8]{0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff}})
 // 	for i, test := range decTests {
-// 		dst := make([]byte, DecodedLen(len(test.enc)))
-// 		n, err := Decode(dst, []byte(test.enc))
+// 		dst := make([u8], DecodedLen(len(test.enc)))
+// 		n, err := Decode(dst, [u8](test.enc))
 // 		if err != nil {
 // 			t.Errorf("#{}: bad return value: got:{} want:{}", i, n, len(dst))
 // 		} else if !bytes::equal(dst, test.dec) {
@@ -117,8 +117,8 @@ fn test_decode_string() {
 
 // fn TestDecodeErr() {
 // 	for _, tt := range errTests {
-// 		out := make([]byte, len(tt.in)+10)
-// 		n, err := Decode(out, []byte(tt.in))
+// 		out := make([u8], len(tt.in)+10)
+// 		n, err := Decode(out, [u8](tt.in))
 // 		if string(out[..n]) != tt.out || err != tt.err {
 // 			t.Errorf("Decode(%q) = %q, {}, want %q, {}", tt.in, string(out[..n]), err, tt.out, tt.err)
 // 		}
@@ -143,7 +143,7 @@ fn test_decode_string() {
 // 			let mut buf = bytes::Buffer::new();
 // 			enc := NewEncoder(&buf)
 // 			r := struct{ io.Reader }{bytes::new_reader(input)} // io.Reader only; not io.WriterTo
-// 			if n, err := io.CopyBuffer(enc, r, make([]byte, 7)); n != int64(len(input)) || err != nil {
+// 			if n, err := io.CopyBuffer(enc, r, make([u8], 7)); n != int64(len(input)) || err != nil {
 // 				t.Errorf("encoder.Write(%q*{}) = ({}, {}), want ({}, nil)", test.dec, multiplier, n, err, len(input))
 // 				continue
 // 			}
@@ -155,8 +155,8 @@ fn test_decode_string() {
 
 // 			dec := NewDecoder(&buf)
 // 			var decBuf bytes::Buffer::new()
-// 			w := struct{ io.Writer }{&decBuf} // io.Writer only; not io.ReaderFrom
-// 			if _, err := io.CopyBuffer(w, dec, make([]byte, 7)); err != nil || decBuf.Len() != len(input) {
+// 			w := struct{ ggio::Writer }{&decBuf} // ggio::Writer only; not io.ReaderFrom
+// 			if _, err := io.CopyBuffer(w, dec, make([u8], 7)); err != nil || decBuf.Len() != len(input) {
 // 				t.Errorf("decoder.Read(%q*{}) = ({}, {}), want ({}, nil)", test.enc, multiplier, decBuf.Len(), err, len(input))
 // 			}
 
@@ -213,10 +213,10 @@ fn test_decode_string() {
 // 	var out strings.Builder
 // 	dumper := Dumper(&out)
 
-// 	dumper.Write([]byte(`gopher`))
+// 	dumper.Write([u8](`gopher`))
 // 	dumper.Close()
 // 	dumper.Close()
-// 	dumper.Write([]byte(`gopher`))
+// 	dumper.Write([u8](`gopher`))
 // 	dumper.Close()
 
 // 	expected := "00000000  67 6f 70 68 65 72                                 |gopher|\n"
@@ -230,7 +230,7 @@ fn test_decode_string() {
 // 	dumper := Dumper(&out)
 
 // 	dumper.Close()
-// 	dumper.Write([]byte(`gopher`))
+// 	dumper.Write([u8](`gopher`))
 
 // 	expected := ""
 // 	if out.String() != expected {
@@ -244,23 +244,23 @@ fn test_decode_string() {
 // 		in[i] = byte(i + 30)
 // 	}
 
-// 	out := []byte(Dump(in[..]))
+// 	out := [u8](Dump(in[..]))
 // 	if !bytes::equal(out, expectedHexDump) {
 // 		t.Errorf("got:\n%s\nwant:\n%s", out, expectedHexDump)
 // 	}
 // }
 
-// var expectedHexDump = []byte(`00000000  1e 1f 20 21 22 23 24 25  26 27 28 29 2a 2b 2c 2d  |.. !"#$%&'()*+,-|
+// var expectedHexDump = [u8](`00000000  1e 1f 20 21 22 23 24 25  26 27 28 29 2a 2b 2c 2d  |.. !"#$%&'()*+,-|
 // 00000010  2e 2f 30 31 32 33 34 35  36 37 38 39 3a 3b 3c 3d  |./0123456789:;<=|
 // 00000020  3e 3f 40 41 42 43 44 45                           |>?@ABCDE|
 // `)
 
-// var sink []byte
+// var sink [u8]
 
 // fn BenchmarkEncode(b *testing.B) {
 // 	for _, size := range []int{256, 1024, 4096, 16384} {
-// 		src := bytes.Repeat([]byte{2, 3, 5, 7, 9, 11, 13, 17}, size/8)
-// 		sink = make([]byte, 2*size)
+// 		src := bytes.Repeat([u8]{2, 3, 5, 7, 9, 11, 13, 17}, size/8)
+// 		sink = make([u8], 2*size)
 
 // 		b.Run(fmt.Sprintf("{}", size), fn(b *testing.B) {
 // 			b.SetBytes(int64(size))
@@ -273,8 +273,8 @@ fn test_decode_string() {
 
 // fn BenchmarkDecode(b *testing.B) {
 // 	for _, size := range []int{256, 1024, 4096, 16384} {
-// 		src := bytes.Repeat([]byte{'2', 'b', '7', '4', '4', 'f', 'a', 'a'}, size/8)
-// 		sink = make([]byte, size/2)
+// 		src := bytes.Repeat([u8]{'2', 'b', '7', '4', '4', 'f', 'a', 'a'}, size/8)
+// 		sink = make([u8], size/2)
 
 // 		b.Run(fmt.Sprintf("{}", size), fn(b *testing.B) {
 // 			b.SetBytes(int64(size))
@@ -287,7 +287,7 @@ fn test_decode_string() {
 
 // fn BenchmarkDump(b *testing.B) {
 // 	for _, size := range []int{256, 1024, 4096, 16384} {
-// 		src := bytes.Repeat([]byte{2, 3, 5, 7, 9, 11, 13, 17}, size/8)
+// 		src := bytes.Repeat([u8]{2, 3, 5, 7, 9, 11, 13, 17}, size/8)
 
 // 		b.Run(fmt.Sprintf("{}", size), fn(b *testing.B) {
 // 			b.SetBytes(int64(size))

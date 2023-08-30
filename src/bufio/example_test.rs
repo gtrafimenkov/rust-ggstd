@@ -13,7 +13,7 @@
 // )
 
 // func ExampleWriter() {
-// 	w := bufio.NewWriter(os.Stdout)
+// 	w := bufio.new_writer(os.Stdout)
 // 	fmt.Fprint(w, "Hello, ")
 // 	fmt.Fprint(w, "world!")
 // 	w.flush() // Don't forget to flush!
@@ -21,7 +21,7 @@
 // }
 
 // func ExampleWriter_AvailableBuffer() {
-// 	w := bufio.NewWriter(os.Stdout)
+// 	w := bufio.new_writer(os.Stdout)
 // 	for _, i := range []int64{1, 2, 3, 4} {
 // 		b := w.AvailableBuffer()
 // 		b = strconv.AppendInt(b, i, 10)
@@ -43,7 +43,7 @@
 // 	}
 // }
 
-// // Return the most recent call to Scan as a []byte.
+// // Return the most recent call to Scan as a [u8].
 // func ExampleScanner_Bytes() {
 // 	scanner := bufio.NewScanner(strings.new_reader("gopher"))
 // 	for scanner.Scan() {
@@ -83,7 +83,7 @@
 // 	const input = "1234 5678 1234567901234567890"
 // 	scanner := bufio.NewScanner(strings.new_reader(input))
 // 	// Create a custom split function by wrapping the existing ScanWords function.
-// 	split := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// 	split := func(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 		advance, token, err = bufio.ScanWords(data, atEOF)
 // 		if err == nil && token != nil {
 // 			_, err = strconv.ParseInt(string(token), 10, 32)
@@ -113,7 +113,7 @@
 // 	const input = "1,2,3,4,"
 // 	scanner := bufio.NewScanner(strings.new_reader(input))
 // 	// Define a split function that separates on commas.
-// 	onComma := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+// 	onComma := func(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 		for i := 0; i < len(data); i += 1 {
 // 			if data[i] == ',' {
 // 				return i + 1, data[..i], nil

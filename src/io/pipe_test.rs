@@ -14,7 +14,7 @@
 // 	"time"
 // )
 
-// func checkWrite(t *testing.T, w Writer, data []byte, c chan int) {
+// func checkWrite(t *testing.T, w Writer, data [u8], c chan int) {
 // 	n, err := w.write(data)
 // 	if err != nil {
 // 		t.Errorf("write: {}", err)
@@ -29,8 +29,8 @@
 // func TestPipe1(t *testing.T) {
 // 	c := make(chan int)
 // 	r, w := Pipe()
-// 	var buf = make([]byte, 64)
-// 	go checkWrite(t, w, []byte("hello, world"), c)
+// 	var buf = make([u8], 64)
+// 	go checkWrite(t, w, [u8]("hello, world"), c)
 // 	n, err := r.Read(buf)
 // 	if err != nil {
 // 		t.Errorf("read: {}", err)
@@ -43,7 +43,7 @@
 // }
 
 // func reader(t *testing.T, r Reader, c chan int) {
-// 	var buf = make([]byte, 64)
+// 	var buf = make([u8], 64)
 // 	for {
 // 		n, err := r.Read(buf)
 // 		if err == EOF {
@@ -62,7 +62,7 @@
 // 	c := make(chan int)
 // 	r, w := Pipe()
 // 	go reader(t, r, c)
-// 	var buf = make([]byte, 64)
+// 	var buf = make([u8], 64)
 // 	for i := 0; i < 5; i += 1 {
 // 		p := buf[0 : 5+i*10]
 // 		n, err := w.write(p)
@@ -90,7 +90,7 @@
 // }
 
 // // Test a large write that requires multiple reads to satisfy.
-// func writer(w WriteCloser, buf []byte, c chan pipeReturn) {
+// func writer(w WriteCloser, buf [u8], c chan pipeReturn) {
 // 	n, err := w.write(buf)
 // 	w.close()
 // 	c <- pipeReturn{n, err}
@@ -99,12 +99,12 @@
 // func TestPipe3(t *testing.T) {
 // 	c := make(chan pipeReturn)
 // 	r, w := Pipe()
-// 	var wdat = make([]byte, 128)
+// 	var wdat = make([u8], 128)
 // 	for i := 0; i < len(wdat); i += 1 {
 // 		wdat[i] = byte(i)
 // 	}
 // 	go writer(w, wdat, c)
-// 	var rdat = make([]byte, 1024)
+// 	var rdat = make([u8], 1024)
 // 	tot := 0
 // 	for n := 1; n <= 256; n *= 2 {
 // 		nn, err := r.Read(rdat[tot : tot+n])
@@ -190,7 +190,7 @@
 // 		} else {
 // 			delayClose(t, w, c, tt)
 // 		}
-// 		var buf = make([]byte, 64)
+// 		var buf = make([u8], 64)
 // 		n, err := r.Read(buf)
 // 		<-c
 // 		want := tt.err
@@ -214,7 +214,7 @@
 // 	c := make(chan int, 1)
 // 	r, _ := Pipe()
 // 	go delayClose(t, r, c, pipeTest{})
-// 	n, err := r.Read(make([]byte, 64))
+// 	n, err := r.Read(make([u8], 64))
 // 	<-c
 // 	if n != 0 || err != ErrClosedPipe {
 // 		t.Errorf("read from closed pipe: {}, {} want {}, {}", n, err, 0, ErrClosedPipe)
@@ -255,7 +255,7 @@
 // 	c := make(chan int, 1)
 // 	_, w := Pipe()
 // 	go delayClose(t, w, c, pipeTest{})
-// 	n, err := w.write(make([]byte, 64))
+// 	n, err := w.write(make([u8], 64))
 // 	<-c
 // 	if n != 0 || err != ErrClosedPipe {
 // 		t.Errorf("write to closed pipe: {}, {} want {}, {}", n, err, 0, ErrClosedPipe)
@@ -265,7 +265,7 @@
 // func TestWriteEmpty(t *testing.T) {
 // 	r, w := Pipe()
 // 	go func() {
-// 		w.write([]byte{})
+// 		w.write([u8]{})
 // 		w.close()
 // 	}()
 // 	var b [2]byte
@@ -290,16 +290,16 @@
 // 	done := make(chan bool)
 // 	var writeErr error
 // 	go func() {
-// 		_, err := w.write([]byte("hello"))
+// 		_, err := w.write([u8]("hello"))
 // 		if err != nil {
 // 			t.Errorf("got error: %q; expected none", err)
 // 		}
 // 		w.close()
-// 		_, writeErr = w.write([]byte("world"))
+// 		_, writeErr = w.write([u8]("world"))
 // 		done <- true
 // 	}()
 
-// 	buf := make([]byte, 100)
+// 	buf := make([u8], 100)
 // 	var result string
 // 	n, err := read_full(r, buf)
 // 	if err != nil && err != ErrUnexpectedEOF {
@@ -354,13 +354,13 @@
 // 		for i := 0; i < count; i += 1 {
 // 			go func() {
 // 				time.Sleep(time.Millisecond) // Increase probability of race
-// 				if n, err := w.write([]byte(input)); n != len(input) || err != nil {
+// 				if n, err := w.write([u8](input)); n != len(input) || err != nil {
 // 					t.Errorf("Write() = ({}, {}); want ({}, nil)", n, err, len(input))
 // 				}
 // 			}()
 // 		}
 
-// 		buf := make([]byte, count*len(input))
+// 		buf := make([u8], count*len(input))
 // 		for i := 0; i < len(buf); i += readSize {
 // 			if n, err := r.Read(buf[i : i+readSize]); n != readSize || err != nil {
 // 				t.Errorf("Read() = ({}, {}); want ({}, nil)", n, err, readSize)
@@ -379,11 +379,11 @@
 // 	t.Run("Read", func(t *testing.T) {
 // 		r, w := Pipe()
 
-// 		c := make(chan []byte, count*len(input)/readSize)
+// 		c := make(chan [u8], count*len(input)/readSize)
 // 		for i := 0; i < cap(c); i += 1 {
 // 			go func() {
 // 				time.Sleep(time.Millisecond) // Increase probability of race
-// 				buf := make([]byte, readSize)
+// 				buf := make([u8], readSize)
 // 				if n, err := r.Read(buf); n != readSize || err != nil {
 // 					t.Errorf("Read() = ({}, {}); want ({}, nil)", n, err, readSize)
 // 				}
@@ -392,19 +392,19 @@
 // 		}
 
 // 		for i := 0; i < count; i += 1 {
-// 			if n, err := w.write([]byte(input)); n != len(input) || err != nil {
+// 			if n, err := w.write([u8](input)); n != len(input) || err != nil {
 // 				t.Errorf("Write() = ({}, {}); want ({}, nil)", n, err, len(input))
 // 			}
 // 		}
 
 // 		// Since each read is independent, the only guarantee about the output
 // 		// is that it is a permutation of the input in readSized groups.
-// 		got := make([]byte, 0, count*len(input))
+// 		got := make([u8], 0, count*len(input))
 // 		for i := 0; i < cap(c); i += 1 {
 // 			got = append(got, (<-c)...)
 // 		}
 // 		got = sortBytesInGroups(got, readSize)
-// 		want := bytes.Repeat([]byte(input), count)
+// 		want := bytes.Repeat([u8](input), count)
 // 		want = sortBytesInGroups(want, readSize)
 // 		if string(got) != string(want) {
 // 			t.Errorf("got: %q; want: %q", got, want)
@@ -412,8 +412,8 @@
 // 	})
 // }
 
-// func sortBytesInGroups(b []byte, n int) []byte {
-// 	var groups [][]byte
+// func sortBytesInGroups(b [u8], n int) [u8] {
+// 	var groups [][u8]
 // 	for b.len() > 0 {
 // 		groups = append(groups, b[..n])
 // 		b = b[n:]

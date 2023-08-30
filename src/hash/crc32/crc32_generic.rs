@@ -72,7 +72,7 @@ pub fn simple_update(crc: u32, tab: &crc32::Table, p: &[u8]) -> u32 {
 
 // // slicingUpdate uses the slicing-by-8 algorithm to update the CRC, given a
 // // table that was previously computed using slicingMakeTable.
-// func slicingUpdate(crc uint32, tab *slicing8Table, p []byte) uint32 {
+// func slicingUpdate(crc uint32, tab *slicing8Table, p [u8]) uint32 {
 // 	if len(p) >= slicing8Cutoff {
 // 		crc = ^crc
 // 		for len(p) > 8 {

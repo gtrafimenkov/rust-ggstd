@@ -247,7 +247,7 @@ impl Buffer {
     // // The return value n is the number of bytes written; it always fits into an
     // // int, but it is int64 to match the io.WriterTo interface. Any error
     // // encountered during the write is also returned.
-    // fn WriteTo(&self, w io.Writer) (n int64, err error) {
+    // fn WriteTo(&self, w ggio::Writer) (n int64, err error) {
     // 	b.lastRead = opInvalid
     // 	if nBytes := b.Len(); nBytes > 0 {
     // 		m, e := w.write(self.buf[self.off..])
@@ -260,7 +260,7 @@ impl Buffer {
     // 			return n, e
     // 		}
     // 		// all bytes should have been written, by definition of
-    // 		// Write method in io.Writer
+    // 		// Write method in ggio::Writer
     // 		if m != nBytes {
     // 			return n, io.ErrShortWrite
     // 		}
@@ -391,7 +391,7 @@ impl Buffer {
     // // it returns the data read before the error and the error itself (often io.EOF).
     // // ReadBytes returns err != nil if and only if the returned data does not end in
     // // delim.
-    // fn ReadBytes(&self, delim byte) (line []byte, err error) {
+    // fn ReadBytes(&self, delim byte) (line [u8], err error) {
     // 	slice, err := b.readSlice(delim)
     // 	// return a copy of slice. The buffer's backing array may
     // 	// be overwritten by later calls.
@@ -400,7 +400,7 @@ impl Buffer {
     // }
 
     // // readSlice is like ReadBytes but returns a reference to internal buffer data.
-    // fn readSlice(&self, delim byte) (line []byte, err error) {
+    // fn readSlice(&self, delim byte) (line [u8], err error) {
     // 	i := IndexByte(self.buf[self.off..], delim)
     // 	end := self.off + i + 1
     // 	if i < 0 {

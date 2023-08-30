@@ -74,10 +74,101 @@ const CODEGEN_ORDER: &[u32] = &[
 ];
 
 pub(super) struct HuffmanBitWriter<'a> {
-    // writer is the underlying writer.
-    // Do not use it directly; use the write method, which ensures
-    // that Write errors are sticky.
     pub(super) writer: &'a mut dyn std::io::Write,
+    hbw: HuffmanBitWriteFilter,
+}
+
+#[allow(dead_code)]
+impl<'a> HuffmanBitWriter<'a> {
+    pub(super) fn new(w: &'a mut dyn std::io::Write) -> Self {
+        HuffmanBitWriter {
+            writer: w,
+            hbw: HuffmanBitWriteFilter::new(),
+        }
+    }
+
+    pub fn reset(&mut self, writer: &'a mut dyn std::io::Write) {
+        self.writer = writer;
+        self.hbw.reset();
+    }
+
+    pub fn flush(&mut self) {
+        self.hbw.flush(self.writer);
+    }
+
+    pub(super) fn write_bytes(&mut self, bytes: &[u8]) {
+        self.hbw.write_bytes(self.writer, bytes);
+    }
+
+    pub(super) fn write_stored_header(&mut self, length: usize, is_eof: bool) {
+        self.hbw.write_stored_header(self.writer, length, is_eof);
+    }
+
+    /// write_block will write a block of tokens with the smallest encoding.
+    /// The original input can be supplied, and if the huffman encoded data
+    /// is larger than the original bytes, the data will be written as a
+    /// stored block.
+    /// If the input is nil, the tokens will always be Huffman encoded.
+    pub(super) fn write_block(&mut self, tokens: &[Token], eof: bool, input: Option<&[u8]>) {
+        self.hbw.write_block(self.writer, tokens, eof, input);
+    }
+
+    /// write_block_dynamic encodes a block using a dynamic Huffman table.
+    /// This should be used if the symbols used have a disproportionate
+    /// histogram distribution.
+    /// If input is supplied and the compression savings are below 1/16th of the
+    /// input size the block is stored.
+    pub(super) fn write_block_dynamic(
+        &mut self,
+        tokens: &[Token],
+        eof: bool,
+        input: Option<&[u8]>,
+    ) {
+        self.hbw
+            .write_block_dynamic(self.writer, tokens, eof, input);
+    }
+
+    /// write_block_huff encodes a block of bytes as either
+    /// Huffman encoded literals or uncompressed bytes if the
+    /// results only gains very little from compression.
+    pub fn write_block_huff(&mut self, eof: bool, input: &[u8]) {
+        self.hbw.write_block_huff(self.writer, eof, input);
+    }
+
+    pub(super) fn error(&self) -> &std::io::Result<usize> {
+        self.hbw.error()
+    }
+}
+
+// huffOffset is a static offset encoder used for huffman only encoding.
+// It can be reused since we will not be encoding offset values.
+// var huffOffset *HuffmanEncoder
+fn get_huff_offset() -> &'static HuffmanEncoder {
+    static ENCODER: OnceLock<HuffmanEncoder> = OnceLock::new();
+    ENCODER.get_or_init(generate_huff_offset)
+}
+
+fn generate_huff_offset() -> HuffmanEncoder {
+    let mut offset_freq: [i32; OFFSET_CODE_COUNT] = [0; OFFSET_CODE_COUNT];
+    offset_freq[0] = 1;
+    let mut huff_offset = new_huffman_encoder(OFFSET_CODE_COUNT);
+    huff_offset.generate(&offset_freq, 15);
+    huff_offset
+}
+
+/// histogram accumulates a histogram of b in h.
+///
+/// len(h) must be >= 256, and h's elements must be all zeroes.
+fn histogram(b: &[u8], h: &mut [i32]) {
+    for t in b {
+        h[*t as usize] += 1;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+/// Same as HuffmanBitWriter, but doesn't keep Writer in the internal state.
+pub(super) struct HuffmanBitWriteFilter {
     // Data waiting to be written is bytes[0:nbytes]
     // and then the low nbits of bits.  Data is always written
     // sequentially into the bytes array.
@@ -95,10 +186,10 @@ pub(super) struct HuffmanBitWriter<'a> {
     err: std::io::Result<usize>,
 }
 
-impl<'a> HuffmanBitWriter<'a> {
-    pub(super) fn new(w: &'a mut dyn std::io::Write) -> Self {
-        HuffmanBitWriter {
-            writer: w,
+impl HuffmanBitWriteFilter {
+    pub(super) fn new() -> Self {
+        HuffmanBitWriteFilter {
+            // writer: w,
             bits: 0,
             nbits: 0,
             nbytes: 0,
@@ -114,15 +205,14 @@ impl<'a> HuffmanBitWriter<'a> {
         }
     }
 
-    pub fn reset(&mut self, writer: &'a mut dyn std::io::Write) {
-        self.writer = writer;
+    pub fn reset(&mut self) {
         self.bits = 0;
         self.nbits = 0;
         self.nbytes = 0;
         self.err = Ok(0);
     }
 
-    pub fn flush(&mut self) {
+    pub fn flush(&mut self, writer: &mut dyn std::io::Write) {
         if self.err.is_err() {
             self.nbits = 0;
             return;
@@ -140,26 +230,26 @@ impl<'a> HuffmanBitWriter<'a> {
             n += 1;
         }
         self.bits = 0;
-        self.write_bytes_from_internal_buffer(n);
+        self.write_bytes_from_internal_buffer(writer, n);
         self.nbytes = 0;
     }
 
-    fn write(&mut self, b: &[u8]) {
+    fn write(&mut self, writer: &mut dyn std::io::Write, b: &[u8]) {
         if self.err.is_err() {
             return;
         }
-        self.err = self.writer.write(b);
+        self.err = writer.write(b);
     }
 
     /// write data from an internal buffer
-    fn write_bytes_from_internal_buffer(&mut self, n: usize) {
+    fn write_bytes_from_internal_buffer(&mut self, writer: &mut dyn std::io::Write, n: usize) {
         if self.err.is_err() {
             return;
         }
-        self.err = self.writer.write(&self.bytes[0..n]);
+        self.err = writer.write(&self.bytes[0..n]);
     }
 
-    fn write_bits(&mut self, b: u32, nb: usize) {
+    fn write_bits(&mut self, writer: &mut dyn std::io::Write, b: u32, nb: usize) {
         if self.err.is_err() {
             return;
         }
@@ -181,14 +271,14 @@ impl<'a> HuffmanBitWriter<'a> {
             }
             n += 6;
             if n >= BUFFER_FLUSH_SIZE {
-                self.write_bytes_from_internal_buffer(n);
+                self.write_bytes_from_internal_buffer(writer, n);
                 n = 0;
             }
             self.nbytes = n
         }
     }
 
-    pub(super) fn write_bytes(&mut self, bytes: &[u8]) {
+    pub(super) fn write_bytes(&mut self, writer: &mut dyn std::io::Write, bytes: &[u8]) {
         if self.err.is_err() {
             return;
         }
@@ -207,10 +297,10 @@ impl<'a> HuffmanBitWriter<'a> {
             n += 1;
         }
         if n != 0 {
-            self.write_bytes_from_internal_buffer(n);
+            self.write_bytes_from_internal_buffer(writer, n);
         }
         self.nbytes = 0;
-        self.write(bytes);
+        self.write(writer, bytes);
     }
 
     /// RFC 1951 3.2.7 specifies a special run-length encoding for specifying
@@ -370,7 +460,7 @@ impl<'a> HuffmanBitWriter<'a> {
         return (0, false);
     }
 
-    fn write_code(&mut self, c: HCode) {
+    fn write_code(&mut self, writer: &mut dyn std::io::Write, c: HCode) {
         if self.err.is_err() {
             return;
         }
@@ -392,7 +482,7 @@ impl<'a> HuffmanBitWriter<'a> {
             }
             n += 6;
             if n >= BUFFER_FLUSH_SIZE {
-                self.write_bytes_from_internal_buffer(n);
+                self.write_bytes_from_internal_buffer(writer, n);
                 n = 0;
             }
             self.nbytes = n;
@@ -406,6 +496,7 @@ impl<'a> HuffmanBitWriter<'a> {
     ///	num_codegens  The number of codegens used in codegen
     fn write_dynamic_header(
         &mut self,
+        writer: &mut dyn std::io::Write,
         num_literals: usize,
         num_offsets: usize,
         num_codegens: usize,
@@ -415,14 +506,14 @@ impl<'a> HuffmanBitWriter<'a> {
             return;
         }
         let first_bits: u32 = if is_eof { 5 } else { 4 };
-        self.write_bits(first_bits, 3);
-        self.write_bits((num_literals - 257) as u32, 5);
-        self.write_bits((num_offsets - 1) as u32, 5);
-        self.write_bits((num_codegens - 4) as u32, 4);
+        self.write_bits(writer, first_bits, 3);
+        self.write_bits(writer, (num_literals - 257) as u32, 5);
+        self.write_bits(writer, (num_offsets - 1) as u32, 5);
+        self.write_bits(writer, (num_codegens - 4) as u32, 4);
 
         for i in 0..num_codegens {
             let value = self.codegen_encoding.codes[CODEGEN_ORDER[i] as usize].len;
-            self.write_bits(value as u32, 3);
+            self.write_bits(writer, value as u32, 3);
         }
 
         let mut i = 0;
@@ -432,19 +523,19 @@ impl<'a> HuffmanBitWriter<'a> {
             if code_word == BAD_CODE {
                 break;
             }
-            self.write_code(self.codegen_encoding.codes[code_word as usize]);
+            self.write_code(writer, self.codegen_encoding.codes[code_word as usize]);
 
             match code_word {
                 16 => {
-                    self.write_bits(self.codegen[i] as u32, 2);
+                    self.write_bits(writer, self.codegen[i] as u32, 2);
                     i += 1;
                 }
                 17 => {
-                    self.write_bits(self.codegen[i] as u32, 3);
+                    self.write_bits(writer, self.codegen[i] as u32, 3);
                     i += 1;
                 }
                 18 => {
-                    self.write_bits(self.codegen[i] as u32, 7);
+                    self.write_bits(writer, self.codegen[i] as u32, 7);
                     i += 1;
                 }
                 _ => {}
@@ -452,24 +543,29 @@ impl<'a> HuffmanBitWriter<'a> {
         }
     }
 
-    pub(super) fn write_stored_header(&mut self, length: usize, is_eof: bool) {
+    pub(super) fn write_stored_header(
+        &mut self,
+        writer: &mut dyn std::io::Write,
+        length: usize,
+        is_eof: bool,
+    ) {
         if self.err.is_err() {
             return;
         }
         let flag: u32 = if is_eof { 1 } else { 0 };
-        self.write_bits(flag, 3);
-        self.flush();
-        self.write_bits(length as u32, 16);
-        self.write_bits((!(length as u16)) as u32, 16);
+        self.write_bits(writer, flag, 3);
+        self.flush(writer);
+        self.write_bits(writer, length as u32, 16);
+        self.write_bits(writer, (!(length as u16)) as u32, 16);
     }
 
-    fn write_fixed_header(&mut self, is_eof: bool) {
+    fn write_fixed_header(&mut self, writer: &mut dyn std::io::Write, is_eof: bool) {
         if self.err.is_err() {
             return;
         }
         // Indicate that we are a fixed Huffman block
         let value = if is_eof { 3 } else { 2 };
-        self.write_bits(value, 3)
+        self.write_bits(writer, value, 3)
     }
 
     /// write_block will write a block of tokens with the smallest encoding.
@@ -477,7 +573,13 @@ impl<'a> HuffmanBitWriter<'a> {
     /// is larger than the original bytes, the data will be written as a
     /// stored block.
     /// If the input is nil, the tokens will always be Huffman encoded.
-    pub(super) fn write_block(&mut self, tokens: &[Token], eof: bool, input: Option<&[u8]>) {
+    pub(super) fn write_block(
+        &mut self,
+        writer: &mut dyn std::io::Write,
+        tokens: &[Token],
+        eof: bool,
+        input: Option<&[u8]>,
+    ) {
         if self.err.is_err() {
             return;
         }
@@ -529,18 +631,23 @@ impl<'a> HuffmanBitWriter<'a> {
 
         // Stored bytes?
         if storable && stored_size < size {
-            self.write_stored_header(input.unwrap().len(), eof);
-            self.write_bytes(input.unwrap());
+            self.write_stored_header(writer, input.unwrap().len(), eof);
+            self.write_bytes(writer, input.unwrap());
             return;
         }
 
         // Huffman.
         if !use_dynamic {
-            self.write_fixed_header(eof);
-            self.write_tokens(&tokens, &literal_encoding.codes, &offset_encoding.codes);
+            self.write_fixed_header(writer, eof);
+            self.write_tokens(
+                writer,
+                &tokens,
+                &literal_encoding.codes,
+                &offset_encoding.codes,
+            );
         } else {
-            self.write_dynamic_header(num_literals, num_offsets, num_codegens, eof);
-            self.write_tokens_using_internal_codes(&tokens);
+            self.write_dynamic_header(writer, num_literals, num_offsets, num_codegens, eof);
+            self.write_tokens_using_internal_codes(writer, &tokens);
         }
     }
 
@@ -551,6 +658,7 @@ impl<'a> HuffmanBitWriter<'a> {
     /// input size the block is stored.
     pub(super) fn write_block_dynamic(
         &mut self,
+        writer: &mut dyn std::io::Write,
         tokens: &[Token],
         eof: bool,
         input: Option<&[u8]>,
@@ -574,16 +682,16 @@ impl<'a> HuffmanBitWriter<'a> {
         let (ssize, storable) = self.stored_size(input);
         if storable && ssize < (size + (size >> 4)) {
             let input = input.unwrap();
-            self.write_stored_header(input.len(), eof);
-            self.write_bytes(input);
+            self.write_stored_header(writer, input.len(), eof);
+            self.write_bytes(writer, input);
             return;
         }
 
         // Write Huffman table.
-        self.write_dynamic_header(num_literals, num_offsets, num_codegens, eof);
+        self.write_dynamic_header(writer, num_literals, num_offsets, num_codegens, eof);
 
         // Write the tokens.
-        self.write_tokens_using_internal_codes(&tokens);
+        self.write_tokens_using_internal_codes(writer, &tokens);
     }
 
     /// indexTokens indexes a slice of tokens, and updates
@@ -632,88 +740,83 @@ impl<'a> HuffmanBitWriter<'a> {
 
     /// write_tokens writes a slice of tokens to the output.
     /// codes for literal and offset encoding must be supplied.
-    fn write_tokens(&mut self, tokens: &[Token], le_codes: &[HCode], oe_codes: &[HCode]) {
+    fn write_tokens(
+        &mut self,
+        writer: &mut dyn std::io::Write,
+        tokens: &[Token],
+        le_codes: &[HCode],
+        oe_codes: &[HCode],
+    ) {
         if self.err.is_err() {
             return;
         }
         for t in tokens {
             if *t < MATCH_TYPE {
-                self.write_code(le_codes[t.literal() as usize]);
+                self.write_code(writer, le_codes[t.literal() as usize]);
                 continue;
             }
             // Write the length
             let length = t.length();
             let length_code = length_code(length);
-            self.write_code(le_codes[length_code + LENGTH_CODES_START]);
+            self.write_code(writer, le_codes[length_code + LENGTH_CODES_START]);
             let extra_length_bits = LENGTH_EXTRA_BITS[length_code] as usize;
             if extra_length_bits > 0 {
                 let extra_length = length - LENGTH_BASE[length_code] as u32;
-                self.write_bits(extra_length, extra_length_bits);
+                self.write_bits(writer, extra_length, extra_length_bits);
             }
             // Write the offset
             let offset = t.offset() as usize;
             let offset_code = offset_code(offset);
-            self.write_code(oe_codes[offset_code]);
+            self.write_code(writer, oe_codes[offset_code]);
             let extra_offset_bits = OFFSET_EXTRA_BITS[offset_code] as usize;
             if extra_offset_bits > 0 {
                 let extra_offset = offset as u32 - OFFSET_BASE[offset_code];
-                self.write_bits(extra_offset, extra_offset_bits);
+                self.write_bits(writer, extra_offset, extra_offset_bits);
             }
         }
     }
 
-    fn write_tokens_using_internal_codes(&mut self, tokens: &[Token]) {
+    fn write_tokens_using_internal_codes(
+        &mut self,
+        writer: &mut dyn std::io::Write,
+        tokens: &[Token],
+    ) {
         if self.err.is_err() {
             return;
         }
         for t in tokens {
             if *t < MATCH_TYPE {
-                self.write_code(self.literal_encoding.codes[t.literal() as usize]);
+                self.write_code(writer, self.literal_encoding.codes[t.literal() as usize]);
                 continue;
             }
             // Write the length
             let length = t.length();
             let length_code = length_code(length);
-            self.write_code(self.literal_encoding.codes[length_code + LENGTH_CODES_START]);
+            self.write_code(
+                writer,
+                self.literal_encoding.codes[length_code + LENGTH_CODES_START],
+            );
             let extra_length_bits = LENGTH_EXTRA_BITS[length_code] as usize;
             if extra_length_bits > 0 {
                 let extra_length = length - LENGTH_BASE[length_code] as u32;
-                self.write_bits(extra_length, extra_length_bits);
+                self.write_bits(writer, extra_length, extra_length_bits);
             }
             // Write the offset
             let offset = t.offset() as usize;
             let offset_code = offset_code(offset);
-            self.write_code(self.offset_encoding.codes[offset_code]);
+            self.write_code(writer, self.offset_encoding.codes[offset_code]);
             let extra_offset_bits = OFFSET_EXTRA_BITS[offset_code] as usize;
             if extra_offset_bits > 0 {
                 let extra_offset = offset as u32 - OFFSET_BASE[offset_code];
-                self.write_bits(extra_offset, extra_offset_bits);
+                self.write_bits(writer, extra_offset, extra_offset_bits);
             }
         }
     }
-}
 
-// huffOffset is a static offset encoder used for huffman only encoding.
-// It can be reused since we will not be encoding offset values.
-// var huffOffset *HuffmanEncoder
-fn get_huff_offset() -> &'static HuffmanEncoder {
-    static ENCODER: OnceLock<HuffmanEncoder> = OnceLock::new();
-    ENCODER.get_or_init(generate_huff_offset)
-}
-
-fn generate_huff_offset() -> HuffmanEncoder {
-    let mut offset_freq: [i32; OFFSET_CODE_COUNT] = [0; OFFSET_CODE_COUNT];
-    offset_freq[0] = 1;
-    let mut huff_offset = new_huffman_encoder(OFFSET_CODE_COUNT);
-    huff_offset.generate(&offset_freq, 15);
-    huff_offset
-}
-
-impl HuffmanBitWriter<'_> {
     /// write_block_huff encodes a block of bytes as either
     /// Huffman encoded literals or uncompressed bytes if the
     /// results only gains very little from compression.
-    pub fn write_block_huff(&mut self, eof: bool, input: &[u8]) {
+    pub fn write_block_huff(&mut self, writer: &mut dyn std::io::Write, eof: bool, input: &[u8]) {
         if self.err.is_err() {
             return;
         }
@@ -744,13 +847,13 @@ impl HuffmanBitWriter<'_> {
         // Store bytes, if we don't get a reasonable improvement.
         let (ssize, storable) = self.stored_size(Some(input));
         if storable && ssize < (size + (size >> 4)) {
-            self.write_stored_header(input.len(), eof);
-            self.write_bytes(input);
+            self.write_stored_header(writer, input.len(), eof);
+            self.write_bytes(writer, input);
             return;
         }
 
         // Huffman.
-        self.write_dynamic_header(num_literals, num_offsets, num_codegens, eof);
+        self.write_dynamic_header(writer, num_literals, num_offsets, num_codegens, eof);
         let mut n = self.nbytes;
         for t in input {
             // Bitwriting inlined, ~30% speedup
@@ -777,26 +880,17 @@ impl HuffmanBitWriter<'_> {
             if n < BUFFER_FLUSH_SIZE {
                 continue;
             }
-            self.write_bytes_from_internal_buffer(n);
+            self.write_bytes_from_internal_buffer(writer, n);
             if self.err.is_err() {
                 return; // Return early in the event of write failures
             }
             n = 0;
         }
         self.nbytes = n;
-        self.write_code(self.literal_encoding.codes[END_BLOCK_MARKER]);
+        self.write_code(writer, self.literal_encoding.codes[END_BLOCK_MARKER]);
     }
 
     pub(super) fn error(&self) -> &std::io::Result<usize> {
         &self.err
-    }
-}
-
-/// histogram accumulates a histogram of b in h.
-///
-/// len(h) must be >= 256, and h's elements must be all zeroes.
-fn histogram(b: &[u8], h: &mut [i32]) {
-    for t in b {
-        h[*t as usize] += 1;
     }
 }

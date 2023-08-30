@@ -11,7 +11,7 @@ struct UnexpectedEOFErrorReader {}
 
 impl ggio::Reader for UnexpectedEOFErrorReader {
     fn read(&mut self, _: &mut [u8]) -> (usize, Option<super::Error>) {
-        return (0, Some(ggio::Error::ErrUnexpectedEOF));
+        return (0, Some(ggio::Error::new_unexpected_eof()));
     }
 }
 
@@ -130,15 +130,15 @@ fn test_copy_buffer_nil() {
 // 	err error
 // }
 
-// fn (r zeroErrReader) Read(p []byte) (int, error) {
-// 	return copy(p, []byte{0}), r.err
+// fn (r zeroErrReader) Read(p [u8]) (int, error) {
+// 	return copy(p, [u8]{0}), r.err
 // }
 
 // type errWriter struct {
 // 	err error
 // }
 
-// fn (w errWriter) Write([]byte) (int, error) {
+// fn (w errWriter) Write([u8]) (int, error) {
 // 	return 0, w.err
 // }
 
@@ -184,7 +184,7 @@ fn test_copy_n() {
 // }
 
 // fn BenchmarkCopyNSmall(b *testing.B) {
-// 	bs := bytes.Repeat([]byte{0}, 512+1)
+// 	bs := bytes.Repeat([u8]{0}, 512+1)
 // 	rd := bytes::new_reader(bs)
 // 	buf := new(Buffer)
 // 	b.ResetTimer()
@@ -196,7 +196,7 @@ fn test_copy_n() {
 // }
 
 // fn BenchmarkCopyNLarge(b *testing.B) {
-// 	bs := bytes.Repeat([]byte{0}, (32*1024)+1)
+// 	bs := bytes.Repeat([u8]{0}, (32*1024)+1)
 // 	rd := bytes::new_reader(bs)
 // 	buf := new(Buffer)
 // 	b.ResetTimer()
@@ -211,13 +211,13 @@ fn test_copy_n() {
 // 	w Writer
 // }
 
-// fn (w *noReadFrom) Write(p []byte) (n int, err error) {
+// fn (w *noReadFrom) Write(p [u8]) (n int, err error) {
 // 	return w.w.write(p)
 // }
 
 // type wantedAndErrReader struct{}
 
-// fn (wantedAndErrReader) Read(p []byte) (int, error) {
+// fn (wantedAndErrReader) Read(p [u8]) (int, error) {
 // 	return len(p), errors.New("wantedAndErrReader error")
 // }
 
@@ -271,7 +271,7 @@ fn test_read_at_least() {
 // 	bytes::Buffer::new()
 // }
 
-// fn (r *dataAndErrorBuffer) Read(p []byte) (n int, err error) {
+// fn (r *dataAndErrorBuffer) Read(p [u8]) (n int, err error) {
 // 	n, err = r.Buffer.Read(p)
 // 	if n > 0 && r.Buffer.Len() == 0 && err == nil {
 // 		err = r.err
@@ -323,8 +323,8 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 }
 
 // fn TestTeeReader() {
-// 	src := []byte("hello, world")
-// 	dst := make([]byte, len(src))
+// 	src := [u8]("hello, world")
+// 	dst := make([u8], len(src))
 // 	rb := bytes::new_buffer(src)
 // 	wb := new(bytes::Buffer::new())
 // 	r := TeeReader(rb, wb)
@@ -376,7 +376,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 	for i, tt := range tests {
 // 		r := strings.new_reader(tt.data)
 // 		s := NewSectionReader(r, int64(tt.off), int64(tt.n))
-// 		buf := make([]byte, tt.bufLen)
+// 		buf := make([u8], tt.bufLen)
 // 		if n, err := s.ReadAt(buf, int64(tt.at)); n != len(tt.exp) || string(buf[..n]) != tt.exp || err != tt.err {
 // 			t.Fatalf("{}: ReadAt({}) = %q, {}; expected %q, {}", i, tt.at, buf[..n], err, tt.exp, tt.err)
 // 		}
@@ -385,7 +385,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 
 // fn TestSectionReader_Seek() {
 // 	// Verifies that NewSectionReader's Seeker behaves like bytes::new_reader (which is like strings.new_reader)
-// 	br := bytes::new_reader([]byte("foo"))
+// 	br := bytes::new_reader([u8]("foo"))
 // 	sr := NewSectionReader(br, 0, int64(len("foo")))
 
 // 	for _, whence := range []int{SeekStart, SeekCurrent, SeekEnd} {
@@ -405,7 +405,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 		t.Errorf("Seek = {}, {}; want 100, nil", got, err)
 // 	}
 
-// 	n, err := sr.Read(make([]byte, 10))
+// 	n, err := sr.Read(make([u8], 10))
 // 	if n != 0 || err != EOF {
 // 		t.Errorf("Read = {}, {}; want 0, EOF", n, err)
 // 	}
@@ -433,11 +433,11 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 	r := strings.new_reader("abcdef")
 // 	const maxint64 = 1<<63 - 1
 // 	sr := NewSectionReader(r, 3, maxint64)
-// 	n, err := sr.Read(make([]byte, 3))
+// 	n, err := sr.Read(make([u8], 3))
 // 	if n != 3 || err != nil {
 // 		t.Errorf("Read = {} {}, want 3, nil", n, err)
 // 	}
-// 	n, err = sr.Read(make([]byte, 3))
+// 	n, err = sr.Read(make([u8], 3))
 // 	if n != 0 || err != EOF {
 // 		t.Errorf("Read = {}, {}, want 0, EOF", n, err)
 // 	}
@@ -449,7 +449,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 	err error
 // }
 
-// fn (w largeWriter) Write(p []byte) (int, error) {
+// fn (w largeWriter) Write(p [u8]) (int, error) {
 // 	return len(p) + 1, w.err
 // }
 
@@ -570,13 +570,13 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 		var writeN int64
 // 		var wg sync.WaitGroup
 // 		// Concurrent writes, one byte at a time
-// 		for step, value := range []byte(content) {
+// 		for step, value := range [u8](content) {
 // 			wg.Add(1)
 // 			go fn(wg *sync.WaitGroup, tmpfile *os.File, value byte, off, at int64, step int) {
 // 				defer wg.Done()
 
 // 				w := NewOffsetWriter(tmpfile, off)
-// 				n, e := w.WriteAt([]byte{value}, at+int64(step))
+// 				n, e := w.WriteAt([u8]{value}, at+int64(step))
 // 				if e != nil {
 // 					t.Errorf("WriteAt failed. off: {}, at: {}, step: {}\n error: {}", off, at, step, e)
 // 				}
@@ -586,7 +586,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 		wg.Wait()
 
 // 		// Read one more byte to reach EOF
-// 		buf := make([]byte, contentSize+1)
+// 		buf := make([u8], contentSize+1)
 // 		readN, err := tmpfile.ReadAt(buf, off+at)
 // 		if err != EOF {
 // 			t.Fatalf("ReadAt failed: {}", err)
@@ -619,7 +619,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 	}
 // 	checkContent := fn(name string, f *os.File) {
 // 		// Read one more byte to reach EOF
-// 		buf := make([]byte, contentSize+1)
+// 		buf := make([u8], contentSize+1)
 // 		readN, err := f.ReadAt(buf, 0)
 // 		if err != EOF {
 // 			t.Fatalf("ReadAt failed, err: {}", err)
@@ -638,8 +638,8 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 		// Write content to file
 // 		w, f := makeOffsetWriter(name)
 // 		defer f.Close()
-// 		for _, value := range []byte(content) {
-// 			n, err := w.write([]byte{value})
+// 		for _, value := range [u8](content) {
+// 			n, err := w.write([u8]{value})
 // 			if err != nil {
 // 				t.Fatalf("Write failed, n: {}, err: {}", n, err)
 // 			}

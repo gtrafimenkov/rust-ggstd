@@ -14,10 +14,10 @@
 // // A ByteOrder specifies how to convert u8 slices into
 // // 16-, 32-, or 64-bit unsigned integers.
 // type ByteOrder interface {
-// 	Uint16([]u8) uint16
+// 	Uint16([]u8) u16
 // 	Uint32([]u8) u32
 // 	Uint64([]u8) u64
-// 	PutUint16([]u8, uint16)
+// 	PutUint16([]u8, u16)
 // 	put_u32([]u8, u32)
 // 	put_u64([]u8, u64)
 // 	String() string
@@ -26,7 +26,7 @@
 // // AppendByteOrder specifies how to append 16-, 32-, or 64-bit unsigned integers
 // // into a u8 slice.
 // type AppendByteOrder interface {
-// 	AppendUint16([]u8, uint16) []u8
+// 	AppendUint16([]u8, u16) []u8
 // 	AppendUint32([]u8, u32) []u8
 // 	AppendUint64([]u8, u64) []u8
 // 	String() string
@@ -37,9 +37,9 @@
 
 // type littleEndian struct{}
 
-// func (littleEndian) Uint16(b []u8) uint16 {
+// func (littleEndian) Uint16(b []u8) u16 {
 // 	_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808
-// 	return uint16(b[0]) | uint16(b[1])<<8
+// 	return u16(b[0]) | u16(b[1])<<8
 // }
 
 // func (littleEndian) PutUint16(b []u8, v: u16) {
@@ -116,9 +116,9 @@
 pub struct BigEndian {}
 
 impl BigEndian {
-    // pub fn Uint16(b: &[u8]) uint16 {
+    // pub fn Uint16(b: &[u8]) u16 {
     // 	_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808
-    // 	return uint16(b[1]) | uint16(b[0])<<8
+    // 	return u16(b[1]) | u16(b[0])<<8
     // }
 
     // pub fn PutUint16(b: &[u8], v: u16) {
@@ -187,7 +187,7 @@ impl BigEndian {
 
     // pub fn String() string { return "BigEndian" }
 
-    // pub fn GoString() string { return "binary.BigEndian" }
+    // pub fn GoString() string { return "binary::BigEndian" }
 }
 
 // // Read reads structured binary data from r into data.
@@ -222,7 +222,7 @@ impl BigEndian {
 // 			*data = bs[0]
 // 		case *int16:
 // 			*data = int16(order.Uint16(bs))
-// 		case *uint16:
+// 		case *u16:
 // 			*data = order.Uint16(bs)
 // 		case *int32:
 // 			*data = int32(order.Uint32(bs))
@@ -250,7 +250,7 @@ impl BigEndian {
 // 			for i := range data {
 // 				data[i] = int16(order.Uint16(bs[2*i:]))
 // 			}
-// 		case []uint16:
+// 		case []u16:
 // 			for i := range data {
 // 				data[i] = order.Uint16(bs[2*i:])
 // 			}
@@ -315,7 +315,7 @@ impl BigEndian {
 // // and read from successive fields of the data.
 // // When writing structs, zero values are written for fields
 // // with blank (_) field names.
-// func Write(w io.Writer, order ByteOrder, data any) error {
+// func Write(w: &mut dyn ggio::Writer, order ByteOrder, data any) error {
 // 	// Fast path for basic types and slices.
 // 	if n := intDataSize(data); n != 0 {
 // 		bs := make([]u8, n)
@@ -355,18 +355,18 @@ impl BigEndian {
 // 		case []uint8:
 // 			bs = v
 // 		case *int16:
-// 			order.PutUint16(bs, uint16(*v))
+// 			order.PutUint16(bs, u16(*v))
 // 		case int16:
-// 			order.PutUint16(bs, uint16(v))
+// 			order.PutUint16(bs, u16(v))
 // 		case []int16:
 // 			for i, x := range v {
-// 				order.PutUint16(bs[2*i:], uint16(x))
+// 				order.PutUint16(bs[2*i:], u16(x))
 // 			}
-// 		case *uint16:
+// 		case *u16:
 // 			order.PutUint16(bs, *v)
-// 		case uint16:
+// 		case u16:
 // 			order.PutUint16(bs, v)
-// 		case []uint16:
+// 		case []u16:
 // 			for i, x := range v {
 // 				order.PutUint16(bs[2*i:], x)
 // 			}
@@ -535,13 +535,13 @@ impl BigEndian {
 // 	e.offset++
 // }
 
-// func (d *decoder) uint16() uint16 {
+// func (d *decoder) u16() u16 {
 // 	x := d.order.Uint16(d.buf[d.offset : d.offset+2])
 // 	d.offset += 2
 // 	return x
 // }
 
-// func (e *encoder) uint16(x uint16) {
+// func (e *encoder) u16(x u16) {
 // 	e.order.PutUint16(e.buf[e.offset:e.offset+2], x)
 // 	e.offset += 2
 // }
@@ -572,9 +572,9 @@ impl BigEndian {
 
 // func (e *encoder) int8(x int8) { e.uint8(uint8(x)) }
 
-// func (d *decoder) int16() int16 { return int16(d.uint16()) }
+// func (d *decoder) int16() int16 { return int16(d.u16()) }
 
-// func (e *encoder) int16(x int16) { e.uint16(uint16(x)) }
+// func (e *encoder) int16(x int16) { e.u16(u16(x)) }
 
 // func (d *decoder) int32() int32 { return int32(d.u32()) }
 
@@ -629,7 +629,7 @@ impl BigEndian {
 // 	case reflect.Uint8:
 // 		v.SetUint(u64(d.uint8()))
 // 	case reflect.Uint16:
-// 		v.SetUint(u64(d.uint16()))
+// 		v.SetUint(u64(d.u16()))
 // 	case reflect.Uint32:
 // 		v.SetUint(u64(d.u32()))
 // 	case reflect.Uint64:
@@ -699,7 +699,7 @@ impl BigEndian {
 // 		case reflect.Uint8:
 // 			e.uint8(uint8(v.Uint()))
 // 		case reflect.Uint16:
-// 			e.uint16(uint16(v.Uint()))
+// 			e.u16(u16(v.Uint()))
 // 		case reflect.Uint32:
 // 			e.u32(u32(v.Uint()))
 // 		case reflect.Uint64:
@@ -753,11 +753,11 @@ impl BigEndian {
 // 		return len(data)
 // 	case []uint8:
 // 		return len(data)
-// 	case int16, uint16, *int16, *uint16:
+// 	case int16, u16, *int16, *u16:
 // 		return 2
 // 	case []int16:
 // 		return 2 * len(data)
-// 	case []uint16:
+// 	case []u16:
 // 		return 2 * len(data)
 // 	case int32, u32, *int32, *u32:
 // 		return 4

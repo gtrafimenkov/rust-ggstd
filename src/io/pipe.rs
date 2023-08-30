@@ -3,7 +3,7 @@
 // // license that can be found in the LICENSE file.
 
 // // Pipe adapter to connect code expecting an io.Reader
-// // with code expecting an io.Writer.
+// // with code expecting an ggio::Writer.
 
 // package io
 
@@ -38,7 +38,7 @@
 // // A pipe is the shared pipe structure underlying PipeReader and PipeWriter.
 // type pipe struct {
 // 	wrMu sync.Mutex // Serializes Write operations
-// 	wrCh chan []byte
+// 	wrCh chan [u8]
 // 	rdCh chan int
 
 // 	once sync.Once // Protects closing done
@@ -47,7 +47,7 @@
 // 	werr onceError
 // }
 
-// func (p *pipe) read(b []byte) (n int, err error) {
+// func (p *pipe) read(b [u8]) (n int, err error) {
 // 	select {
 // 	case <-p.done:
 // 		return 0, p.readCloseError()
@@ -73,7 +73,7 @@
 // 	return nil
 // }
 
-// func (p *pipe) write(b []byte) (n int, err error) {
+// func (p *pipe) write(b [u8]) (n int, err error) {
 // 	select {
 // 	case <-p.done:
 // 		return 0, p.writeCloseError()
@@ -132,7 +132,7 @@
 // // arrives or the write end is closed.
 // // If the write end is closed with an error, that error is
 // // returned as err; otherwise err is EOF.
-// func (r *PipeReader) Read(data []byte) (n int, err error) {
+// func (r *PipeReader) Read(data [u8]) (n int, err error) {
 // 	return r.p.read(data)
 // }
 
@@ -161,7 +161,7 @@
 // // have consumed all the data or the read end is closed.
 // // If the read end is closed with an error, that err is
 // // returned as err; otherwise err is ErrClosedPipe.
-// func (w *PipeWriter) Write(data []byte) (n int, err error) {
+// func (w *PipeWriter) Write(data [u8]) (n int, err error) {
 // 	return w.p.write(data)
 // }
 
@@ -183,7 +183,7 @@
 
 // // Pipe creates a synchronous in-memory pipe.
 // // It can be used to connect code expecting an io.Reader
-// // with code expecting an io.Writer.
+// // with code expecting an ggio::Writer.
 // //
 // // Reads and Writes on the pipe are matched one to one
 // // except when multiple Reads are needed to consume a single Write.
@@ -198,7 +198,7 @@
 // // the individual calls will be gated sequentially.
 // func Pipe() (*PipeReader, *PipeWriter) {
 // 	p := &pipe{
-// 		wrCh: make(chan []byte),
+// 		wrCh: make(chan [u8]),
 // 		rdCh: make(chan int),
 // 		done: make(chan struct{}),
 // 	}

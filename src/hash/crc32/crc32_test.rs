@@ -15,7 +15,7 @@ use std::io::Write;
 // 	// whether tab == castagnoliTable.
 // 	ieee := NewIEEE()
 // 	go MakeTable(Castagnoli)
-// 	ieee.write([]byte("hello"))
+// 	ieee.write([u8]("hello"))
 // }
 
 struct Test {
@@ -211,9 +211,9 @@ where
 
 // // testGoldenCastagnoli verifies that the given function returns
 // // correct IEEE checksums.
-// fn testGoldenCastagnoli(t *testing.T, crcFunc func(b []byte) u32) {
+// fn testGoldenCastagnoli(t *testing.T, crcFunc func(b [u8]) u32) {
 // 	for g in GOLDEN {
-// 		if crc := crcFunc([]byte(g.in)); crc != g.castagnoli {
+// 		if crc := crcFunc([u8](g.in)); crc != g.castagnoli {
 // 			t.Errorf("Castagnoli(%s) = 0x%x want 0x%x", g.in, crc, g.castagnoli)
 // 		}
 // 	}
@@ -221,7 +221,7 @@ where
 
 // // testCrossCheck generates random buffers of various lengths and verifies that
 // // the two "update" functions return the same result.
-// fn testCrossCheck(t *testing.T, crcFunc1, crcFunc2 func(crc u32, b []byte) u32) {
+// fn testCrossCheck(t *testing.T, crcFunc1, crcFunc2 func(crc u32, b [u8]) u32) {
 // 	// The AMD64 implementation has some cutoffs at lengths 168*3=504 and
 // 	// 1344*3=4032. We should make sure lengths around these values are in the
 // 	// list.
@@ -230,7 +230,7 @@ where
 // 		500, 501, 502, 503, 504, 505, 512, 513, 1000, 1024, 2000,
 // 		4030, 4031, 4032, 4033, 4036, 4040, 4048, 4096, 5000, 10000}
 // 	for _, length := range lengths {
-// 		p := make([]byte, length)
+// 		p := make([u8], length)
 // 		_, _ = rand.Read(p)
 // 		crcInit := u32(rand.Int63())
 // 		crc1 := crcFunc1(crcInit, p)
@@ -249,7 +249,7 @@ fn test_simple() {
     test_golden_ieee(f);
 
     // 	tab = simpleMakeTable(Castagnoli)
-    // 	testGoldenCastagnoli(t, func(b []byte) u32 {
+    // 	testGoldenCastagnoli(t, func(b [u8]) u32 {
     // 		return simpleUpdate(0, tab, b)
     // 	})
 }
@@ -281,8 +281,8 @@ fn test_simple() {
 // 			io.writeString(h, g.in[len(g.in)/2:])
 // 			io.writeString(h2, g.in[len(g.in)/2:])
 
-// 			if h.Sum32() != h2.Sum32() {
-// 				t.Errorf("IEEE(%s) = 0x%x != marshaled 0x%x", g.in, h.Sum32(), h2.Sum32())
+// 			if h.sum32() != h2.sum32() {
+// 				t.Errorf("IEEE(%s) = 0x%x != marshaled 0x%x", g.in, h.sum32(), h2.sum32())
 // 			}
 // 		}
 // 	})
@@ -313,8 +313,8 @@ fn test_simple() {
 // 			io.writeString(h, g.in[len(g.in)/2:])
 // 			io.writeString(h2, g.in[len(g.in)/2:])
 
-// 			if h.Sum32() != h2.Sum32() {
-// 				t.Errorf("Castagnoli(%s) = 0x%x != marshaled 0x%x", g.in, h.Sum32(), h2.Sum32())
+// 			if h.sum32() != h2.sum32() {
+// 				t.Errorf("Castagnoli(%s) = 0x%x != marshaled 0x%x", g.in, h.sum32(), h2.sum32())
 // 			}
 // 		}
 // 	})
@@ -337,23 +337,23 @@ fn test_simple() {
 // // TestSimple tests the slicing-by-8 algorithm.
 // fn TestSlicing() {
 // 	tab := slicingMakeTable(IEEE)
-// 	test_golden_ieee(t, func(b []byte) u32 {
+// 	test_golden_ieee(t, func(b [u8]) u32 {
 // 		return slicingUpdate(0, tab, b)
 // 	})
 
 // 	tab = slicingMakeTable(Castagnoli)
-// 	testGoldenCastagnoli(t, func(b []byte) u32 {
+// 	testGoldenCastagnoli(t, func(b [u8]) u32 {
 // 		return slicingUpdate(0, tab, b)
 // 	})
 
 // 	// Cross-check various polys against the simple algorithm.
 // 	for _, poly := range []u32{IEEE, Castagnoli, Koopman, 0xD5828281} {
 // 		t1 := simpleMakeTable(poly)
-// 		f1 := func(crc u32, b []byte) u32 {
+// 		f1 := func(crc u32, b [u8]) u32 {
 // 			return simpleUpdate(crc, t1, b)
 // 		}
 // 		t2 := slicingMakeTable(poly)
-// 		f2 := func(crc u32, b []byte) u32 {
+// 		f2 := func(crc u32, b [u8]) u32 {
 // 			return slicingUpdate(crc, t2, b)
 // 		}
 // 		testCrossCheck(t, f1, f2)
@@ -366,7 +366,7 @@ fn test_simple() {
 // 	}
 // 	archInitIEEE()
 // 	slicingTable := slicingMakeTable(IEEE)
-// 	testCrossCheck(t, archUpdateIEEE, func(crc u32, b []byte) u32 {
+// 	testCrossCheck(t, archUpdateIEEE, func(crc u32, b [u8]) u32 {
 // 		return slicingUpdate(crc, slicingTable, b)
 // 	})
 // }
@@ -377,7 +377,7 @@ fn test_simple() {
 // 	}
 // 	archInitCastagnoli()
 // 	slicingTable := slicingMakeTable(Castagnoli)
-// 	testCrossCheck(t, archUpdateCastagnoli, func(crc u32, b []byte) u32 {
+// 	testCrossCheck(t, archUpdateCastagnoli, func(crc u32, b [u8]) u32 {
 // 		return slicingUpdate(crc, slicingTable, b)
 // 	})
 // }
@@ -406,16 +406,16 @@ fn test_golden() {
     // 		t.Errorf("nil Castagnoli Table")
     // 	}
 
-    // 	testGoldenCastagnoli(t, func(b []byte) u32 {
+    // 	testGoldenCastagnoli(t, func(b [u8]) u32 {
     // 		castagnoli := New(castagnoliTab)
     // 		castagnoli.write(b)
-    // 		return castagnoli.Sum32()
+    // 		return castagnoli.sum32()
     // 	})
 
     // 	// Some implementations have special code to deal with misaligned
     // 	// data; test that as well.
     // 	for delta := 1; delta <= 7; delta++ {
-    // 		testGoldenCastagnoli(t, func(b []byte) u32 {
+    // 		testGoldenCastagnoli(t, func(b [u8]) u32 {
     // 			castagnoli := New(castagnoliTab)
     // 			d := delta
     // 			if d >= b.len() {
@@ -423,7 +423,7 @@ fn test_golden() {
     // 			}
     // 			castagnoli.write(b[..d])
     // 			castagnoli.write(b[d:])
-    // 			return castagnoli.Sum32()
+    // 			return castagnoli.sum32()
     // 		})
     // 	}
 }
@@ -454,12 +454,12 @@ fn test_golden() {
 
 // fn benchmark(b *testing.B, h hash.Hash32, n, alignment int64) {
 // 	b.SetBytes(n)
-// 	data := make([]byte, n+alignment)
+// 	data := make([u8], n+alignment)
 // 	data = data[alignment:]
 // 	for i := range data {
 // 		data[i] = byte(i)
 // 	}
-// 	in := make([]byte, 0, h.Size())
+// 	in := make([u8], 0, h.Size())
 
 // 	// Warm up
 // 	h.Reset()

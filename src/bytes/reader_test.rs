@@ -230,7 +230,7 @@ fn test_reader_at() {
 // fn TestReaderAtConcurrent() {
 // 	// Test for the race detector, to verify read_at doesn't mutate
 // 	// any state.
-// 	r := new_reader([]byte("0123456789"))
+// 	r := new_reader([u8]("0123456789"))
 // 	var wg sync.WaitGroup
 // 	for i := 0; i < 5; i += 1 {
 // 		wg.Add(1)
@@ -247,7 +247,7 @@ fn test_reader_at() {
 // 	// Test for the race detector, to verify a read that doesn't yield any bytes
 // 	// is okay to use from multiple goroutines. This was our historic behavior.
 // 	// See golang.org/issue/7856
-// 	r := new_reader([]byte{})
+// 	r := new_reader([u8]{})
 // 	var wg sync.WaitGroup
 // 	for i := 0; i < 5; i += 1 {
 // 		wg.Add(2)
@@ -329,7 +329,7 @@ fn test_reader_len() {
 // 	name string
 // 	f    fn(*Reader)
 // }{
-// 	{"read", fn(r *Reader) { r.read([]byte{0}) }},
+// 	{"read", fn(r *Reader) { r.read([u8]{0}) }},
 // 	{"read_byte", fn(r *Reader) { r.read_byte() }},
 // 	{"UnreadRune", fn(r *Reader) { r.UnreadRune() }},
 // 	{"Seek", fn(r *Reader) { r.seek(0, ggio::Seek::Current) }},
@@ -338,7 +338,7 @@ fn test_reader_len() {
 
 // fn TestUnreadRuneError() {
 // 	for _, tt := range UnreadRuneErrorTests {
-// 		reader := new_reader([]byte("0123456789"))
+// 		reader := new_reader([u8]("0123456789"))
 // 		if _, _, err := reader.ReadRune(); err != nil {
 // 			// should not happen
 // 			t.Fatal(err)
@@ -352,7 +352,7 @@ fn test_reader_len() {
 // }
 
 // fn TestReaderDoubleUnreadRune() {
-// 	buf := NewBuffer([]byte("groucho"))
+// 	buf := NewBuffer([u8]("groucho"))
 // 	if _, _, err := buf.ReadRune(); err != nil {
 // 		// should not happen
 // 		t.Fatal(err)
@@ -377,7 +377,7 @@ fn test_reader_len() {
 // 		io.Reader
 // 	}
 // 	type justWriter struct {
-// 		io.Writer
+// 		ggio::Writer
 // 	}
 // 	discard := justWriter{ggio::Discard::new()} // hide ReadFrom
 
@@ -399,13 +399,13 @@ fn test_reader_len_size() {
 }
 
 // fn TestReaderReset() {
-// 	r := new_reader([]byte("世界"))
+// 	r := new_reader([u8]("世界"))
 // 	if _, _, err := r.ReadRune(); err != nil {
 // 		t.Errorf("ReadRune: unexpected error: '{}'", err)
 // 	}
 
 // 	const want = "abcdef"
-// 	r.Reset([]byte(want))
+// 	r.Reset([u8](want))
 // 	if err := r.UnreadRune(); err == nil {
 // 		t.Errorf("UnreadRune: expected error, got nil")
 // 	}

@@ -14,7 +14,6 @@ use super::inflate::{DecoderToUse, Decompressor, HuffmanDecoder};
 use crate::bytes;
 use crate::encoding::hex;
 use crate::io as ggio;
-use ggio::Reader;
 
 /// The following test should not panic.
 #[test]
@@ -69,7 +68,7 @@ fn test_invalid_encoding() {
     // Initialize decompressor with invalid Huffman coding.
     let mut r = bytes::new_reader(&[0xff]);
     let mut f = Decompressor::new(&mut r);
-    f.h1 = h;
+    f.td.h1 = h;
 
     assert!(
         f.huff_sym(DecoderToUse::H1).is_err(),
@@ -327,7 +326,7 @@ fn test_truncated_streams() {
             "ggio::copy({}) on truncated stream: got {}, want {}",
             i,
             err.unwrap(),
-            ggio::Error::ErrUnexpectedEOF
+            ggio::Error::new_unexpected_eof()
         );
     }
 }
@@ -403,7 +402,7 @@ fn test_reader_early_eof() {
                     // previous Read returned because the write buffer was full
                     // and it just so happened that the stream had no more data.
                     // This situation is rare, but unavoidable.
-                    if r.dict.avail_write() == deflate::WINDOW_SIZE {
+                    if r.td.dict.avail_write() == deflate::WINDOW_SIZE {
                         early_eof = false;
                     }
                     assert!(

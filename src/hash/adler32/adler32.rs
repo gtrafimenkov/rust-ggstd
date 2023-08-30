@@ -20,13 +20,13 @@ const SIZE: usize = 4;
 
 /// Digest represents the partial evaluation of a checksum.
 /// The low 16 bits are s1, the high 16 bits are s2.
-struct Digest {
+pub struct Digest {
     hash: u32,
 }
 
-/// New returns a new hash.Hash32 computing the Adler-32 checksum. Its
+/// new returns a new Digest computing the Adler-32 checksum. Its
 /// Sum method will lay the value out in big-endian byte order.
-pub fn new() -> impl hash::Hash32 {
+pub fn new() -> Digest {
     Digest::new()
 }
 
@@ -106,7 +106,7 @@ impl Hash32 for Digest {
         self.hash
     }
 
-    // fn Sum(&mut self, in []byte) []byte {
+    // fn Sum(&mut self, in [u8]) [u8] {
     // 	s := uint32(*d)
     // 	return append(in, byte(s>>24), byte(s>>16), byte(s>>8), byte(s))
     // }

@@ -127,7 +127,7 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
 
 // // Dump returns a string that contains a hex dump of the given data. The format
 // // of the hex dump matches the output of `hexdump -C` on the command line.
-// fn Dump(data []byte) string {
+// fn Dump(data [u8]) string {
 // 	if len(data) == 0 {
 // 		return ""
 // 	}
@@ -148,17 +148,17 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
 // const bufferSize = 1024
 
 // type encoder struct {
-// 	w   io.Writer
+// 	w   ggio::Writer
 // 	err error
 // 	out [bufferSize]byte // output buffer
 // }
 
-// // NewEncoder returns an io.Writer that writes lowercase hexadecimal characters to w.
-// fn NewEncoder(w io.Writer) io.Writer {
+// // NewEncoder returns an ggio::Writer that writes lowercase hexadecimal characters to w.
+// fn NewEncoder(w: &mut dyn ggio::Writer) ggio::Writer {
 // 	return &encoder{w: w}
 // }
 
-// fn (e *encoder) Write(p []byte) (n usize, err error) {
+// fn (e *encoder) Write(p [u8]) (n usize, err error) {
 // 	for len(p) > 0 && e.err == nil {
 // 		chunkSize := bufferSize / 2
 // 		if len(p) < chunkSize {
@@ -177,7 +177,7 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
 // type decoder struct {
 // 	r   io.Reader
 // 	err error
-// 	in  []byte           // input buffer (encoded form)
+// 	in  [u8]           // input buffer (encoded form)
 // 	arr [bufferSize]byte // backing array for in
 // }
 
@@ -187,7 +187,7 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
 // 	return &decoder{r: r}
 // }
 
-// fn (d *decoder) Read(p []byte) (n usize, err error) {
+// fn (d *decoder) Read(p [u8]) (n usize, err error) {
 // 	// Fill internal buffer with sufficient bytes to decode
 // 	if len(d.in) < 2 && d.err == nil {
 // 		var numCopy, numRead usize
@@ -223,12 +223,12 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
 // // Dumper returns a WriteCloser that writes a hex dump of all written data to
 // // w. The format of the dump matches the output of `hexdump -C` on the command
 // // line.
-// fn Dumper(w io.Writer) io.WriteCloser {
+// fn Dumper(w: &mut dyn ggio::Writer) io.WriteCloser {
 // 	return &dumper{w: w}
 // }
 
 // type dumper struct {
-// 	w          io.Writer
+// 	w          ggio::Writer
 // 	rightChars [18]byte
 // 	buf        [14]byte
 // 	used       int  // number of bytes in the current line
@@ -243,7 +243,7 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
 // 	return b
 // }
 
-// fn (h *dumper) Write(data []byte) (n int, err error) {
+// fn (h *dumper) Write(data [u8]) (n int, err error) {
 // 	if h.closed {
 // 		return 0, errors.New("encoding/hex: dumper closed")
 // 	}

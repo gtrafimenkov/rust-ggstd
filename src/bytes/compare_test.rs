@@ -12,38 +12,38 @@ import (
 )
 
 var compareTests = []struct {
-	a, b []byte
+	a, b [u8]
 	i    int
 }{
-	{[]byte(""), []byte(""), 0},
-	{[]byte("a"), []byte(""), 1},
-	{[]byte(""), []byte("a"), -1},
-	{[]byte("abc"), []byte("abc"), 0},
-	{[]byte("abd"), []byte("abc"), 1},
-	{[]byte("abc"), []byte("abd"), -1},
-	{[]byte("ab"), []byte("abc"), -1},
-	{[]byte("abc"), []byte("ab"), 1},
-	{[]byte("x"), []byte("ab"), 1},
-	{[]byte("ab"), []byte("x"), -1},
-	{[]byte("x"), []byte("a"), 1},
-	{[]byte("b"), []byte("x"), -1},
+	{[u8](""), [u8](""), 0},
+	{[u8]("a"), [u8](""), 1},
+	{[u8](""), [u8]("a"), -1},
+	{[u8]("abc"), [u8]("abc"), 0},
+	{[u8]("abd"), [u8]("abc"), 1},
+	{[u8]("abc"), [u8]("abd"), -1},
+	{[u8]("ab"), [u8]("abc"), -1},
+	{[u8]("abc"), [u8]("ab"), 1},
+	{[u8]("x"), [u8]("ab"), 1},
+	{[u8]("ab"), [u8]("x"), -1},
+	{[u8]("x"), [u8]("a"), 1},
+	{[u8]("b"), [u8]("x"), -1},
 	// test runtime·memeq's chunked implementation
-	{[]byte("abcdefgh"), []byte("abcdefgh"), 0},
-	{[]byte("abcdefghi"), []byte("abcdefghi"), 0},
-	{[]byte("abcdefghi"), []byte("abcdefghj"), -1},
-	{[]byte("abcdefghj"), []byte("abcdefghi"), 1},
+	{[u8]("abcdefgh"), [u8]("abcdefgh"), 0},
+	{[u8]("abcdefghi"), [u8]("abcdefghi"), 0},
+	{[u8]("abcdefghi"), [u8]("abcdefghj"), -1},
+	{[u8]("abcdefghj"), [u8]("abcdefghi"), 1},
 	// nil tests
 	{nil, nil, 0},
-	{[]byte(""), nil, 0},
-	{nil, []byte(""), 0},
-	{[]byte("a"), nil, 1},
-	{nil, []byte("a"), -1},
+	{[u8](""), nil, 0},
+	{nil, [u8](""), 0},
+	{[u8]("a"), nil, 1},
+	{nil, [u8]("a"), -1},
 }
 
 func TestCompare(t *testing.T) {
 	for _, tt := range compareTests {
 		numShifts := 16
-		buffer := make([]byte, len(tt.b)+numShifts)
+		buffer := make([u8], len(tt.b)+numShifts)
 		// vary the input alignment of tt.b
 		for offset := 0; offset <= numShifts; offset++ {
 			shiftedB := buffer[offset : len(tt.b)+offset]
@@ -57,7 +57,7 @@ func TestCompare(t *testing.T) {
 }
 
 func TestCompareIdenticalSlice(t *testing.T) {
-	var b = []byte("Hello Gophers!")
+	var b = [u8]("Hello Gophers!")
 	if Compare(b, b) != 0 {
 		t.Error("b != b")
 	}
@@ -78,8 +78,8 @@ func TestCompareBytes(t *testing.T) {
 	}
 
 	n := lengths[len(lengths)-1]
-	a := make([]byte, n+1)
-	b := make([]byte, n+1)
+	a := make([u8], n+1)
+	b := make([u8], n+1)
 	for _, len := range lengths {
 		// randomish but deterministic data. No 0 or 255.
 		for i := 0; i < len; i += 1 {
@@ -127,8 +127,8 @@ func TestEndianBaseCompare(t *testing.T) {
 	// compares large chunks with wrong endianness, it gets wrong result.
 	// no vector register is larger than 512 bytes for now
 	const maxLength = 512
-	a := make([]byte, maxLength)
-	b := make([]byte, maxLength)
+	a := make([u8], maxLength)
+	b := make([u8], maxLength)
 	// randomish but deterministic data. No 0 or 255.
 	for i := 0; i < maxLength; i += 1 {
 		a[i] = byte(1 + 31*i%254)
@@ -155,8 +155,8 @@ func TestEndianBaseCompare(t *testing.T) {
 }
 
 func BenchmarkCompareBytesEqual(b *testing.B) {
-	b1 := []byte("Hello Gophers!")
-	b2 := []byte("Hello Gophers!")
+	b1 := [u8]("Hello Gophers!")
+	b2 := [u8]("Hello Gophers!")
 	for i := 0; i < b.N; i += 1 {
 		if Compare(b1, b2) != 0 {
 			b.Fatal("b1 != b2")
@@ -165,8 +165,8 @@ func BenchmarkCompareBytesEqual(b *testing.B) {
 }
 
 func BenchmarkCompareBytesToNil(b *testing.B) {
-	b1 := []byte("Hello Gophers!")
-	var b2 []byte
+	b1 := [u8]("Hello Gophers!")
+	var b2 [u8]
 	for i := 0; i < b.N; i += 1 {
 		if Compare(b1, b2) != 1 {
 			b.Fatal("b1 > b2 failed")
@@ -175,7 +175,7 @@ func BenchmarkCompareBytesToNil(b *testing.B) {
 }
 
 func BenchmarkCompareBytesEmpty(b *testing.B) {
-	b1 := []byte("")
+	b1 := [u8]("")
 	b2 := b1
 	for i := 0; i < b.N; i += 1 {
 		if Compare(b1, b2) != 0 {
@@ -185,7 +185,7 @@ func BenchmarkCompareBytesEmpty(b *testing.B) {
 }
 
 func BenchmarkCompareBytesIdentical(b *testing.B) {
-	b1 := []byte("Hello Gophers!")
+	b1 := [u8]("Hello Gophers!")
 	b2 := b1
 	for i := 0; i < b.N; i += 1 {
 		if Compare(b1, b2) != 0 {
@@ -195,8 +195,8 @@ func BenchmarkCompareBytesIdentical(b *testing.B) {
 }
 
 func BenchmarkCompareBytesSameLength(b *testing.B) {
-	b1 := []byte("Hello Gophers!")
-	b2 := []byte("Hello, Gophers")
+	b1 := [u8]("Hello Gophers!")
+	b2 := [u8]("Hello, Gophers")
 	for i := 0; i < b.N; i += 1 {
 		if Compare(b1, b2) != -1 {
 			b.Fatal("b1 < b2 failed")
@@ -205,8 +205,8 @@ func BenchmarkCompareBytesSameLength(b *testing.B) {
 }
 
 func BenchmarkCompareBytesDifferentLength(b *testing.B) {
-	b1 := []byte("Hello Gophers!")
-	b2 := []byte("Hello, Gophers!")
+	b1 := [u8]("Hello Gophers!")
+	b2 := [u8]("Hello, Gophers!")
 	for i := 0; i < b.N; i += 1 {
 		if Compare(b1, b2) != -1 {
 			b.Fatal("b1 < b2 failed")
@@ -216,11 +216,11 @@ func BenchmarkCompareBytesDifferentLength(b *testing.B) {
 
 func benchmarkCompareBytesBigUnaligned(b *testing.B, offset int) {
 	b.StopTimer()
-	b1 := make([]byte, 0, 1<<20)
+	b1 := make([u8], 0, 1<<20)
 	for len(b1) < 1<<20 {
 		b1 = append(b1, "Hello Gophers!"...)
 	}
-	b2 := append([]byte("12345678")[..offset], b1...)
+	b2 := append([u8]("12345678")[..offset], b1...)
 	b.StartTimer()
 	for j := 0; j < b.N; j++ {
 		if Compare(b1, b2[offset:]) != 0 {
@@ -240,12 +240,12 @@ func BenchmarkCompareBytesBigUnaligned(b *testing.B) {
 
 func benchmarkCompareBytesBigBothUnaligned(b *testing.B, offset int) {
 	b.StopTimer()
-	pattern := []byte("Hello Gophers!")
-	b1 := make([]byte, 0, 1<<20+len(pattern))
+	pattern := [u8]("Hello Gophers!")
+	b1 := make([u8], 0, 1<<20+len(pattern))
 	for len(b1) < 1<<20 {
 		b1 = append(b1, pattern...)
 	}
-	b2 := make([]byte, len(b1))
+	b2 := make([u8], len(b1))
 	copy(b2, b1)
 	b.StartTimer()
 	for j := 0; j < b.N; j++ {
@@ -266,11 +266,11 @@ func BenchmarkCompareBytesBigBothUnaligned(b *testing.B) {
 
 func BenchmarkCompareBytesBig(b *testing.B) {
 	b.StopTimer()
-	b1 := make([]byte, 0, 1<<20)
+	b1 := make([u8], 0, 1<<20)
 	for len(b1) < 1<<20 {
 		b1 = append(b1, "Hello Gophers!"...)
 	}
-	b2 := append([]byte{}, b1...)
+	b2 := append([u8]{}, b1...)
 	b.StartTimer()
 	for i := 0; i < b.N; i += 1 {
 		if Compare(b1, b2) != 0 {
@@ -282,7 +282,7 @@ func BenchmarkCompareBytesBig(b *testing.B) {
 
 func BenchmarkCompareBytesBigIdentical(b *testing.B) {
 	b.StopTimer()
-	b1 := make([]byte, 0, 1<<20)
+	b1 := make([u8], 0, 1<<20)
 	for len(b1) < 1<<20 {
 		b1 = append(b1, "Hello Gophers!"...)
 	}

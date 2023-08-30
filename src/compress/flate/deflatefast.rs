@@ -220,7 +220,7 @@ impl DeflateFast {
             emit_literal(dst, &src[next_emit..])
         }
         self.cur += src.len() as i32;
-        self.prev.truncate(src.len());
+        self.prev.resize(src.len(), 0);
         self.prev.copy_from_slice(src);
     }
 }
@@ -294,7 +294,7 @@ impl DeflateFast {
         return a.len() + n;
     }
 
-    /// Reset resets the encoding history.
+    /// reset resets the encoding history.
     /// This ensures that no matches are made to the previous block.
     pub(super) fn reset(&mut self) {
         self.prev.truncate(0);

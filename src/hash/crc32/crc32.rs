@@ -49,7 +49,7 @@ pub type Table = [u32; 256];
 // //
 // //    // archUpdateIEEE updates the given CRC32-IEEE. It can only be called if
 // //    // archInitIEEE() was previously called.
-// //    archUpdateIEEE(crc uint32, p []byte) uint32
+// //    archUpdateIEEE(crc uint32, p [u8]) uint32
 // //
 // //    // archAvailableCastagnoli reports whether an architecture-specific
 // //    // CRC32-C algorithm is available.
@@ -62,7 +62,7 @@ pub type Table = [u32; 256];
 // //
 // //    // archUpdateCastagnoli updates the given CRC32-C. It can only be called
 // //    // if archInitCastagnoli() was previously called.
-// //    archUpdateCastagnoli(crc uint32, p []byte) uint32
+// //    archUpdateCastagnoli(crc uint32, p [u8]) uint32
 
 // // castagnoliTable points to a lazily initialized Table for the Castagnoli
 // // polynomial. MakeTable will always return this value when asked to make a
@@ -70,7 +70,7 @@ pub type Table = [u32; 256];
 // // using this polynomial.
 // var castagnoliTable *Table
 // var castagnoliTable8 *slicing8Table
-// var updateCastagnoli func(crc uint32, p []byte) uint32
+// var updateCastagnoli func(crc uint32, p [u8]) uint32
 // var castagnoliOnce sync.Once
 // var haveCastagnoli atomic.Bool
 
@@ -83,7 +83,7 @@ pub type Table = [u32; 256];
 // 	} else {
 // 		// Initialize the slicing-by-8 table.
 // 		castagnoliTable8 = slicingMakeTable(Castagnoli)
-// 		updateCastagnoli = func(crc uint32, p []byte) uint32 {
+// 		updateCastagnoli = func(crc uint32, p [u8]) uint32 {
 // 			return slicingUpdate(crc, castagnoliTable8, p)
 // 		}
 // 	}
@@ -130,7 +130,7 @@ static IEEE_TABLE: Table = [
 
 // // ieeeTable8 is the slicing8Table for IEEE
 // var ieeeTable8 *slicing8Table
-// var updateIEEE func(crc uint32, p []byte) uint32
+// var updateIEEE func(crc uint32, p [u8]) uint32
 // var ieeeOnce sync.Once
 
 // func ieeeInit() {
@@ -140,7 +140,7 @@ static IEEE_TABLE: Table = [
 // 	} else {
 // 		// Initialize the slicing-by-8 table.
 // 		ieeeTable8 = slicingMakeTable(IEEE)
-// 		updateIEEE = func(crc uint32, p []byte) uint32 {
+// 		updateIEEE = func(crc uint32, p [u8]) uint32 {
 // 			return slicingUpdate(crc, ieeeTable8, p)
 // 		}
 // 	}
@@ -218,15 +218,15 @@ impl hash::Hash32 for Digest<'_> {
 // 	marshaledSize = len(magic) + 4 + 4
 // )
 
-// func (d *digest) MarshalBinary() ([]byte, error) {
-// 	b := make([]byte, 0, marshaledSize)
+// func (d *digest) MarshalBinary() ([u8], error) {
+// 	b := make([u8], 0, marshaledSize)
 // 	b = append(b, magic...)
 // 	b = appendUint32(b, tableSum(d.tab))
 // 	b = appendUint32(b, d.crc)
 // 	return b, nil
 // }
 
-// func (d *digest) UnmarshalBinary(b []byte) error {
+// func (d *digest) UnmarshalBinary(b [u8]) error {
 // 	if b.len() < len(magic) || string(b[..len(magic)]) != magic {
 // 		return errors.New("hash/crc32: invalid hash state identifier")
 // 	}
@@ -240,7 +240,7 @@ impl hash::Hash32 for Digest<'_> {
 // 	return nil
 // }
 
-// func appendUint32(b []byte, x uint32) []byte {
+// func appendUint32(b [u8], x uint32) [u8] {
 // 	a := [4]byte{
 // 		byte(x >> 24),
 // 		byte(x >> 16),
@@ -250,7 +250,7 @@ impl hash::Hash32 for Digest<'_> {
 // 	return append(b, a[..]...)
 // }
 
-// func readUint32(b []byte) uint32 {
+// func readUint32(b [u8]) uint32 {
 // 	_ = b[3]
 // 	return uint32(b[3]) | uint32(b[2])<<8 | uint32(b[1])<<16 | uint32(b[0])<<24
 // }
@@ -289,8 +289,8 @@ impl std::io::Write for Digest<'_> {
         Ok(())
     }
 }
-// func (d *digest) Sum(in []byte) []byte {
-// 	s := d.Sum32()
+// func (d *digest) Sum(in [u8]) [u8] {
+// 	s := d.sum32()
 // 	return append(in, byte(s>>24), byte(s>>16), byte(s>>8), byte(s))
 // }
 

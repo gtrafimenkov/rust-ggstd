@@ -30,7 +30,7 @@
 // 	return true
 // }
 
-// func sliceOfString(s [][]byte) []string {
+// func sliceOfString(s [][u8]) []string {
 // 	result := make([]string, len(s))
 // 	for i, v := range s {
 // 		result[i] = string(v)
@@ -72,9 +72,9 @@
 // 	if testing.Short() {
 // 		size = 32
 // 	}
-// 	a := make([]byte, size)
-// 	b := make([]byte, size)
-// 	b_init := make([]byte, size)
+// 	a := make([u8], size)
+// 	b := make([u8], size)
+// 	b_init := make([u8], size)
 // 	// randomish but deterministic data
 // 	for i := 0; i < size; i += 1 {
 // 		a[i] = byte(17 * i)
@@ -101,8 +101,8 @@
 // 	if testing.Short() {
 // 		size = 32
 // 	}
-// 	a := make([]byte, size)
-// 	b := make([]byte, size)
+// 	a := make([u8], size)
+// 	b := make([u8], size)
 
 // 	for len := 0; len <= size; len++ {
 // 		for x := 0; x <= size-len; x++ {
@@ -237,31 +237,31 @@
 
 // // Execute f on each test case.  funcName should be the name of f; it's used
 // // in failure reports.
-// func runIndexTests(t *testing.T, f func(s, sep []byte) int, funcName string, testCases []BinOpTest) {
+// func runIndexTests(t *testing.T, f func(s, sep [u8]) int, funcName string, testCases []BinOpTest) {
 // 	for _, test := range testCases {
-// 		a := []byte(test.a)
-// 		b := []byte(test.b)
+// 		a := [u8](test.a)
+// 		b := [u8](test.b)
 // 		actual := f(a, b)
 // 		if actual != test.i {
 // 			t.Errorf("%s(%q,%q) = {}; want {}", funcName, a, b, actual, test.i)
 // 		}
 // 	}
 // 	var allocTests = []struct {
-// 		a []byte
-// 		b []byte
+// 		a [u8]
+// 		b [u8]
 // 		i int
 // 	}{
 // 		// case for function Index.
-// 		{[]byte("000000000000000000000000000000000000000000000000000000000000000000000001"), []byte("0000000000000000000000000000000000000000000000000000000000000000001"), 5},
+// 		{[u8]("000000000000000000000000000000000000000000000000000000000000000000000001"), [u8]("0000000000000000000000000000000000000000000000000000000000000000001"), 5},
 // 		// case for function LastIndex.
-// 		{[]byte("000000000000000000000000000000000000000000000000000000000000000010000"), []byte("00000000000000000000000000000000000000000000000000000000000001"), 3},
+// 		{[u8]("000000000000000000000000000000000000000000000000000000000000000010000"), [u8]("00000000000000000000000000000000000000000000000000000000000001"), 3},
 // 	}
 // 	allocs := testing.AllocsPerRun(100, func() {
 // 		if i := Index(allocTests[1].a, allocTests[1].b); i != allocTests[1].i {
-// 			t.Errorf("Index([]byte(%q), []byte(%q)) = {}; want {}", allocTests[1].a, allocTests[1].b, i, allocTests[1].i)
+// 			t.Errorf("Index([u8](%q), [u8](%q)) = {}; want {}", allocTests[1].a, allocTests[1].b, i, allocTests[1].i)
 // 		}
 // 		if i := LastIndex(allocTests[0].a, allocTests[0].b); i != allocTests[0].i {
-// 			t.Errorf("LastIndex([]byte(%q), []byte(%q)) = {}; want {}", allocTests[0].a, allocTests[0].b, i, allocTests[0].i)
+// 			t.Errorf("LastIndex([u8](%q), [u8](%q)) = {}; want {}", allocTests[0].a, allocTests[0].b, i, allocTests[0].i)
 // 		}
 // 	})
 // 	if allocs != 0 {
@@ -269,9 +269,9 @@
 // 	}
 // }
 
-// func runIndexAnyTests(t *testing.T, f func(s []byte, chars string) int, funcName string, testCases []BinOpTest) {
+// func runIndexAnyTests(t *testing.T, f func(s [u8], chars string) int, funcName string, testCases []BinOpTest) {
 // 	for _, test := range testCases {
-// 		a := []byte(test.a)
+// 		a := [u8](test.a)
 // 		actual := f(a, test.b)
 // 		if actual != test.i {
 // 			t.Errorf("%s(%q,%q) = {}; want {}", funcName, a, test.b, actual, test.i)
@@ -291,7 +291,7 @@
 // 		if len(tt.b) != 1 {
 // 			continue
 // 		}
-// 		a := []byte(tt.a)
+// 		a := [u8](tt.a)
 // 		b := tt.b[0]
 // 		pos := IndexByte(a, b)
 // 		if pos != tt.i {
@@ -314,7 +314,7 @@
 // 		{"a☺b☻c☹d", "b", len("a☺")},               // non-ascii
 // 	}
 // 	for _, test := range testCases {
-// 		actual := LastIndexByte([]byte(test.a), test.b[0])
+// 		actual := LastIndexByte([u8](test.a), test.b[0])
 // 		if actual != test.i {
 // 			t.Errorf("LastIndexByte(%q,%c) = {}; want {}", test.a, test.b[0], actual, test.i)
 // 		}
@@ -327,7 +327,7 @@
 // 	if testing.Short() {
 // 		n = 128
 // 	}
-// 	b := make([]byte, n)
+// 	b := make([u8], n)
 // 	for i := 0; i < n; i += 1 {
 // 		// different start alignments
 // 		b1 := b[i:]
@@ -376,7 +376,7 @@
 
 // // test a small index across all page offsets
 // func TestIndexByteSmall(t *testing.T) {
-// 	b := make([]byte, 5015) // bigger than a page
+// 	b := make([u8], 5015) // bigger than a page
 // 	// Make sure we find the correct byte even when straddling a page.
 // 	for i := 0; i <= b.len()-15; i += 1 {
 // 		for j := 0; j < 15; j++ {
@@ -440,12 +440,12 @@
 // 		{"a☺b☻c☹d\xe2\x98�\xff�\xed\xa0\x80", utf8.MaxRune + 1, -1},
 // 	}
 // 	for _, tt := range tests {
-// 		if got := IndexRune([]byte(tt.in), tt.rune); got != tt.want {
+// 		if got := IndexRune([u8](tt.in), tt.rune); got != tt.want {
 // 			t.Errorf("IndexRune(%q, {}) = {}; want {}", tt.in, tt.rune, got, tt.want)
 // 		}
 // 	}
 
-// 	haystack := []byte("test世界")
+// 	haystack := [u8]("test世界")
 // 	allocs := testing.AllocsPerRun(1000, func() {
 // 		if i := IndexRune(haystack, 's'); i != 2 {
 // 			t.Fatalf("'s' at {}; want 2", i)
@@ -461,12 +461,12 @@
 
 // // test count of a single byte across page offsets
 // func TestCountByte(t *testing.T) {
-// 	b := make([]byte, 5015) // bigger than a page
+// 	b := make([u8], 5015) // bigger than a page
 // 	windows := []int{1, 2, 3, 4, 15, 16, 17, 31, 32, 33, 63, 64, 65, 128}
 // 	testCountWindow := func(i, window int) {
 // 		for j := 0; j < window; j++ {
 // 			b[i+j] = byte(100)
-// 			p := Count(b[i:i+window], []byte{100})
+// 			p := Count(b[i:i+window], [u8]{100})
 // 			if p != j+1 {
 // 				t.Errorf("TestCountByte.Count(%q, 100) = {}", b[i:i+window], p)
 // 			}
@@ -501,7 +501,7 @@
 
 // // Make sure we don't count bytes outside our window
 // func TestCountByteNoMatch(t *testing.T) {
-// 	b := make([]byte, 5015)
+// 	b := make([u8], 5015)
 // 	windows := []int{1, 2, 3, 4, 15, 16, 17, 31, 32, 33, 63, 64, 65, 128}
 // 	for i := 0; i <= b.len(); i += 1 {
 // 		for _, window := range windows {
@@ -513,7 +513,7 @@
 // 				b[i+j] = byte(100)
 // 			}
 // 			// Try to find something that doesn't exist
-// 			p := Count(b[i:i+window], []byte{0})
+// 			p := Count(b[i:i+window], [u8]{0})
 // 			if p != 0 {
 // 				t.Errorf("TestCountByteNoMatch(%q, 0) = {}", b[i:i+window], p)
 // 			}
@@ -524,7 +524,7 @@
 // 	}
 // }
 
-// var bmbuf []byte
+// var bmbuf [u8]
 
 // func valName(x int) string {
 // 	if s := x >> 20; s<<20 == x {
@@ -543,7 +543,7 @@
 // 		}
 // 		b.Run(valName(n), func(b *testing.B) {
 // 			if len(bmbuf) < n {
-// 				bmbuf = make([]byte, n)
+// 				bmbuf = make([u8], n)
 // 			}
 // 			b.SetBytes(int64(n))
 // 			f(b, n)
@@ -563,7 +563,7 @@
 // 	benchBytes(b, indexSizes, bmIndexByte(IndexBytePortable))
 // }
 
-// func bmIndexByte(index func([]byte, byte) int) func(b *testing.B, n int) {
+// func bmIndexByte(index func([u8], byte) int) func(b *testing.B, n int) {
 // 	return func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
@@ -585,7 +585,7 @@
 // 	benchBytes(b, indexSizes, bmIndexRuneASCII(IndexRune))
 // }
 
-// func bmIndexRuneASCII(index func([]byte, rune) int) func(b *testing.B, n int) {
+// func bmIndexRuneASCII(index func([u8], rune) int) func(b *testing.B, n int) {
 // 	return func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		buf[n-1] = 'x'
@@ -599,7 +599,7 @@
 // 	}
 // }
 
-// func bmIndexRune(index func([]byte, rune) int) func(b *testing.B, n int) {
+// func bmIndexRune(index func([u8], rune) int) func(b *testing.B, n int) {
 // 	return func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
 // 		utf8.EncodeRune(buf[n-3:], '世')
@@ -632,10 +632,10 @@
 // 	benchBytes(b, sizes, bmEqual(Equal))
 // }
 
-// func bmEqual(equal func([]byte, []byte) bool) func(b *testing.B, n int) {
+// func bmEqual(equal func([u8], [u8]) bool) func(b *testing.B, n int) {
 // 	return func(b *testing.B, n int) {
 // 		if len(bmbuf) < 2*n {
-// 			bmbuf = make([]byte, 2*n)
+// 			bmbuf = make([u8], 2*n)
 // 		}
 // 		buf1 := bmbuf[0:n]
 // 		buf2 := bmbuf[n : 2*n]
@@ -721,7 +721,7 @@
 // 		}
 // 		expect := (len(buf) + (step - 1)) / step
 // 		for i := 0; i < b.N; i += 1 {
-// 			j := Count(buf, []byte{1})
+// 			j := Count(buf, [u8]{1})
 // 			if j != expect {
 // 				b.Fatal("bad count", j, expect)
 // 			}
@@ -762,10 +762,10 @@
 
 // func TestSplit(t *testing.T) {
 // 	for _, tt := range splittests {
-// 		a := SplitN([]byte(tt.s), []byte(tt.sep), tt.n)
+// 		a := SplitN([u8](tt.s), [u8](tt.sep), tt.n)
 
 // 		// Appending to the results should not change future results.
-// 		var x []byte
+// 		var x [u8]
 // 		for _, v := range a {
 // 			x = append(v, 'z')
 // 		}
@@ -783,12 +783,12 @@
 // 			t.Errorf("last appended result was %s; want %s", x, want)
 // 		}
 
-// 		s := Join(a, []byte(tt.sep))
+// 		s := Join(a, [u8](tt.sep))
 // 		if string(s) != tt.s {
 // 			t.Errorf(`Join(Split(%q, %q, {}), %q) = %q`, tt.s, tt.sep, tt.n, tt.sep, s)
 // 		}
 // 		if tt.n < 0 {
-// 			b := Split([]byte(tt.s), []byte(tt.sep))
+// 			b := Split([u8](tt.s), [u8](tt.sep))
 // 			if !reflect.DeepEqual(a, b) {
 // 				t.Errorf("Split disagrees withSplitN(%q, %q, {}) = {}; want {}", tt.s, tt.sep, tt.n, b, a)
 // 			}
@@ -820,10 +820,10 @@
 
 // func TestSplitAfter(t *testing.T) {
 // 	for _, tt := range splitaftertests {
-// 		a := SplitAfterN([]byte(tt.s), []byte(tt.sep), tt.n)
+// 		a := SplitAfterN([u8](tt.s), [u8](tt.sep), tt.n)
 
 // 		// Appending to the results should not change future results.
-// 		var x []byte
+// 		var x [u8]
 // 		for _, v := range a {
 // 			x = append(v, 'z')
 // 		}
@@ -843,7 +843,7 @@
 // 			t.Errorf(`Join(Split(%q, %q, {}), %q) = %q`, tt.s, tt.sep, tt.n, tt.sep, s)
 // 		}
 // 		if tt.n < 0 {
-// 			b := SplitAfter([]byte(tt.s), []byte(tt.sep))
+// 			b := SplitAfter([u8](tt.s), [u8](tt.sep))
 // 			if !reflect.DeepEqual(a, b) {
 // 				t.Errorf("SplitAfter disagrees withSplitAfterN(%q, %q, {}) = {}; want {}", tt.s, tt.sep, tt.n, b, a)
 // 			}
@@ -872,11 +872,11 @@
 
 // func TestFields(t *testing.T) {
 // 	for _, tt := range fieldstests {
-// 		b := []byte(tt.s)
+// 		b := [u8](tt.s)
 // 		a := Fields(b)
 
 // 		// Appending to the results should not change future results.
-// 		var x []byte
+// 		var x [u8]
 // 		for _, v := range a {
 // 			x = append(v, 'z')
 // 		}
@@ -900,7 +900,7 @@
 
 // func TestFieldsFunc(t *testing.T) {
 // 	for _, tt := range fieldstests {
-// 		a := FieldsFunc([]byte(tt.s), unicode.IsSpace)
+// 		a := FieldsFunc([u8](tt.s), unicode.IsSpace)
 // 		result := sliceOfString(a)
 // 		if !eq(result, tt.a) {
 // 			t.Errorf("FieldsFunc(%q, unicode.IsSpace) = {}; want {}", tt.s, a, tt.a)
@@ -915,11 +915,11 @@
 // 		{"aXXbXXXcX", []string{"a", "b", "c"}},
 // 	}
 // 	for _, tt := range fieldsFuncTests {
-// 		b := []byte(tt.s)
+// 		b := [u8](tt.s)
 // 		a := FieldsFunc(b, pred)
 
 // 		// Appending to the results should not change future results.
-// 		var x []byte
+// 		var x [u8]
 // 		for _, v := range a {
 // 			x = append(v, 'z')
 // 		}
@@ -944,62 +944,62 @@
 // // For ease of creation, we write the input byte slice as a string.
 // type StringTest struct {
 // 	in  string
-// 	out []byte
+// 	out [u8]
 // }
 
 // var upperTests = []StringTest{
-// 	{"", []byte("")},
-// 	{"ONLYUPPER", []byte("ONLYUPPER")},
-// 	{"abc", []byte("ABC")},
-// 	{"AbC123", []byte("ABC123")},
-// 	{"azAZ09_", []byte("AZAZ09_")},
-// 	{"longStrinGwitHmixofsmaLLandcAps", []byte("LONGSTRINGWITHMIXOFSMALLANDCAPS")},
-// 	{"long\u0250string\u0250with\u0250nonascii\u2C6Fchars", []byte("LONG\u2C6FSTRING\u2C6FWITH\u2C6FNONASCII\u2C6FCHARS")},
-// 	{"\u0250\u0250\u0250\u0250\u0250", []byte("\u2C6F\u2C6F\u2C6F\u2C6F\u2C6F")}, // grows one byte per char
-// 	{"a\u0080\U0010FFFF", []byte("A\u0080\U0010FFFF")},                           // test utf8.RuneSelf and utf8.MaxRune
+// 	{"", [u8]("")},
+// 	{"ONLYUPPER", [u8]("ONLYUPPER")},
+// 	{"abc", [u8]("ABC")},
+// 	{"AbC123", [u8]("ABC123")},
+// 	{"azAZ09_", [u8]("AZAZ09_")},
+// 	{"longStrinGwitHmixofsmaLLandcAps", [u8]("LONGSTRINGWITHMIXOFSMALLANDCAPS")},
+// 	{"long\u0250string\u0250with\u0250nonascii\u2C6Fchars", [u8]("LONG\u2C6FSTRING\u2C6FWITH\u2C6FNONASCII\u2C6FCHARS")},
+// 	{"\u0250\u0250\u0250\u0250\u0250", [u8]("\u2C6F\u2C6F\u2C6F\u2C6F\u2C6F")}, // grows one byte per char
+// 	{"a\u0080\U0010FFFF", [u8]("A\u0080\U0010FFFF")},                           // test utf8.RuneSelf and utf8.MaxRune
 // }
 
 // var lowerTests = []StringTest{
-// 	{"", []byte("")},
-// 	{"abc", []byte("abc")},
-// 	{"AbC123", []byte("abc123")},
-// 	{"azAZ09_", []byte("azaz09_")},
-// 	{"longStrinGwitHmixofsmaLLandcAps", []byte("longstringwithmixofsmallandcaps")},
-// 	{"LONG\u2C6FSTRING\u2C6FWITH\u2C6FNONASCII\u2C6FCHARS", []byte("long\u0250string\u0250with\u0250nonascii\u0250chars")},
-// 	{"\u2C6D\u2C6D\u2C6D\u2C6D\u2C6D", []byte("\u0251\u0251\u0251\u0251\u0251")}, // shrinks one byte per char
-// 	{"A\u0080\U0010FFFF", []byte("a\u0080\U0010FFFF")},                           // test utf8.RuneSelf and utf8.MaxRune
+// 	{"", [u8]("")},
+// 	{"abc", [u8]("abc")},
+// 	{"AbC123", [u8]("abc123")},
+// 	{"azAZ09_", [u8]("azaz09_")},
+// 	{"longStrinGwitHmixofsmaLLandcAps", [u8]("longstringwithmixofsmallandcaps")},
+// 	{"LONG\u2C6FSTRING\u2C6FWITH\u2C6FNONASCII\u2C6FCHARS", [u8]("long\u0250string\u0250with\u0250nonascii\u0250chars")},
+// 	{"\u2C6D\u2C6D\u2C6D\u2C6D\u2C6D", [u8]("\u0251\u0251\u0251\u0251\u0251")}, // shrinks one byte per char
+// 	{"A\u0080\U0010FFFF", [u8]("a\u0080\U0010FFFF")},                           // test utf8.RuneSelf and utf8.MaxRune
 // }
 
 // const space = "\t\v\r\f\n\u0085\u00a0\u2000\u3000"
 
 // var trimSpaceTests = []StringTest{
 // 	{"", nil},
-// 	{"  a", []byte("a")},
-// 	{"b  ", []byte("b")},
-// 	{"abc", []byte("abc")},
-// 	{space + "abc" + space, []byte("abc")},
+// 	{"  a", [u8]("a")},
+// 	{"b  ", [u8]("b")},
+// 	{"abc", [u8]("abc")},
+// 	{space + "abc" + space, [u8]("abc")},
 // 	{" ", nil},
 // 	{"\u3000 ", nil},
 // 	{" \u3000", nil},
 // 	{" \t\r\n \t\t\r\r\n\n ", nil},
-// 	{" \t\r\n x\t\t\r\r\n\n ", []byte("x")},
-// 	{" \u2000\t\r\n x\t\t\r\r\ny\n \u3000", []byte("x\t\t\r\r\ny")},
-// 	{"1 \t\r\n2", []byte("1 \t\r\n2")},
-// 	{" x\x80", []byte("x\x80")},
-// 	{" x\xc0", []byte("x\xc0")},
-// 	{"x \xc0\xc0 ", []byte("x \xc0\xc0")},
-// 	{"x \xc0", []byte("x \xc0")},
-// 	{"x \xc0 ", []byte("x \xc0")},
-// 	{"x \xc0\xc0 ", []byte("x \xc0\xc0")},
-// 	{"x ☺\xc0\xc0 ", []byte("x ☺\xc0\xc0")},
-// 	{"x ☺ ", []byte("x ☺")},
+// 	{" \t\r\n x\t\t\r\r\n\n ", [u8]("x")},
+// 	{" \u2000\t\r\n x\t\t\r\r\ny\n \u3000", [u8]("x\t\t\r\r\ny")},
+// 	{"1 \t\r\n2", [u8]("1 \t\r\n2")},
+// 	{" x\x80", [u8]("x\x80")},
+// 	{" x\xc0", [u8]("x\xc0")},
+// 	{"x \xc0\xc0 ", [u8]("x \xc0\xc0")},
+// 	{"x \xc0", [u8]("x \xc0")},
+// 	{"x \xc0 ", [u8]("x \xc0")},
+// 	{"x \xc0\xc0 ", [u8]("x \xc0\xc0")},
+// 	{"x ☺\xc0\xc0 ", [u8]("x ☺\xc0\xc0")},
+// 	{"x ☺ ", [u8]("x ☺")},
 // }
 
 // // Execute f on each test case.  funcName should be the name of f; it's used
 // // in failure reports.
-// func runStringTests(t *testing.T, f func([]byte) []byte, funcName string, testCases []StringTest) {
+// func runStringTests(t *testing.T, f func([u8]) [u8], funcName string, testCases []StringTest) {
 // 	for _, tc := range testCases {
-// 		actual := f([]byte(tc.in))
+// 		actual := f([u8](tc.in))
 // 		if actual == nil && tc.out != nil {
 // 			t.Errorf("%s(%q) = nil; want %q", funcName, tc.in, tc.out)
 // 		}
@@ -1038,7 +1038,7 @@
 
 // 	// 1.  Grow. This triggers two reallocations in Map.
 // 	maxRune := func(r rune) rune { return unicode.MaxRune }
-// 	m := Map(maxRune, []byte(a))
+// 	m := Map(maxRune, [u8](a))
 // 	expect := tenRunes(unicode.MaxRune)
 // 	if string(m) != expect {
 // 		t.Errorf("growing: expected %q got %q", expect, m)
@@ -1046,21 +1046,21 @@
 
 // 	// 2. Shrink
 // 	minRune := func(r rune) rune { return 'a' }
-// 	m = Map(minRune, []byte(tenRunes(unicode.MaxRune)))
+// 	m = Map(minRune, [u8](tenRunes(unicode.MaxRune)))
 // 	expect = a
 // 	if string(m) != expect {
 // 		t.Errorf("shrinking: expected %q got %q", expect, m)
 // 	}
 
 // 	// 3. Rot13
-// 	m = Map(rot13, []byte("a to zed"))
+// 	m = Map(rot13, [u8]("a to zed"))
 // 	expect = "n gb mrq"
 // 	if string(m) != expect {
 // 		t.Errorf("rot13: expected %q got %q", expect, m)
 // 	}
 
 // 	// 4. Rot13^2
-// 	m = Map(rot13, Map(rot13, []byte("a to zed")))
+// 	m = Map(rot13, Map(rot13, [u8]("a to zed")))
 // 	expect = "a to zed"
 // 	if string(m) != expect {
 // 		t.Errorf("rot13: expected %q got %q", expect, m)
@@ -1073,7 +1073,7 @@
 // 		}
 // 		return -1
 // 	}
-// 	m = Map(dropNotLatin, []byte("Hello, 세계"))
+// 	m = Map(dropNotLatin, [u8]("Hello, 세계"))
 // 	expect = "Hello"
 // 	if string(m) != expect {
 // 		t.Errorf("drop: expected %q got %q", expect, m)
@@ -1083,7 +1083,7 @@
 // 	invalidRune := func(r rune) rune {
 // 		return utf8.MaxRune + 1
 // 	}
-// 	m = Map(invalidRune, []byte("x"))
+// 	m = Map(invalidRune, [u8]("x"))
 // 	expect = "\uFFFD"
 // 	if string(m) != expect {
 // 		t.Errorf("invalidRune: expected %q got %q", expect, m)
@@ -1096,7 +1096,7 @@
 
 // func BenchmarkToUpper(b *testing.B) {
 // 	for _, tc := range upperTests {
-// 		tin := []byte(tc.in)
+// 		tin := [u8](tc.in)
 // 		b.Run(tc.in, func(b *testing.B) {
 // 			for i := 0; i < b.N; i += 1 {
 // 				actual := ToUpper(tin)
@@ -1110,7 +1110,7 @@
 
 // func BenchmarkToLower(b *testing.B) {
 // 	for _, tc := range lowerTests {
-// 		tin := []byte(tc.in)
+// 		tin := [u8](tc.in)
 // 		b.Run(tc.in, func(b *testing.B) {
 // 			for i := 0; i < b.N; i += 1 {
 // 				actual := ToLower(tin)
@@ -1145,8 +1145,8 @@
 
 // func TestToValidUTF8(t *testing.T) {
 // 	for _, tc := range toValidUTF8Tests {
-// 		got := ToValidUTF8([]byte(tc.in), []byte(tc.repl))
-// 		if !Equal(got, []byte(tc.out)) {
+// 		got := ToValidUTF8([u8](tc.in), [u8](tc.repl))
+// 		if !Equal(got, [u8](tc.out)) {
 // 			t.Errorf("ToValidUTF8(%q, %q) = %q; want %q", tc.in, tc.repl, got, tc.out)
 // 		}
 // 	}
@@ -1159,7 +1159,7 @@
 // 	count   int
 // }
 
-// var longString = "a" + string(make([]byte, 1<<16)) + "z"
+// var longString = "a" + string(make([u8], 1<<16)) + "z"
 
 // var RepeatTests = []RepeatTest{
 // 	{"", "", 0},
@@ -1170,14 +1170,14 @@
 // 	{"-", "----------", 10},
 // 	{"abc ", "abc abc abc ", 3},
 // 	// Tests for results over the chunkLimit
-// 	{string(rune(0)), string(make([]byte, 1<<16)), 1 << 16},
+// 	{string(rune(0)), string(make([u8], 1<<16)), 1 << 16},
 // 	{longString, longString + longString, 2},
 // }
 
 // func TestRepeat(t *testing.T) {
 // 	for _, tt := range RepeatTests {
-// 		tin := []byte(tt.in)
-// 		tout := []byte(tt.out)
+// 		tin := [u8](tt.in)
+// 		tout := [u8](tt.out)
 // 		a := Repeat(tin, tt.count)
 // 		if !Equal(a, tout) {
 // 			t.Errorf("Repeat(%q, {}) = %q; want %q", tin, tt.count, a, tout)
@@ -1186,7 +1186,7 @@
 // 	}
 // }
 
-// func repeat(b []byte, count int) (err error) {
+// func repeat(b [u8], count int) (err error) {
 // 	defer func() {
 // 		if r := recover(); r != nil {
 // 			switch v := r.(type) {
@@ -1216,11 +1216,11 @@
 // 		3: {"gopher", 0, ""},
 // 		4: {"-", -1, "negative"},
 // 		5: {"--", -102, "negative"},
-// 		6: {string(make([]byte, 255)), int((^uint(0))/255 + 1), "overflow"},
+// 		6: {string(make([u8], 255)), int((^uint(0))/255 + 1), "overflow"},
 // 	}
 
 // 	for i, tt := range tests {
-// 		err := repeat([]byte(tt.s), tt.count)
+// 		err := repeat([u8](tt.s), tt.count)
 // 		if tt.errStr == "" {
 // 			if err != nil {
 // 				t.Errorf("#{} panicked {}", i, err)
@@ -1264,7 +1264,7 @@
 
 // func TestRunes(t *testing.T) {
 // 	for _, tt := range RunesTests {
-// 		tin := []byte(tt.in)
+// 		tin := [u8](tt.in)
 // 		a := Runes(tin)
 // 		if !runesEqual(a, tt.out) {
 // 			t.Errorf("Runes(%q) = {}; want {}", tin, a, tt.out)
@@ -1320,45 +1320,45 @@
 
 // type TrimNilTest struct {
 // 	f   string
-// 	in  []byte
+// 	in  [u8]
 // 	arg string
-// 	out []byte
+// 	out [u8]
 // }
 
 // var trimNilTests = []TrimNilTest{
 // 	{"Trim", nil, "", nil},
-// 	{"Trim", []byte{}, "", nil},
-// 	{"Trim", []byte{'a'}, "a", nil},
-// 	{"Trim", []byte{'a', 'a'}, "a", nil},
-// 	{"Trim", []byte{'a'}, "ab", nil},
-// 	{"Trim", []byte{'a', 'b'}, "ab", nil},
-// 	{"Trim", []byte("☺"), "☺", nil},
+// 	{"Trim", [u8]{}, "", nil},
+// 	{"Trim", [u8]{'a'}, "a", nil},
+// 	{"Trim", [u8]{'a', 'a'}, "a", nil},
+// 	{"Trim", [u8]{'a'}, "ab", nil},
+// 	{"Trim", [u8]{'a', 'b'}, "ab", nil},
+// 	{"Trim", [u8]("☺"), "☺", nil},
 // 	{"TrimLeft", nil, "", nil},
-// 	{"TrimLeft", []byte{}, "", nil},
-// 	{"TrimLeft", []byte{'a'}, "a", nil},
-// 	{"TrimLeft", []byte{'a', 'a'}, "a", nil},
-// 	{"TrimLeft", []byte{'a'}, "ab", nil},
-// 	{"TrimLeft", []byte{'a', 'b'}, "ab", nil},
-// 	{"TrimLeft", []byte("☺"), "☺", nil},
+// 	{"TrimLeft", [u8]{}, "", nil},
+// 	{"TrimLeft", [u8]{'a'}, "a", nil},
+// 	{"TrimLeft", [u8]{'a', 'a'}, "a", nil},
+// 	{"TrimLeft", [u8]{'a'}, "ab", nil},
+// 	{"TrimLeft", [u8]{'a', 'b'}, "ab", nil},
+// 	{"TrimLeft", [u8]("☺"), "☺", nil},
 // 	{"TrimRight", nil, "", nil},
-// 	{"TrimRight", []byte{}, "", []byte{}},
-// 	{"TrimRight", []byte{'a'}, "a", []byte{}},
-// 	{"TrimRight", []byte{'a', 'a'}, "a", []byte{}},
-// 	{"TrimRight", []byte{'a'}, "ab", []byte{}},
-// 	{"TrimRight", []byte{'a', 'b'}, "ab", []byte{}},
-// 	{"TrimRight", []byte("☺"), "☺", []byte{}},
+// 	{"TrimRight", [u8]{}, "", [u8]{}},
+// 	{"TrimRight", [u8]{'a'}, "a", [u8]{}},
+// 	{"TrimRight", [u8]{'a', 'a'}, "a", [u8]{}},
+// 	{"TrimRight", [u8]{'a'}, "ab", [u8]{}},
+// 	{"TrimRight", [u8]{'a', 'b'}, "ab", [u8]{}},
+// 	{"TrimRight", [u8]("☺"), "☺", [u8]{}},
 // 	{"TrimPrefix", nil, "", nil},
-// 	{"TrimPrefix", []byte{}, "", []byte{}},
-// 	{"TrimPrefix", []byte{'a'}, "a", []byte{}},
-// 	{"TrimPrefix", []byte("☺"), "☺", []byte{}},
+// 	{"TrimPrefix", [u8]{}, "", [u8]{}},
+// 	{"TrimPrefix", [u8]{'a'}, "a", [u8]{}},
+// 	{"TrimPrefix", [u8]("☺"), "☺", [u8]{}},
 // 	{"TrimSuffix", nil, "", nil},
-// 	{"TrimSuffix", []byte{}, "", []byte{}},
-// 	{"TrimSuffix", []byte{'a'}, "a", []byte{}},
-// 	{"TrimSuffix", []byte("☺"), "☺", []byte{}},
+// 	{"TrimSuffix", [u8]{}, "", [u8]{}},
+// 	{"TrimSuffix", [u8]{'a'}, "a", [u8]{}},
+// 	{"TrimSuffix", [u8]("☺"), "☺", [u8]{}},
 // }
 
 // func TestTrim(t *testing.T) {
-// 	toFn := func(name string) (func([]byte, string) []byte, func([]byte, []byte) []byte) {
+// 	toFn := func(name string) (func([u8], string) [u8], func([u8], [u8]) [u8]) {
 // 		switch name {
 // 		case "Trim":
 // 			return Trim, nil
@@ -1384,9 +1384,9 @@
 // 		}
 // 		var actual string
 // 		if f != nil {
-// 			actual = string(f([]byte(tc.in), tc.arg))
+// 			actual = string(f([u8](tc.in), tc.arg))
 // 		} else {
-// 			actual = string(fb([]byte(tc.in), []byte(tc.arg)))
+// 			actual = string(fb([u8](tc.in), [u8](tc.arg)))
 // 		}
 // 		if actual != tc.out {
 // 			t.Errorf("%s(%q, %q) = %q; want %q", name, tc.in, tc.arg, actual, tc.out)
@@ -1399,13 +1399,13 @@
 // 		if f == nil && fb == nil {
 // 			continue
 // 		}
-// 		var actual []byte
+// 		var actual [u8]
 // 		if f != nil {
 // 			actual = f(tc.in, tc.arg)
 // 		} else {
-// 			actual = fb(tc.in, []byte(tc.arg))
+// 			actual = fb(tc.in, [u8](tc.arg))
 // 		}
-// 		report := func(s []byte) string {
+// 		report := func(s [u8]) string {
 // 			if s == nil {
 // 				return "nil"
 // 			} else {
@@ -1442,9 +1442,9 @@
 // type TrimFuncTest struct {
 // 	f        predicate
 // 	in       string
-// 	trimOut  []byte
-// 	leftOut  []byte
-// 	rightOut []byte
+// 	trimOut  [u8]
+// 	leftOut  [u8]
+// 	rightOut [u8]
 // }
 
 // func not(p predicate) predicate {
@@ -1458,58 +1458,58 @@
 
 // var trimFuncTests = []TrimFuncTest{
 // 	{isSpace, space + " hello " + space,
-// 		[]byte("hello"),
-// 		[]byte("hello " + space),
-// 		[]byte(space + " hello")},
+// 		[u8]("hello"),
+// 		[u8]("hello " + space),
+// 		[u8](space + " hello")},
 // 	{isDigit, "\u0e50\u0e5212hello34\u0e50\u0e51",
-// 		[]byte("hello"),
-// 		[]byte("hello34\u0e50\u0e51"),
-// 		[]byte("\u0e50\u0e5212hello")},
+// 		[u8]("hello"),
+// 		[u8]("hello34\u0e50\u0e51"),
+// 		[u8]("\u0e50\u0e5212hello")},
 // 	{isUpper, "\u2C6F\u2C6F\u2C6F\u2C6FABCDhelloEF\u2C6F\u2C6FGH\u2C6F\u2C6F",
-// 		[]byte("hello"),
-// 		[]byte("helloEF\u2C6F\u2C6FGH\u2C6F\u2C6F"),
-// 		[]byte("\u2C6F\u2C6F\u2C6F\u2C6FABCDhello")},
+// 		[u8]("hello"),
+// 		[u8]("helloEF\u2C6F\u2C6FGH\u2C6F\u2C6F"),
+// 		[u8]("\u2C6F\u2C6F\u2C6F\u2C6FABCDhello")},
 // 	{not(isSpace), "hello" + space + "hello",
-// 		[]byte(space),
-// 		[]byte(space + "hello"),
-// 		[]byte("hello" + space)},
+// 		[u8](space),
+// 		[u8](space + "hello"),
+// 		[u8]("hello" + space)},
 // 	{not(isDigit), "hello\u0e50\u0e521234\u0e50\u0e51helo",
-// 		[]byte("\u0e50\u0e521234\u0e50\u0e51"),
-// 		[]byte("\u0e50\u0e521234\u0e50\u0e51helo"),
-// 		[]byte("hello\u0e50\u0e521234\u0e50\u0e51")},
+// 		[u8]("\u0e50\u0e521234\u0e50\u0e51"),
+// 		[u8]("\u0e50\u0e521234\u0e50\u0e51helo"),
+// 		[u8]("hello\u0e50\u0e521234\u0e50\u0e51")},
 // 	{isValidRune, "ab\xc0a\xc0cd",
-// 		[]byte("\xc0a\xc0"),
-// 		[]byte("\xc0a\xc0cd"),
-// 		[]byte("ab\xc0a\xc0")},
+// 		[u8]("\xc0a\xc0"),
+// 		[u8]("\xc0a\xc0cd"),
+// 		[u8]("ab\xc0a\xc0")},
 // 	{not(isValidRune), "\xc0a\xc0",
-// 		[]byte("a"),
-// 		[]byte("a\xc0"),
-// 		[]byte("\xc0a")},
+// 		[u8]("a"),
+// 		[u8]("a\xc0"),
+// 		[u8]("\xc0a")},
 // 	// The nils returned by TrimLeftFunc are odd behavior, but we need
 // 	// to preserve backwards compatibility.
 // 	{isSpace, "",
 // 		nil,
 // 		nil,
-// 		[]byte("")},
+// 		[u8]("")},
 // 	{isSpace, " ",
 // 		nil,
 // 		nil,
-// 		[]byte("")},
+// 		[u8]("")},
 // }
 
 // func TestTrimFunc(t *testing.T) {
 // 	for _, tc := range trimFuncTests {
 // 		trimmers := []struct {
 // 			name string
-// 			trim func(s []byte, f func(r rune) bool) []byte
-// 			out  []byte
+// 			trim func(s [u8], f func(r rune) bool) [u8]
+// 			out  [u8]
 // 		}{
 // 			{"TrimFunc", TrimFunc, tc.trimOut},
 // 			{"TrimLeftFunc", TrimLeftFunc, tc.leftOut},
 // 			{"TrimRightFunc", TrimRightFunc, tc.rightOut},
 // 		}
 // 		for _, trimmer := range trimmers {
-// 			actual := trimmer.trim([]byte(tc.in), tc.f.f)
+// 			actual := trimmer.trim([u8](tc.in), tc.f.f)
 // 			if actual == nil && trimmer.out != nil {
 // 				t.Errorf("%s(%q, %q) = nil; want %q", trimmer.name, tc.in, tc.f.name, trimmer.out)
 // 			}
@@ -1552,11 +1552,11 @@
 
 // func TestIndexFunc(t *testing.T) {
 // 	for _, tc := range indexFuncTests {
-// 		first := IndexFunc([]byte(tc.in), tc.f.f)
+// 		first := IndexFunc([u8](tc.in), tc.f.f)
 // 		if first != tc.first {
 // 			t.Errorf("IndexFunc(%q, %s) = {}; want {}", tc.in, tc.f.name, first, tc.first)
 // 		}
-// 		last := LastIndexFunc([]byte(tc.in), tc.f.f)
+// 		last := LastIndexFunc([u8](tc.in), tc.f.f)
 // 		if last != tc.last {
 // 			t.Errorf("LastIndexFunc(%q, %s) = {}; want {}", tc.in, tc.f.name, last, tc.last)
 // 		}
@@ -1594,9 +1594,9 @@
 
 // func TestReplace(t *testing.T) {
 // 	for _, tt := range ReplaceTests {
-// 		in := append([]byte(tt.in), "<spare>"...)
+// 		in := append([u8](tt.in), "<spare>"...)
 // 		in = in[..len(tt.in)]
-// 		out := Replace(in, []byte(tt.old), []byte(tt.new), tt.n)
+// 		out := Replace(in, [u8](tt.old), [u8](tt.new), tt.n)
 // 		if s := string(out); s != tt.out {
 // 			t.Errorf("Replace(%q, %q, %q, {}) = %q, want %q", tt.in, tt.old, tt.new, tt.n, s, tt.out)
 // 		}
@@ -1604,7 +1604,7 @@
 // 			t.Errorf("Replace(%q, %q, %q, {}) didn't copy", tt.in, tt.old, tt.new, tt.n)
 // 		}
 // 		if tt.n == -1 {
-// 			out := ReplaceAll(in, []byte(tt.old), []byte(tt.new))
+// 			out := ReplaceAll(in, [u8](tt.old), [u8](tt.new))
 // 			if s := string(out); s != tt.out {
 // 				t.Errorf("ReplaceAll(%q, %q, %q) = %q, want %q", tt.in, tt.old, tt.new, s, tt.out)
 // 			}
@@ -1630,7 +1630,7 @@
 
 // func TestTitle(t *testing.T) {
 // 	for _, tt := range TitleTests {
-// 		if s := string(Title([]byte(tt.in))); s != tt.out {
+// 		if s := string(Title([u8](tt.in))); s != tt.out {
 // 			t.Errorf("Title(%q) = %q, want %q", tt.in, s, tt.out)
 // 		}
 // 	}
@@ -1648,7 +1648,7 @@
 
 // func TestToTitle(t *testing.T) {
 // 	for _, tt := range ToTitleTests {
-// 		if s := string(ToTitle([]byte(tt.in))); s != tt.out {
+// 		if s := string(ToTitle([u8](tt.in))); s != tt.out {
 // 			t.Errorf("ToTitle(%q) = %q, want %q", tt.in, s, tt.out)
 // 		}
 // 	}
@@ -1673,10 +1673,10 @@
 
 // func TestEqualFold(t *testing.T) {
 // 	for _, tt := range EqualFoldTests {
-// 		if out := EqualFold([]byte(tt.s), []byte(tt.t)); out != tt.out {
+// 		if out := EqualFold([u8](tt.s), [u8](tt.t)); out != tt.out {
 // 			t.Errorf("EqualFold(%#q, %#q) = {}, want {}", tt.s, tt.t, out, tt.out)
 // 		}
-// 		if out := EqualFold([]byte(tt.t), []byte(tt.s)); out != tt.out {
+// 		if out := EqualFold([u8](tt.t), [u8](tt.s)); out != tt.out {
 // 			t.Errorf("EqualFold(%#q, %#q) = {}, want {}", tt.t, tt.s, out, tt.out)
 // 		}
 // 	}
@@ -1699,7 +1699,7 @@
 
 // func TestCut(t *testing.T) {
 // 	for _, tt := range cutTests {
-// 		if before, after, found := Cut([]byte(tt.s), []byte(tt.sep)); string(before) != tt.before || string(after) != tt.after || found != tt.found {
+// 		if before, after, found := Cut([u8](tt.s), [u8](tt.sep)); string(before) != tt.before || string(after) != tt.after || found != tt.found {
 // 			t.Errorf("Cut(%q, %q) = %q, %q, {}, want %q, %q, {}", tt.s, tt.sep, before, after, found, tt.before, tt.after, tt.found)
 // 		}
 // 	}
@@ -1720,7 +1720,7 @@
 
 // func TestCutPrefix(t *testing.T) {
 // 	for _, tt := range cutPrefixTests {
-// 		if after, found := CutPrefix([]byte(tt.s), []byte(tt.sep)); string(after) != tt.after || found != tt.found {
+// 		if after, found := CutPrefix([u8](tt.s), [u8](tt.sep)); string(after) != tt.after || found != tt.found {
 // 			t.Errorf("CutPrefix(%q, %q) = %q, {}, want %q, {}", tt.s, tt.sep, after, found, tt.after, tt.found)
 // 		}
 // 	}
@@ -1741,7 +1741,7 @@
 
 // func TestCutSuffix(t *testing.T) {
 // 	for _, tt := range cutSuffixTests {
-// 		if after, found := CutSuffix([]byte(tt.s), []byte(tt.sep)); string(after) != tt.after || found != tt.found {
+// 		if after, found := CutSuffix([u8](tt.s), [u8](tt.sep)); string(after) != tt.after || found != tt.found {
 // 			t.Errorf("CutSuffix(%q, %q) = %q, {}, want %q, {}", tt.s, tt.sep, after, found, tt.after, tt.found)
 // 		}
 // 	}
@@ -1774,18 +1774,18 @@
 // 		}
 // 	}()
 // 	var b Buffer
-// 	b.Write(make([]byte, 10))
+// 	b.Write(make([u8], 10))
 // 	b.Truncate(20)
 // }
 
 // var containsTests = []struct {
-// 	b, subslice []byte
+// 	b, subslice [u8]
 // 	want        bool
 // }{
-// 	{[]byte("hello"), []byte("hel"), true},
-// 	{[]byte("日本語"), []byte("日本"), true},
-// 	{[]byte("hello"), []byte("Hello, world"), false},
-// 	{[]byte("東京"), []byte("京東"), false},
+// 	{[u8]("hello"), [u8]("hel"), true},
+// 	{[u8]("日本語"), [u8]("日本"), true},
+// 	{[u8]("hello"), [u8]("Hello, world"), false},
+// 	{[u8]("東京"), [u8]("京東"), false},
 // }
 
 // func TestContains(t *testing.T) {
@@ -1797,21 +1797,21 @@
 // }
 
 // var ContainsAnyTests = []struct {
-// 	b        []byte
+// 	b        [u8]
 // 	substr   string
 // 	expected bool
 // }{
-// 	{[]byte(""), "", false},
-// 	{[]byte(""), "a", false},
-// 	{[]byte(""), "abc", false},
-// 	{[]byte("a"), "", false},
-// 	{[]byte("a"), "a", true},
-// 	{[]byte("aaa"), "a", true},
-// 	{[]byte("abc"), "xyz", false},
-// 	{[]byte("abc"), "xcz", true},
-// 	{[]byte("a☺b☻c☹d"), "uvw☻xyz", true},
-// 	{[]byte("aRegExp*"), ".(|)*+?^$[]", true},
-// 	{[]byte(dots + dots + dots), " ", false},
+// 	{[u8](""), "", false},
+// 	{[u8](""), "a", false},
+// 	{[u8](""), "abc", false},
+// 	{[u8]("a"), "", false},
+// 	{[u8]("a"), "a", true},
+// 	{[u8]("aaa"), "a", true},
+// 	{[u8]("abc"), "xyz", false},
+// 	{[u8]("abc"), "xcz", true},
+// 	{[u8]("a☺b☻c☹d"), "uvw☻xyz", true},
+// 	{[u8]("aRegExp*"), ".(|)*+?^$[]", true},
+// 	{[u8](dots + dots + dots), " ", false},
 // }
 
 // func TestContainsAny(t *testing.T) {
@@ -1824,18 +1824,18 @@
 // }
 
 // var ContainsRuneTests = []struct {
-// 	b        []byte
+// 	b        [u8]
 // 	r        rune
 // 	expected bool
 // }{
-// 	{[]byte(""), 'a', false},
-// 	{[]byte("a"), 'a', true},
-// 	{[]byte("aaa"), 'a', true},
-// 	{[]byte("abc"), 'y', false},
-// 	{[]byte("abc"), 'c', true},
-// 	{[]byte("a☺b☻c☹d"), 'x', false},
-// 	{[]byte("a☺b☻c☹d"), '☻', true},
-// 	{[]byte("aRegExp*"), '*', true},
+// 	{[u8](""), 'a', false},
+// 	{[u8]("a"), 'a', true},
+// 	{[u8]("aaa"), 'a', true},
+// 	{[u8]("abc"), 'y', false},
+// 	{[u8]("abc"), 'c', true},
+// 	{[u8]("a☺b☻c☹d"), 'x', false},
+// 	{[u8]("a☺b☻c☹d"), '☻', true},
+// 	{[u8]("aRegExp*"), '*', true},
 // }
 
 // func TestContainsRune(t *testing.T) {
@@ -1847,8 +1847,8 @@
 // 	}
 // }
 
-// var makeFieldsInput = func() []byte {
-// 	x := make([]byte, 1<<20)
+// var makeFieldsInput = func() [u8] {
+// 	x := make([u8], 1<<20)
 // 	// Input is ~10% space, ~10% 2-byte UTF-8, rest ASCII non-space.
 // 	for i := range x {
 // 		switch rand.Intn(10) {
@@ -1867,8 +1867,8 @@
 // 	return x
 // }
 
-// var makeFieldsInputASCII = func() []byte {
-// 	x := make([]byte, 1<<20)
+// var makeFieldsInputASCII = func() [u8] {
+// 	x := make([u8], 1<<20)
 // 	// Input is ~10% space, rest ASCII non-space.
 // 	for i := range x {
 // 		if rand.Intn(10) == 0 {
@@ -1882,7 +1882,7 @@
 
 // var bytesdata = []struct {
 // 	name string
-// 	data []byte
+// 	data [u8]
 // }{
 // 	{"ASCII", makeFieldsInputASCII()},
 // 	{"Mixed", makeFieldsInput()},
@@ -1925,12 +1925,12 @@
 // func BenchmarkTrimSpace(b *testing.B) {
 // 	tests := []struct {
 // 		name  string
-// 		input []byte
+// 		input [u8]
 // 	}{
-// 		{"NoTrim", []byte("typical")},
-// 		{"ASCII", []byte("  foo bar  ")},
-// 		{"SomeNonASCII", []byte("    \u2000\t\r\n x\t\t\r\r\ny\n \u3000    ")},
-// 		{"JustNonASCII", []byte("\u2000\u2000\u2000☺☺☺☺\u3000\u3000\u3000")},
+// 		{"NoTrim", [u8]("typical")},
+// 		{"ASCII", [u8]("  foo bar  ")},
+// 		{"SomeNonASCII", [u8]("    \u2000\t\r\n x\t\t\r\r\ny\n \u3000    ")},
+// 		{"JustNonASCII", [u8]("\u2000\u2000\u2000☺☺☺☺\u3000\u3000\u3000")},
 // 	}
 // 	for _, test := range tests {
 // 		b.Run(test.name, func(b *testing.B) {
@@ -1944,13 +1944,13 @@
 // func BenchmarkToValidUTF8(b *testing.B) {
 // 	tests := []struct {
 // 		name  string
-// 		input []byte
+// 		input [u8]
 // 	}{
-// 		{"Valid", []byte("typical")},
-// 		{"InvalidASCII", []byte("foo\xffbar")},
-// 		{"InvalidNonASCII", []byte("日本語\xff日本語")},
+// 		{"Valid", [u8]("typical")},
+// 		{"InvalidASCII", [u8]("foo\xffbar")},
+// 		{"InvalidNonASCII", [u8]("日本語\xff日本語")},
 // 	}
-// 	replacement := []byte("\uFFFD")
+// 	replacement := [u8]("\uFFFD")
 // 	b.ResetTimer()
 // 	for _, test := range tests {
 // 		b.Run(test.name, func(b *testing.B) {
@@ -1961,13 +1961,13 @@
 // 	}
 // }
 
-// func makeBenchInputHard() []byte {
+// func makeBenchInputHard() [u8] {
 // 	tokens := [...]string{
 // 		"<a>", "<p>", "<b>", "<strong>",
 // 		"</a>", "</p>", "</b>", "</strong>",
 // 		"hello", "world",
 // 	}
-// 	x := make([]byte, 0, 1<<20)
+// 	x := make([u8], 0, 1<<20)
 // 	for {
 // 		i := rand.Intn(len(tokens))
 // 		if len(x)+len(tokens[i]) >= 1<<20 {
@@ -1980,38 +1980,38 @@
 
 // var benchInputHard = makeBenchInputHard()
 
-// func benchmarkIndexHard(b *testing.B, sep []byte) {
+// func benchmarkIndexHard(b *testing.B, sep [u8]) {
 // 	for i := 0; i < b.N; i += 1 {
 // 		Index(benchInputHard, sep)
 // 	}
 // }
 
-// func benchmarkLastIndexHard(b *testing.B, sep []byte) {
+// func benchmarkLastIndexHard(b *testing.B, sep [u8]) {
 // 	for i := 0; i < b.N; i += 1 {
 // 		LastIndex(benchInputHard, sep)
 // 	}
 // }
 
-// func benchmarkCountHard(b *testing.B, sep []byte) {
+// func benchmarkCountHard(b *testing.B, sep [u8]) {
 // 	for i := 0; i < b.N; i += 1 {
 // 		Count(benchInputHard, sep)
 // 	}
 // }
 
-// func BenchmarkIndexHard1(b *testing.B) { benchmarkIndexHard(b, []byte("<>")) }
-// func BenchmarkIndexHard2(b *testing.B) { benchmarkIndexHard(b, []byte("</pre>")) }
-// func BenchmarkIndexHard3(b *testing.B) { benchmarkIndexHard(b, []byte("<b>hello world</b>")) }
+// func BenchmarkIndexHard1(b *testing.B) { benchmarkIndexHard(b, [u8]("<>")) }
+// func BenchmarkIndexHard2(b *testing.B) { benchmarkIndexHard(b, [u8]("</pre>")) }
+// func BenchmarkIndexHard3(b *testing.B) { benchmarkIndexHard(b, [u8]("<b>hello world</b>")) }
 // func BenchmarkIndexHard4(b *testing.B) {
-// 	benchmarkIndexHard(b, []byte("<pre><b>hello</b><strong>world</strong></pre>"))
+// 	benchmarkIndexHard(b, [u8]("<pre><b>hello</b><strong>world</strong></pre>"))
 // }
 
-// func BenchmarkLastIndexHard1(b *testing.B) { benchmarkLastIndexHard(b, []byte("<>")) }
-// func BenchmarkLastIndexHard2(b *testing.B) { benchmarkLastIndexHard(b, []byte("</pre>")) }
-// func BenchmarkLastIndexHard3(b *testing.B) { benchmarkLastIndexHard(b, []byte("<b>hello world</b>")) }
+// func BenchmarkLastIndexHard1(b *testing.B) { benchmarkLastIndexHard(b, [u8]("<>")) }
+// func BenchmarkLastIndexHard2(b *testing.B) { benchmarkLastIndexHard(b, [u8]("</pre>")) }
+// func BenchmarkLastIndexHard3(b *testing.B) { benchmarkLastIndexHard(b, [u8]("<b>hello world</b>")) }
 
-// func BenchmarkCountHard1(b *testing.B) { benchmarkCountHard(b, []byte("<>")) }
-// func BenchmarkCountHard2(b *testing.B) { benchmarkCountHard(b, []byte("</pre>")) }
-// func BenchmarkCountHard3(b *testing.B) { benchmarkCountHard(b, []byte("<b>hello world</b>")) }
+// func BenchmarkCountHard1(b *testing.B) { benchmarkCountHard(b, [u8]("<>")) }
+// func BenchmarkCountHard2(b *testing.B) { benchmarkCountHard(b, [u8]("</pre>")) }
+// func BenchmarkCountHard3(b *testing.B) { benchmarkCountHard(b, [u8]("<b>hello world</b>")) }
 
 // func BenchmarkSplitEmptySeparator(b *testing.B) {
 // 	for i := 0; i < b.N; i += 1 {
@@ -2020,28 +2020,28 @@
 // }
 
 // func BenchmarkSplitSingleByteSeparator(b *testing.B) {
-// 	sep := []byte("/")
+// 	sep := [u8]("/")
 // 	for i := 0; i < b.N; i += 1 {
 // 		Split(benchInputHard, sep)
 // 	}
 // }
 
 // func BenchmarkSplitMultiByteSeparator(b *testing.B) {
-// 	sep := []byte("hello")
+// 	sep := [u8]("hello")
 // 	for i := 0; i < b.N; i += 1 {
 // 		Split(benchInputHard, sep)
 // 	}
 // }
 
 // func BenchmarkSplitNSingleByteSeparator(b *testing.B) {
-// 	sep := []byte("/")
+// 	sep := [u8]("/")
 // 	for i := 0; i < b.N; i += 1 {
 // 		SplitN(benchInputHard, sep, 10)
 // 	}
 // }
 
 // func BenchmarkSplitNMultiByteSeparator(b *testing.B) {
-// 	sep := []byte("hello")
+// 	sep := [u8]("hello")
 // 	for i := 0; i < b.N; i += 1 {
 // 		SplitN(benchInputHard, sep, 10)
 // 	}
@@ -2049,12 +2049,12 @@
 
 // func BenchmarkRepeat(b *testing.B) {
 // 	for i := 0; i < b.N; i += 1 {
-// 		Repeat([]byte("-"), 80)
+// 		Repeat([u8]("-"), 80)
 // 	}
 // }
 
 // func BenchmarkRepeatLarge(b *testing.B) {
-// 	s := Repeat([]byte("@"), 8*1024)
+// 	s := Repeat([u8]("@"), 8*1024)
 // 	for j := 8; j <= 30; j++ {
 // 		for _, k := range []int{1, 16, 4097} {
 // 			s := s[..k]
@@ -2075,8 +2075,8 @@
 // func BenchmarkBytesCompare(b *testing.B) {
 // 	for n := 1; n <= 2048; n <<= 1 {
 // 		b.Run(fmt.Sprint(n), func(b *testing.B) {
-// 			var x = make([]byte, n)
-// 			var y = make([]byte, n)
+// 			var x = make([u8], n)
+// 			var y = make([u8], n)
 
 // 			for i := 0; i < n; i += 1 {
 // 				x[i] = 'a'
@@ -2095,7 +2095,7 @@
 // }
 
 // func BenchmarkIndexAnyASCII(b *testing.B) {
-// 	x := Repeat([]byte{'#'}, 2048) // Never matches set
+// 	x := Repeat([u8]{'#'}, 2048) // Never matches set
 // 	cs := "0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
@@ -2109,7 +2109,7 @@
 // }
 
 // func BenchmarkIndexAnyUTF8(b *testing.B) {
-// 	x := Repeat([]byte{'#'}, 2048) // Never matches set
+// 	x := Repeat([u8]{'#'}, 2048) // Never matches set
 // 	cs := "你好世界, hello world. 你好世界, hello world. 你好世界, hello world."
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
@@ -2123,7 +2123,7 @@
 // }
 
 // func BenchmarkLastIndexAnyASCII(b *testing.B) {
-// 	x := Repeat([]byte{'#'}, 2048) // Never matches set
+// 	x := Repeat([u8]{'#'}, 2048) // Never matches set
 // 	cs := "0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
@@ -2137,7 +2137,7 @@
 // }
 
 // func BenchmarkLastIndexAnyUTF8(b *testing.B) {
-// 	x := Repeat([]byte{'#'}, 2048) // Never matches set
+// 	x := Repeat([u8]{'#'}, 2048) // Never matches set
 // 	cs := "你好世界, hello world. 你好世界, hello world. 你好世界, hello world."
 // 	for k := 1; k <= 2048; k <<= 4 {
 // 		for j := 1; j <= 64; j <<= 1 {
@@ -2155,7 +2155,7 @@
 // 	for k := 1; k <= 4096; k <<= 4 {
 // 		for j := 1; j <= 16; j <<= 1 {
 // 			b.Run(fmt.Sprintf("{}:{}", k, j), func(b *testing.B) {
-// 				x := Repeat([]byte(cs[..j]), k) // Always matches set
+// 				x := Repeat([u8](cs[..j]), k) // Always matches set
 // 				for i := 0; i < b.N; i += 1 {
 // 					Trim(x[..k], cs[..j])
 // 				}
@@ -2165,17 +2165,17 @@
 // }
 
 // func BenchmarkTrimByte(b *testing.B) {
-// 	x := []byte("  the quick brown fox   ")
+// 	x := [u8]("  the quick brown fox   ")
 // 	for i := 0; i < b.N; i += 1 {
 // 		Trim(x, " ")
 // 	}
 // }
 
 // func BenchmarkIndexPeriodic(b *testing.B) {
-// 	key := []byte{1, 1}
+// 	key := [u8]{1, 1}
 // 	for _, skip := range [...]int{2, 4, 8, 16, 32, 64} {
 // 		b.Run(fmt.Sprintf("IndexPeriodic{}", skip), func(b *testing.B) {
-// 			buf := make([]byte, 1<<16)
+// 			buf := make([u8], 1<<16)
 // 			for i := 0; i < len(buf); i += skip {
 // 				buf[i] = 1
 // 			}
@@ -2187,14 +2187,14 @@
 // }
 
 // func TestClone(t *testing.T) {
-// 	var cloneTests = [][]byte{
-// 		[]byte(nil),
-// 		[]byte{},
-// 		Clone([]byte{}),
-// 		[]byte(strings.Repeat("a", 42))[..0],
-// 		[]byte(strings.Repeat("a", 42))[..0:0],
-// 		[]byte("short"),
-// 		[]byte(strings.Repeat("a", 42)),
+// 	var cloneTests = [][u8]{
+// 		[u8](nil),
+// 		[u8]{},
+// 		Clone([u8]{}),
+// 		[u8](strings.Repeat("a", 42))[..0],
+// 		[u8](strings.Repeat("a", 42))[..0:0],
+// 		[u8]("short"),
+// 		[u8](strings.Repeat("a", 42)),
 // 	}
 // 	for _, input := range cloneTests {
 // 		clone := Clone(input)

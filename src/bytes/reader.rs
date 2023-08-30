@@ -147,9 +147,9 @@ impl<'a> Reader<'a> {
             ggio::Seek::End => self.s.len() as i64 + offset,
         };
         if abs < 0 {
-            return Err(ggio::Error::Other(Box::new(errors::ErrorString::new(
-                "bytes::Reader::seek: negative position",
-            ))));
+            return Err(ggio::Error::Other(Box::new(
+                errors::ErrorStaticString::new("bytes::Reader::seek: negative position"),
+            )));
         }
         self.i = abs as u64;
         return Ok(self.i);

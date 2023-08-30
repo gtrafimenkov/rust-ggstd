@@ -38,7 +38,7 @@
 // }
 
 // func (e *joinError) Error() string {
-// 	var b []byte
+// 	var b [u8]
 // 	for i, err := range e.errs {
 // 		if i > 0 {
 // 			b = append(b, '\n')

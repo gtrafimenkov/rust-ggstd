@@ -10,7 +10,7 @@
 
 mod adler32;
 
-pub use adler32::{checksum, new};
+pub use adler32::{checksum, new, Digest};
 
 #[cfg(test)]
 mod adler32_test;
