@@ -173,9 +173,9 @@ fn test_decode_string() {
 // 		dec := NewDecoder(strings.new_reader(tt.in))
 // 		out, err := ggio::read_all(dec)
 // 		wantErr := tt.err
-// 		// Decoder is reading from stream, so it reports ggio::Error::ErrUnexpectedEOF instead of ErrLength.
+// 		// Decoder is reading from stream, so it reports std::io::Error::ErrUnexpectedEOF instead of ErrLength.
 // 		if wantErr == ErrLength {
-// 			wantErr = ggio::Error::ErrUnexpectedEOF
+// 			wantErr = std::io::Error::ErrUnexpectedEOF
 // 		}
 // 		if string(out) != tt.out || err != wantErr {
 // 			t.Errorf("NewDecoder(%q) = %q, {}, want %q, {}", tt.in, out, err, tt.out, wantErr)

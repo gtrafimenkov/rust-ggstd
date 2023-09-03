@@ -369,7 +369,7 @@
 // type alwaysError struct{}
 
 // func (alwaysError) Read(p [u8]) (int, error) {
-// 	return 0, ggio::Error::ErrUnexpectedEOF
+// 	return 0, std::io::Error::ErrUnexpectedEOF
 // }
 
 // func TestNonEOFWithEmptyRead(t *testing.T) {
@@ -378,7 +378,7 @@
 // 		t.Fatal("read should fail")
 // 	}
 // 	err := scanner.Err()
-// 	if err != ggio::Error::ErrUnexpectedEOF {
+// 	if err != std::io::Error::ErrUnexpectedEOF {
 // 		t.Errorf("unexpected error: {}", err)
 // 	}
 // }

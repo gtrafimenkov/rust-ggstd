@@ -7,7 +7,6 @@ use super::deflatefast::DeflateFast;
 use super::huffman_bit_writer::HuffmanBitWriteFilter;
 use super::token::{literal_token, match_token, Token};
 use crate::compat;
-use crate::io as ggio;
 
 pub const NO_COMPRESSION: isize = 0;
 pub const BEST_SPEED: isize = 1;
@@ -876,15 +875,6 @@ impl std::io::Write for Writer<'_> {
     /// In the terminology of the zlib library, Flush is equivalent to Z_SYNC_FLUSH.
     fn flush(&mut self) -> std::io::Result<()> {
         self.tw.flush(self.writer)
-    }
-}
-
-impl ggio::Writer for Writer<'_> {
-    fn write(&mut self, p: &[u8]) -> (usize, Option<ggio::Error>) {
-        match self.tw.d.write(self.writer, p) {
-            Ok(v) => (v, None),
-            Err(err) => (0, Some(ggio::Error::StdIo(err))),
-        }
     }
 }
 

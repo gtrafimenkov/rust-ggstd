@@ -4,14 +4,14 @@
 // license that can be found in the LICENSE file.
 
 use super::io as ggio;
-use super::io::Writer;
 use crate::bytes;
+use std::io::Write;
 
 struct UnexpectedEOFErrorReader {}
 
-impl ggio::Reader for UnexpectedEOFErrorReader {
-    fn read(&mut self, _: &mut [u8]) -> (usize, Option<super::Error>) {
-        return (0, Some(ggio::Error::new_unexpected_eof()));
+impl std::io::Read for UnexpectedEOFErrorReader {
+    fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+        return Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof));
     }
 }
 
@@ -28,7 +28,7 @@ fn test_read_all() {
     let (data, err) = ggio::read_all(&mut r);
     assert_eq!(0, data.len());
     assert!(
-        err.is_some_and(|e| e.is_unexpected_eof()),
+        err.is_some_and(|e| e.kind() == std::io::ErrorKind::UnexpectedEof),
         "expecting ErrUnexpectedEOF"
     );
 }
@@ -293,17 +293,18 @@ fn test_read_at_least() {
 
 fn test_read_at_least_int(rb: &mut bytes::Buffer) {
     // fn test_read_at_least_int(rb: &mut dyn ReadWriter) {
-    rb.write("0123".as_bytes());
+    rb.write("0123".as_bytes()).unwrap();
     let buf = &mut [0; 2];
 
     let (n, err) = ggio::read_at_least(rb, buf, 2);
     assert!(err.is_none());
     assert_eq!(2, n, "expected to have read 2 bytes, got {}", n);
 
+    // ErrorKind::InvalidInput if buffer is too small
     let (n, err) = ggio::read_at_least(rb, buf, 4);
     assert!(
-        err.as_ref().unwrap().is_short_buffer(),
-        "expected ErrShortBuffer got {:?}",
+        err.as_ref().unwrap().kind() == std::io::ErrorKind::InvalidInput,
+        "expected ErrorKind::InvalidInput got {:?}",
         err
     );
     assert_eq!(0, n, "expected to have read 0 bytes, got {}", n);
@@ -313,12 +314,16 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
     assert_eq!(2, n, "expected to have read 2 bytes, got {}", n);
 
     let (n, err) = ggio::read_at_least(rb, buf, 2);
-    assert!(err.as_ref().unwrap().is_eof(), "expected EOF got {:?}", err);
+    assert!(
+        err.as_ref().unwrap().kind() == std::io::ErrorKind::UnexpectedEof,
+        "expected EOF got {:?}",
+        err
+    );
     assert_eq!(0, n, "expected to have read 0 bytes, got {}", n);
 
-    rb.write("4".as_bytes());
+    rb.write("4".as_bytes()).unwrap();
     let (n, err) = ggio::read_at_least(rb, buf, 2);
-    assert!(err.as_ref().unwrap().is_unexpected_eof());
+    assert!(err.as_ref().unwrap().kind() == std::io::ErrorKind::UnexpectedEof);
     assert_eq!(1, n, "expected to have read 1 bytes, got {}", n);
 }
 

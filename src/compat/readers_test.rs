@@ -10,15 +10,5 @@ fn test_bufreader_read_byte() {
     assert_eq!(b'l', reader.read_byte().unwrap());
     assert_eq!(b'l', reader.read_byte().unwrap());
     assert_eq!(b'o', reader.read_byte().unwrap());
-    assert!(reader.read_byte().err().unwrap().is_eof());
+    assert!(reader.read_byte().err().unwrap().kind() == std::io::ErrorKind::UnexpectedEof);
 }
-
-// #[test]
-// fn test_ggreader_adapter() {
-//     const TEST_VALUE: &str = "hello world!";
-//     let mut r = bytes::new_buffer_string(TEST_VALUE);
-//     let mut ra = readers::GGReaderAdapter::new(&mut r);
-//     let mut buf = Vec::new();
-//     assert_eq!(12, ra.read_to_end(&mut buf).unwrap());
-//     assert_eq!(TEST_VALUE.as_bytes(), &buf);
-// }

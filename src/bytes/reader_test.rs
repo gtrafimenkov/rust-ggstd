@@ -4,7 +4,8 @@
 // license that can be found in the LICENSE file.
 
 use super::reader::{new_reader, Reader};
-use crate::io::{self as ggio, ByteReader, Reader as IOReader};
+use crate::io::{self as ggio, ByteReader};
+use std::io::Read;
 
 #[test]
 fn test_reader() {
@@ -62,7 +63,7 @@ fn test_reader() {
             wantpos: 1 << 33,
             n: 0,
             want: &[],
-            readerr: Some("EOF"),
+            readerr: None,
             seekerr: None,
         },
         Test {
@@ -71,7 +72,7 @@ fn test_reader() {
             wantpos: (1 << 33) + 1,
             n: 0,
             want: &[],
-            readerr: Some("EOF"),
+            readerr: None,
             seekerr: None,
         },
         Test {
@@ -130,16 +131,16 @@ fn test_reader() {
             }
         }
         let mut buf = vec![0; tt.n];
-        let (n, err) = r.read(&mut buf);
-        if err.is_none() {
+        let res = r.read(&mut buf);
+        if res.is_ok() {
             if tt.readerr.is_some() {
                 assert!(false, "{}. read = no error; want {:?}", i, tt.readerr);
             }
         } else {
             if tt.readerr.is_none() {
-                assert!(false, "{}. read = {:?}; want = no error", i, err);
+                assert!(false, "{}. read = {:?}; want = no error", i, res);
             } else {
-                let errstr = err.unwrap().to_string();
+                let errstr = res.as_ref().unwrap_err().to_string();
                 assert_eq!(
                     tt.readerr.as_ref().unwrap(),
                     &errstr,
@@ -150,6 +151,7 @@ fn test_reader() {
                 );
             }
         }
+        let n = res.unwrap();
         let got = &buf[..n];
         assert_eq!(tt.want, got, "{}. got {:?}; want {:?}", i, got, tt.want);
     }
@@ -160,13 +162,8 @@ fn test_read_after_big_seek() {
     let mut r = new_reader("0123456789".as_bytes());
     r.seek((1 << 31) + 5, ggio::Seek::Start).unwrap();
     let mut buf = [0; 10];
-    let (n, err) = r.read(&mut buf);
-    assert!(
-        n == 0 && err.as_ref().unwrap().is_eof(),
-        "read = {}, {:?}; want 0, Some(EOF)",
-        n,
-        err
-    );
+    let res = r.read(&mut buf);
+    assert!(res.is_ok() && res.unwrap() == 0);
 }
 
 #[test]
@@ -189,7 +186,7 @@ fn test_reader_at() {
             off: 1,
             n: 10,
             want: "123456789".as_bytes(),
-            wanterr: Some("EOF"),
+            wanterr: None,
         },
         Test {
             off: 1,
@@ -201,7 +198,7 @@ fn test_reader_at() {
             off: 11,
             n: 10,
             want: "".as_bytes(),
-            wanterr: Some("EOF"),
+            wanterr: None,
         },
         Test {
             off: 0,
@@ -212,17 +209,21 @@ fn test_reader_at() {
     ];
     for (i, tt) in tests.iter().enumerate() {
         let mut b = vec![0; tt.n];
-        let (rn, err) = r.read_at(&mut b, tt.off);
-        let got = &b[..rn];
-        assert_eq!(tt.want, got, "{}. got {:?}; want {:?}", i, got, tt.want);
-        if err.is_some() {
-            let got = err.unwrap().to_string();
-            let wanterr = tt.wanterr.unwrap();
-            assert_eq!(
-                wanterr, got,
-                "{}. got error = '{:?}'; want '{:?}'",
-                i, got, wanterr
-            );
+        let res = r.read_at(&mut b, tt.off);
+        match res {
+            Ok(rn) => {
+                let got = &b[..rn];
+                assert_eq!(tt.want, got, "{}. got {:?}; want {:?}", i, got, tt.want);
+            }
+            Err(err) => {
+                let got = err.to_string();
+                let wanterr = tt.wanterr.unwrap();
+                assert_eq!(
+                    wanterr, got,
+                    "{}. got error = '{:?}'; want '{:?}'",
+                    i, got, wanterr
+                );
+            }
         }
     }
 }
@@ -299,26 +300,16 @@ fn test_reader_len() {
     assert_eq!(want, got, "r.len(): got {}, want {}", got, want);
 
     let mut buf = [0; 10];
-    let (n, err) = r.read(&mut buf);
-    assert!(
-        n == 10 && err.is_none(),
-        "read failed: read {} '{:?}'",
-        n,
-        err
-    );
+    let res = r.read(&mut buf);
+    assert!(res.is_ok() && res.unwrap() == 10);
 
     let want = 1;
     let got = r.len();
     assert_eq!(want, got, "r.len(): got {}, want {}", got, want);
 
     let mut buf = [0; 1];
-    let (n, err) = r.read(&mut buf);
-    assert!(
-        n == 1 && err.is_none(),
-        "read failed: read {} '{:?}'",
-        n,
-        err
-    );
+    let res = r.read(&mut buf);
+    assert!(res.is_ok() && res.unwrap() == 1);
 
     let want = 0;
     let got = r.len();
@@ -424,15 +415,15 @@ fn test_reader_zero() {
     assert_eq!(0, l, "len: got {}, want 0", l);
 
     let mut buf = [];
-    let (n, err) = Reader::new().read(&mut buf);
-    assert!(n == 0 && err.unwrap().is_eof());
+    let res = Reader::new().read(&mut buf);
+    assert!(res.is_ok() && res.unwrap() == 0);
 
-    let (n, err) = Reader::new().read_at(&mut buf, 11);
-    assert!(n == 0 && err.unwrap().is_eof());
+    let res = Reader::new().read_at(&mut buf, 11);
+    assert!(res.is_ok_and(|x| x == 0));
 
     let res = Reader::new().read_byte();
     assert!(res.is_err());
-    assert!(res.err().unwrap().is_eof());
+    assert!(res.err().unwrap().kind() == std::io::ErrorKind::UnexpectedEof);
 
     // 	if ch, size, err := Reader::new().ReadRune(); ch != 0 || size != 0 || err != io.EOF {
     // 		t.Errorf("ReadRune: got {}, {}, '{}'; want 0, 0, io.EOF", ch, size, err)
@@ -453,12 +444,11 @@ fn test_reader_zero() {
     // 		t.Errorf("UnreadRune: got nil, want error")
     // 	}
 
-    let (n, err) = Reader::new().write_to(&mut ggio::Discard::new());
+    let res = Reader::new().write_to(&mut ggio::Discard::new());
     assert!(
-        n == 0 && err.is_none(),
-        "write_to: got {}, '{:?}'; want 0, nil",
-        n,
-        err
+        res.as_ref().is_ok_and(|x| *x == 0),
+        "write_to: got {:?}; want 0, nil",
+        res
     );
 }
 

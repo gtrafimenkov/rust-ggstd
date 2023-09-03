@@ -27,190 +27,80 @@ pub enum Seek {
     End = 2,     // seek relative to the end
 }
 
-#[derive(Debug)]
-pub enum Error {
-    /// ErrShortWrite means that a write accepted fewer bytes than requested
-    /// but failed to return an explicit error.
-    ErrShortWrite, // = errors.New("short write")
-
-    /// ErrInvalidWrite means that a write returned an impossible count.
-    ErrInvalidWrite,
-    /// ErrShortBuffer means that a read required a longer buffer than was provided.
-    ErrShortBuffer,
-    /// EOF is the error returned by read when no more input is available.
-    /// Functions should return EOF only to signal a graceful end of input.
-    /// If the EOF occurs unexpectedly in a structured data stream,
-    /// the appropriate error is either ErrUnexpectedEOF or some other error
-    /// giving more detail.
-    EOF,
-    // // ErrNoProgress is returned by some clients of a Reader when
-    // // many calls to read have failed to return any data or error,
-    // // usually the sign of a broken Reader implementation.
-    // var ErrNoProgress = errors.New("multiple read calls return no data or error")
-    StdIo(std::io::Error),
-    /// Any error implementing Error trait
-    Other(Box<dyn std::error::Error>),
-}
-
-impl PartialEq for Error {
-    fn eq(&self, other: &Self) -> bool {
-        match self {
-            Error::ErrShortWrite => match other {
-                Error::ErrShortWrite => true,
-                _ => false,
-            },
-            Error::ErrInvalidWrite => match other {
-                Error::ErrInvalidWrite => true,
-                _ => false,
-            },
-            Error::ErrShortBuffer => match other {
-                Error::ErrShortBuffer => true,
-                _ => false,
-            },
-            Error::EOF => match other {
-                Error::EOF => true,
-                _ => false,
-            },
-            Error::StdIo(e1) => match other {
-                Error::StdIo(e2) => e1.kind() == e2.kind(),
-                _ => false,
-            },
-            Error::Other(e1) => match other {
-                Error::Other(e2) => e1.to_string() == e2.to_string(),
-                _ => false,
-            },
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
-impl From<std::io::Error> for Error {
-    fn from(error: std::io::Error) -> Self {
-        Error::StdIo(error)
-    }
-}
-
-impl Error {
-    pub fn new_unexpected_eof() -> Self {
-        Error::StdIo(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
-    }
-    /// new_str_error crates a Error::Other error with the given text.
-    pub fn new_str_error(text: &String) -> Self {
-        Error::Other(Box::new(errors::ErrorString::new(text)))
-    }
-    /// new_static_str_error crates a Error::Other error with the given text.
-    pub fn new_static_str_error(text: &'static str) -> Self {
-        Error::Other(Box::new(errors::ErrorStaticString::new(text)))
-    }
-    pub fn is_eof(&self) -> bool {
-        match self {
-            Error::EOF => true,
-            _ => false,
-        }
-    }
-    pub fn is_short_buffer(&self) -> bool {
-        match self {
-            Error::ErrShortBuffer => true,
-            _ => false,
-        }
-    }
-    pub fn is_unexpected_eof(&self) -> bool {
-        match self {
-            Error::StdIo(err) => err.kind() == std::io::ErrorKind::UnexpectedEof,
-            _ => false,
-        }
-    }
-    /// lossy_copy makes a copy of an error as good as possible.
-    /// If it is not possibly to copy the error, Other(errors::StringError) will be returned instead.
-    pub fn lossy_copy(&self) -> Error {
-        match self {
-            Error::ErrShortWrite => return Error::ErrShortWrite,
-            Error::ErrInvalidWrite => return Error::ErrInvalidWrite,
-            Error::ErrShortBuffer => return Error::ErrShortBuffer,
-            Error::EOF => return Error::EOF,
-            Error::StdIo(v) => return Error::StdIo(std::io::Error::new(v.kind(), v.to_string())),
-            Error::Other(v) => return Error::new_str_error(&v.to_string()),
-        }
-    }
-}
+// /// lossy_copy_to_stdio_err makes a copy of an error as good as possible.
+// /// If it is not possibly to copy the error, an error of ErrorKind::Other will be returned instead.
+// pub fn lossy_copy_to_stdio_err(&self) -> std::io::Error {
+//     match self {
+//         Error::StdIo(err) => std::io::Error::new(err.kind(), err.to_string()),
+//         _ => std::io::Error::new(std::io::ErrorKind::Other, self.to_string()),
+//     }
+// }
 
 // ErrNoProgress
 pub static ERR_NO_PROGRESS: errors::ErrorStaticString =
     errors::new_static("multiple read calls return no data or error");
 
-// impl builtin::Error for Error {
-//     fn error(&self) -> String {
-//         self.to_string()
-//     }
+// Instead of using Reader, use std::io::Read.  That will make the
+// code more idiomatic and make it easier to interoperate with the
+// rest of Rust ecosystem.
+//
+// The main difference between std::io::Read and ggio::Reader is
+// that std::io::Read returns 0 to indicate the end of file.
+//
+// /// Reader is the interface that wraps the basic read method.
+// ///
+// /// read reads up to len(p) bytes into p. It returns the number of bytes
+// /// read (0 <= n <= len(p)) and any error encountered. Even if read
+// /// returns n < len(p), it may use all of p as scratch space during the call.
+// /// If some data is available but not len(p) bytes, read conventionally
+// /// returns what is available instead of waiting for more.
+// ///
+// /// When read encounters an error or end-of-file condition after
+// /// successfully reading n > 0 bytes, it returns the number of
+// /// bytes read. It may return the (non-nil) error from the same call
+// /// or return the error (and n == 0) from a subsequent call.
+// /// An instance of this general case is that a Reader returning
+// /// a non-zero number of bytes at the end of the input stream may
+// /// return either err == EOF or err == nil. The next read should
+// /// return 0, EOF.
+// ///
+// /// Callers should always process the n > 0 bytes returned before
+// /// considering the error err. Doing so correctly handles I/O errors
+// /// that happen after reading some bytes and also both of the
+// /// allowed EOF behaviors.
+// ///
+// /// Implementations of read are discouraged from returning a
+// /// zero byte count with a nil error, except when len(p) == 0.
+// /// Callers should treat a return of 0 and nil as indicating that
+// /// nothing happened; in particular it does not indicate EOF.
+// ///
+// /// Implementations must not retain p.
+// pub trait Reader {
+//     fn read(&mut self, p: &mut [u8]) -> (usize, Option<Error>);
 // }
 
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Error::ErrInvalidWrite => write!(f, "{}", "invalid write result"),
-            Error::ErrShortWrite => write!(f, "{}", "short write"),
-            Error::ErrShortBuffer => write!(f, "{}", "short buffer"),
-            Error::EOF => write!(f, "{}", "EOF"),
-            Error::StdIo(err) => write!(f, "{}", err),
-            Error::Other(err) => write!(f, "{}", err),
-        }
-    }
-}
-
-pub type Result<T> = core::result::Result<T, Error>;
-
-/// Reader is the interface that wraps the basic read method.
-///
-/// read reads up to len(p) bytes into p. It returns the number of bytes
-/// read (0 <= n <= len(p)) and any error encountered. Even if read
-/// returns n < len(p), it may use all of p as scratch space during the call.
-/// If some data is available but not len(p) bytes, read conventionally
-/// returns what is available instead of waiting for more.
-///
-/// When read encounters an error or end-of-file condition after
-/// successfully reading n > 0 bytes, it returns the number of
-/// bytes read. It may return the (non-nil) error from the same call
-/// or return the error (and n == 0) from a subsequent call.
-/// An instance of this general case is that a Reader returning
-/// a non-zero number of bytes at the end of the input stream may
-/// return either err == EOF or err == nil. The next read should
-/// return 0, EOF.
-///
-/// Callers should always process the n > 0 bytes returned before
-/// considering the error err. Doing so correctly handles I/O errors
-/// that happen after reading some bytes and also both of the
-/// allowed EOF behaviors.
-///
-/// Implementations of read are discouraged from returning a
-/// zero byte count with a nil error, except when len(p) == 0.
-/// Callers should treat a return of 0 and nil as indicating that
-/// nothing happened; in particular it does not indicate EOF.
-///
-/// Implementations must not retain p.
-pub trait Reader {
-    fn read(&mut self, p: &mut [u8]) -> (usize, Option<Error>);
-}
-
-/// Writer is the interface that wraps the basic write method.
-///
-/// write writes len(p) bytes from p to the underlying data stream.
-/// It returns the number of bytes written from p (0 <= n <= len(p))
-/// and any error encountered that caused the write to stop early.
-/// write must return a non-nil error if it returns n < len(p).
-/// write must not modify the slice data, even temporarily.
-///
-/// Implementations must not retain p.
-pub trait Writer {
-    fn write(&mut self, p: &[u8]) -> (usize, Option<Error>);
-}
+// Instead of using Writer, use std::io::Write.  That will make the
+// code more idiomatic and make it easier to interoperate with the
+// rest of Rust ecosystem.
+// /// Writer is the interface that wraps the basic write method.
+// ///
+// /// write writes len(p) bytes from p to the underlying data stream.
+// /// It returns the number of bytes written from p (0 <= n <= len(p))
+// /// and any error encountered that caused the write to stop early.
+// /// write must return a non-nil error if it returns n < len(p).
+// /// write must not modify the slice data, even temporarily.
+// ///
+// /// Implementations must not retain p.
+// pub trait Writer {
+//     fn write(&mut self, p: &[u8]) -> (usize, Option<Error>);
+// }
 
 /// Closer is the interface that wraps the basic Close method.
 ///
 /// The behavior of Close after the first call is undefined.
 /// Specific implementations may document their own behavior.
 pub trait Closer {
-    fn close(&mut self) -> Result<()>;
+    fn close(&mut self) -> std::io::Result<()>;
 }
 
 // // Seeker is the interface that wraps the basic Seek method.
@@ -232,11 +122,11 @@ pub trait Closer {
 // 	Seek(offset int64, whence isize) (int64, error)
 // }
 
-/// ReadWriter is the interface that groups the basic read and write methods.
-pub trait ReadWriter: Reader + Writer {}
+// /// ReadWriter is the interface that groups the basic read and write methods.
+// pub trait ReadWriter: Reader + Writer {}
 
-/// ReadCloser is the interface that groups the basic read and Close methods.
-pub trait ReadCloser: Reader + Closer {}
+// /// ReadCloser is the interface that groups the basic read and Close methods.
+// pub trait ReadCloser: Reader + Closer {}
 
 // // WriteCloser is the interface that groups the basic write and Close methods.
 // type WriteCloser interface {
@@ -289,16 +179,16 @@ pub trait ReadCloser: Reader + Closer {}
 // 	ReadFrom(r Reader) (n int64, err error)
 // }
 
-/// WriterTo is the interface that wraps the WriteTo method.
-///
-/// WriteTo writes data to w until there's no more data to write or
-/// when an error occurs. The return value n is the number of bytes
-/// written. Any error encountered during the write is also returned.
-///
-/// The copy function uses WriterTo if available.
-pub trait WriterTo {
-    fn write_to(&mut self, w: &mut dyn Writer) -> (usize, Option<Error>);
-}
+// /// WriterTo is the interface that wraps the WriteTo method.
+// ///
+// /// WriteTo writes data to w until there's no more data to write or
+// /// when an error occurs. The return value n is the number of bytes
+// /// written. Any error encountered during the write is also returned.
+// ///
+// /// The copy function uses WriterTo if available.
+// pub trait WriterTo {
+//     fn write_to(&mut self, w: &mut dyn Writer) -> std::io::Result<usize>;
+// }
 
 // // ReaderAt is the interface that wraps the basic ReadAt method.
 // //
@@ -359,8 +249,7 @@ pub trait WriterTo {
 /// processing. A Reader that does not implement  ByteReader
 /// can be wrapped using bufio.new_reader to add this method.
 pub trait ByteReader {
-    // fn read_byte(&mut self) -> std::io::Result<u8>;
-    fn read_byte(&mut self) -> Result<u8>;
+    fn read_byte(&mut self) -> std::io::Result<u8>;
 }
 
 // // ByteScanner is the interface that adds the UnreadByte method to the
@@ -420,41 +309,42 @@ pub trait ByteReader {
 
 /// read_at_least reads from r into buf until it has read at least min bytes.
 /// It returns the number of bytes copied and an error if fewer bytes were read.
-/// The error is EOF only if no bytes were read.
-/// If an EOF happens after reading fewer than min bytes,
-/// read_at_least returns ErrUnexpectedEOF.
-/// If min is greater than the length of buf, read_at_least returns ErrShortBuffer.
-/// On return, n >= min if and only if err == nil.
-/// If r returns an error having read at least min bytes, the error is dropped.
-pub fn read_at_least(r: &mut dyn Reader, buf: &mut [u8], min: usize) -> (usize, Option<Error>) {
+/// If fewer than min bytes were read, read_at_least returns an error.
+/// If min is greater than the length of buf, read_at_least returns ErrorKind::InvalidInput.
+pub fn read_at_least(
+    r: &mut dyn std::io::Read,
+    buf: &mut [u8],
+    min: usize,
+) -> (usize, Option<std::io::Error>) {
     if buf.len() < min {
-        return (0, Some(Error::ErrShortBuffer));
+        return (
+            0,
+            Some(std::io::Error::from(std::io::ErrorKind::InvalidInput)),
+        );
     }
     let mut n = 0;
-    let mut err: Option<Error> = None;
-    while n < min && err.is_none() {
-        let res = r.read(&mut buf[n..]);
-        err = res.1;
-        n += res.0;
+    while n < min {
+        match r.read(&mut buf[n..]) {
+            Ok(nr) => {
+                if nr == 0 {
+                    return (
+                        n,
+                        Some(std::io::Error::from(std::io::ErrorKind::UnexpectedEof)),
+                    );
+                }
+                n += nr;
+            }
+            Err(e) => return (n, Some(e)),
+        }
     }
-    if n >= min {
-        err = None;
-    } else if n > 0 && err.is_some() && err.as_ref().unwrap().is_eof() {
-        err = Some(Error::new_unexpected_eof());
-    }
-    return (n, err);
+    return (n, None);
 }
 
 /// read_full reads exactly buf.len() bytes from r into buf.
-/// It returns the number of bytes copied and an error if fewer bytes were read.
-/// The error is EOF only if no bytes were read.
-/// If an EOF happens after reading some but not all the bytes,
-/// read_full returns ErrUnexpectedEOF.
-/// On return, n == buf.len() if and only if err == nil.
-/// If r returns an error having read at least buf.len() bytes, the error is dropped.
-///
-/// Rust analog of this is std::io::Read::read_exact
-pub fn read_full(r: &mut dyn Reader, buf: &mut [u8]) -> (usize, Option<Error>) {
+/// The difference from Rust's std::io::Read::read_exact, it that read_full returns both
+/// number of bytes read and a possible error, when std::io::Read::read_exact returns one or another.
+pub fn read_full(r: &mut dyn std::io::Read, buf: &mut [u8]) -> (usize, Option<std::io::Error>) {
+    // r.read_exact(buf)
     read_at_least(r, buf, buf.len())
 }
 
@@ -465,7 +355,11 @@ pub fn read_full(r: &mut dyn Reader, buf: &mut [u8]) -> (usize, Option<Error>) {
 ///
 /// If dst implements the ReaderFrom interface,
 /// the copy is implemented using it.
-pub fn copy_n(dst: &mut dyn Writer, src: &mut dyn Reader, n: usize) -> (usize, Option<Error>) {
+pub fn copy_n(
+    dst: &mut dyn std::io::Write,
+    src: &mut dyn std::io::Read,
+    n: usize,
+) -> (usize, Option<std::io::Error>) {
     // -> (written int64, err error) {
     let (written, err) = copy(dst, &mut LimitedReader::new(src, n));
     if written == n as u64 {
@@ -473,7 +367,10 @@ pub fn copy_n(dst: &mut dyn Writer, src: &mut dyn Reader, n: usize) -> (usize, O
     }
     if written < n as u64 && err.is_none() {
         // src stopped early; must have been EOF.
-        return (written as usize, Some(Error::EOF));
+        return (
+            written as usize,
+            Some(std::io::Error::from(std::io::ErrorKind::UnexpectedEof)),
+        );
     }
     return (written as usize, err);
 }
@@ -491,7 +388,10 @@ pub fn copy_n(dst: &mut dyn Writer, src: &mut dyn Reader, n: usize) -> (usize, O
 // the copy is implemented by calling src.WriteTo(dst).
 // Otherwise, if dst implements the ReaderFrom interface,
 // the copy is implemented by calling dst.ReadFrom(src).
-pub fn copy(dst: &mut dyn Writer, src: &mut dyn Reader) -> (u64, Option<Error>) {
+pub fn copy(
+    dst: &mut dyn std::io::Write,
+    src: &mut dyn std::io::Read,
+) -> (u64, Option<std::io::Error>) {
     return copy_buffer_int(dst, src, None);
 }
 
@@ -504,10 +404,10 @@ pub fn copy(dst: &mut dyn Writer, src: &mut dyn Reader) -> (u64, Option<Error>) 
 // If either src implements WriterTo or dst implements ReaderFrom,
 // buf will not be used to perform the copy.
 pub fn copy_buffer(
-    dst: &mut dyn Writer,
-    src: &mut dyn Reader,
+    dst: &mut dyn std::io::Write,
+    src: &mut dyn std::io::Read,
     buf: Option<&mut [u8]>,
-) -> (u64, Option<Error>) {
+) -> (u64, Option<std::io::Error>) {
     if buf.is_some() && buf.as_ref().unwrap().len() == 0 {
         panic!("empty buffer in copy_buffer");
     }
@@ -517,10 +417,10 @@ pub fn copy_buffer(
 /// copy_buffer_int is the actual implementation of copy and copy_buffer.
 /// if buf is nil, one is allocated.
 fn copy_buffer_int(
-    dst: &mut dyn Writer,
-    src: &mut dyn Reader,
+    dst: &mut dyn std::io::Write,
+    src: &mut dyn std::io::Read,
     buf: Option<&mut [u8]>,
-) -> (u64, Option<Error>) {
+) -> (u64, Option<std::io::Error>) {
     // If the reader has a WriteTo method, use it to do the copy.
     // Avoids an allocation and a copy.
     // 	if wt, ok := src.(WriterTo); ok {
@@ -531,36 +431,39 @@ fn copy_buffer_int(
     // 		return rt.ReadFrom(src)
     // 	}
     fn copy_buf(
-        dst: &mut dyn Writer,
-        src: &mut dyn Reader,
+        dst: &mut dyn std::io::Write,
+        src: &mut dyn std::io::Read,
         buf: &mut [u8],
-    ) -> (u64, Option<Error>) {
+    ) -> (u64, Option<std::io::Error>) {
         let mut written: u64 = 0;
         loop {
             // println!("   copy_buf, written = {}, buf len= {}", written, buf.len());
-            let (nr, er) = src.read(buf);
-            if nr > 0 {
-                let (nw, ew) = dst.write(&buf[0..nr]);
-                if nr < nw {
-                    return (written, Some(Error::ErrInvalidWrite));
-                }
-                written += nw as u64;
-                if ew.is_some() {
-                    return (written, ew);
-                }
-                if nr != nw {
-                    return (written, Some(Error::ErrShortWrite));
-                }
-            }
-            if er.is_some() {
-                return (
-                    written,
-                    if er.as_ref().unwrap().is_eof() {
-                        None
+            // let (nr, er) = src.read(buf);
+            let res = src.read(buf);
+            match res {
+                Ok(nr) => {
+                    if nr > 0 {
+                        // let (nw, ew) = dst.write(&buf[0..nr]);
+                        match dst.write(&buf[0..nr]) {
+                            Ok(nw) => {
+                                if nr < nw {
+                                    return (written, Some(new_error_invalid_write()));
+                                }
+                                written += nw as u64;
+                                if nr != nw {
+                                    return (written, Some(new_error_short_write()));
+                                }
+                            }
+                            Err(ew) => return (written, Some(ew)),
+                        }
                     } else {
-                        er
-                    },
-                );
+                        // consider this to be end of file
+                        return (written, None);
+                    }
+                }
+                Err(er) => {
+                    return (written, Some(er));
+                }
             }
         }
     }
@@ -586,7 +489,7 @@ fn copy_buffer_int(
 /// limit_reader returns a Reader that reads from r
 /// but stops with EOF after n bytes.
 /// The underlying implementation is a *LimitedReader.
-pub fn limit_reader(r: &mut dyn Reader, n: usize) -> impl Reader + '_ {
+pub fn limit_reader(r: &mut dyn std::io::Read, n: usize) -> impl std::io::Read + '_ {
     LimitedReader::new(r, n)
 }
 
@@ -595,25 +498,29 @@ pub fn limit_reader(r: &mut dyn Reader, n: usize) -> impl Reader + '_ {
 /// updates N to reflect the new amount remaining.
 /// read returns EOF when N <= 0 or when the underlying R returns EOF.
 pub struct LimitedReader<'a> {
-    r: &'a mut dyn Reader, // underlying reader
-    n: usize,              // max bytes remaining
+    r: &'a mut dyn std::io::Read, // underlying reader
+    n: usize,                     // max bytes remaining
 }
 
 impl<'a> LimitedReader<'a> {
-    pub fn new(r: &'a mut dyn Reader, n: usize) -> Self {
+    pub fn new(r: &'a mut dyn std::io::Read, n: usize) -> Self {
         Self { r, n }
     }
 }
 
-impl<'a> Reader for LimitedReader<'a> {
-    fn read(&mut self, p: &mut [u8]) -> (usize, Option<Error>) {
+impl<'a> std::io::Read for LimitedReader<'a> {
+    fn read(&mut self, p: &mut [u8]) -> std::io::Result<usize> {
         if self.n == 0 {
-            return (0, Some(Error::EOF));
+            return Ok(0);
         }
         let size = p.len().min(self.n);
-        let (n, err) = self.r.read(&mut p[..size]);
-        self.n -= n;
-        (n, err)
+        match self.r.read(&mut p[..size]) {
+            Ok(n) => {
+                self.n -= n;
+                return Ok(n);
+            }
+            Err(err) => Err(err),
+        }
     }
 }
 
@@ -770,12 +677,6 @@ impl Discard {
     }
 }
 
-impl Writer for Discard {
-    fn write(&mut self, p: &[u8]) -> (usize, Option<Error>) {
-        (p.len(), None)
-    }
-}
-
 impl std::io::Write for Discard {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         Ok(buf.len())
@@ -845,10 +746,8 @@ impl std::io::Write for Discard {
 // }
 
 /// read_all reads from r until an error or EOF and returns the data it read.
-/// A successful call returns err == nil, not err == EOF. Because read_all is
-/// defined to read from src until EOF, it does not treat an EOF from read
-/// as an error to be reported.
-pub fn read_all(r: &mut dyn Reader) -> (Vec<u8>, Option<Error>) {
+/// This is effectively a wrapper around std::io::Read::read_to_end
+pub fn read_all(r: &mut dyn std::io::Read) -> (Vec<u8>, Option<std::io::Error>) {
     let mut b = Vec::<u8>::with_capacity(512);
     loop {
         let len = b.len();
@@ -862,18 +761,31 @@ pub fn read_all(r: &mut dyn Reader) -> (Vec<u8>, Option<Error>) {
             std::slice::from_raw_parts_mut(free_space.as_mut_ptr() as *mut u8, free_space.len())
         };
 
-        let (n, err) = r.read(free_space);
-        if n > 0 {
-            unsafe {
-                b.set_len(len + n);
+        // let (n, err) =
+        match r.read(free_space) {
+            Ok(n) => {
+                if n == 0 {
+                    // consider this to be the end of file
+                    return (b, None);
+                } else {
+                    unsafe {
+                        b.set_len(len + n);
+                    }
+                }
             }
-        }
-        if err.is_some() {
-            let err = err.unwrap();
-            if err.is_eof() {
-                return (b, None);
+            Err(err) => {
+                return (b, Some(err));
             }
-            return (b, Some(err));
         }
     }
+}
+
+fn new_error_short_write() -> std::io::Error {
+    // ErrShortWrite
+    errors::new_stdio_other_error("short write".to_string())
+}
+
+fn new_error_invalid_write() -> std::io::Error {
+    // ErrInvalidWrite
+    errors::new_stdio_other_error("invalid write result".to_string())
 }

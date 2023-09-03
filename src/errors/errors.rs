@@ -137,3 +137,15 @@ impl builtin::Error for ErrorStaticString {
 // // Functions and methods should document the cases in which an error
 // // wrapping this will be returned.
 // var ErrUnsupported = New("unsupported operation")
+
+pub fn new_stdio_other_error(message: String) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::Other, message)
+}
+
+pub fn new_unexpected_eof() -> std::io::Error {
+    std::io::Error::from(std::io::ErrorKind::UnexpectedEof)
+}
+
+pub fn copy_stdio_error(e: &std::io::Error) -> std::io::Error {
+    std::io::Error::new(e.kind(), e.to_string())
+}

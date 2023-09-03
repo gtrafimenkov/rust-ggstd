@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//! Package bufio implements buffered I/O. It wraps an ggio::Reader or ggio::Writer
+//! Package bufio implements buffered I/O. It wraps an std::io::Read or std::io::Write
 //! object, creating another object (Reader or Writer) that also implements
 //! the interface but provides buffering and some help for textual I/O.
 
@@ -26,12 +26,12 @@ static ERR_BUFFER_FULL: errors::ErrorStaticString = errors::new_static("bufio: b
 
 // buffered input.
 
-/// Reader implements buffering for an ggio::Reader object.
+/// Reader implements buffering for an std::io::Read object.
 pub struct Reader<'a> {
     buf: Vec<u8>,
-    rd: &'a mut dyn ggio::Reader, // reader provided by the client
-    r: usize,                     // buf read  positions
-    w: usize,                     // buf write positions
+    rd: &'a mut dyn std::io::Read, // reader provided by the client
+    r: usize,                      // buf read  positions
+    w: usize,                      // buf write positions
     err: Option<Box<dyn std::error::Error>>,
     last_byte: isize,      // last byte read for UnreadByte; -1 means invalid
     last_rune_size: isize, // size of last rune read for UnreadRune; -1 means invalid
@@ -43,9 +43,9 @@ const MAX_CONSECUTIVE_EMPTY_READS: usize = 100;
 /// new_reader_size returns a new Reader whose buffer has at least the specified
 /// size.
 // not implemented: can it be implemented?
-// If the argument ggio::Reader is already a Reader with large enough
+// If the argument std::io::Read is already a Reader with large enough
 // size, it returns the underlying Reader.
-pub fn new_reader_size(rd: &mut dyn ggio::Reader, size: usize) -> Reader {
+pub fn new_reader_size(rd: &mut dyn std::io::Read, size: usize) -> Reader {
     // Is it already a Reader?
     // 	b, ok := rd.(*Reader)
     // 	if ok && b.buf.len() >= size {
@@ -64,13 +64,13 @@ pub fn new_reader_size(rd: &mut dyn ggio::Reader, size: usize) -> Reader {
 }
 
 /// new_reader returns a new Reader whose buffer has the default size.
-pub fn new_reader(rd: &mut dyn ggio::Reader) -> Reader {
+pub fn new_reader(rd: &mut dyn std::io::Read) -> Reader {
     new_reader_size(rd, DEFAULT_BUF_SIZE)
 }
 
 impl<'a> Reader<'a> {
     /// new creates a reader with the default size buffer
-    pub fn new(r: &'a mut dyn ggio::Reader) -> Self {
+    pub fn new(r: &'a mut dyn std::io::Read) -> Self {
         Self {
             buf: vec![0; DEFAULT_BUF_SIZE],
             rd: r,
@@ -89,7 +89,7 @@ impl<'a> Reader<'a> {
 
     /// reset discards any buffered data, resets all state, and switches
     /// the buffered reader to read from r.
-    pub fn reset(&mut self, r: &'a mut dyn ggio::Reader) {
+    pub fn reset(&mut self, r: &'a mut dyn std::io::Read) {
         self.buf.resize(DEFAULT_BUF_SIZE, 0);
         self.rd = r;
         self.r = 0;
@@ -115,14 +115,19 @@ impl<'a> Reader<'a> {
 
         // Read new data: try a limited number of times.
         for _i in 0..MAX_CONSECUTIVE_EMPTY_READS {
-            let (n, err) = self.rd.read(&mut self.buf[self.w..]);
-            self.w += n;
-            if err.is_some() {
-                self.err = Some(Box::new(err.unwrap()));
-                return;
-            }
-            if n > 0 {
-                return;
+            // let (n, err) = self.rd.read(&mut self.buf[self.w..]);
+            let res = self.rd.read(&mut self.buf[self.w..]);
+            match res {
+                Err(err) => {
+                    self.err = Some(Box::new(err));
+                    return;
+                }
+                Ok(n) => {
+                    self.w += n;
+                    if n > 0 {
+                        return;
+                    }
+                }
             }
         }
         self.err = Some(Box::new(ggio::ERR_NO_PROGRESS));
@@ -171,7 +176,7 @@ impl<'a> Reader<'a> {
     // //
     // // If Discard skips fewer than n bytes, it also returns an error.
     // // If 0 <= n <= b.buffered(), Discard is guaranteed to succeed without
-    // // reading from the underlying ggio::Reader.
+    // // reading from the underlying std::io::Read.
     // fn Discard(&mut self, n int) (discarded int, err error) {
     // 	if n < 0 {
     // 		return 0, ERR_NEGATIVE_COUNT
@@ -210,7 +215,7 @@ impl<'a> Reader<'a> {
     // // hence n may be less than len(p).
     // // To read exactly len(p) bytes, use io.ReadFull(b, p).
     // // If the underlying Reader can return a non-zero count with io.EOF,
-    // // then this Read method can do so as well; see the [ggio::Reader] docs.
+    // // then this Read method can do so as well; see the [std::io::Read] docs.
     // fn Read(&mut self, p [u8]) (n int, err error) {
     // 	n = len(p)
     // 	if n == 0 {
@@ -783,7 +788,7 @@ impl<'a> Reader<'a> {
 // // supports the ReadFrom method, this calls the underlying ReadFrom.
 // // If there is buffered data and an underlying ReadFrom, this fills
 // // the buffer and writes it before calling ReadFrom.
-// fn (b *Writer) ReadFrom(r ggio::Reader) (n int64, err error) {
+// fn (b *Writer) ReadFrom(r std::io::Read) (n int64, err error) {
 // 	if b.err.is_some() {
 // 		return 0, b.err
 // 	}

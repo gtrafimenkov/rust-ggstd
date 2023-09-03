@@ -5,7 +5,6 @@
 
 use crate::bytes;
 use crate::compress::zlib;
-use crate::io as ggio;
 use std::io::Read;
 
 struct ZlibTest {
@@ -82,10 +81,10 @@ fn get_tests() -> [ZlibTest; 14] {
             compressed: &[0x78, 0x9c, 0x03, 0x00, 0x00, 0x00, 0x00, 0xff],
             dict: None,
             // expected_err: Some(zlib::Error::ErrChecksum),
-            expected_err: Some(zlib::Error::GGIo(ggio::Error::StdIo(std::io::Error::new(
+            expected_err: Some(zlib::Error::StdIo(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "zlib: invalid checksum",
-            )))),
+            ))),
         },
         ZlibTest {
             _desc: "not enough data",
@@ -163,13 +162,10 @@ fn test_decompressor() {
             assert!(false, "unexpected error {:?}", got);
         }
         match want.as_ref().unwrap() {
-            zlib::Error::GGIo(want) => match want {
-                ggio::Error::StdIo(want) => {
-                    assert_eq!(got.kind(), want.kind());
-                    return;
-                }
-                _ => {}
-            },
+            zlib::Error::StdIo(want) => {
+                assert_eq!(got.kind(), want.kind());
+                return;
+            }
             _ => {}
         }
         assert!(

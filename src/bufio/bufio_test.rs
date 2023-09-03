@@ -1146,7 +1146,7 @@
 // var errorWriterToTests = []errorWriterToTest{
 // 	{1, 0, nil, io.ErrClosedPipe, io.ErrClosedPipe},
 // 	{0, 1, io.ErrClosedPipe, nil, io.ErrClosedPipe},
-// 	{0, 0, ggio::Error::ErrUnexpectedEOF, io.ErrClosedPipe, io.ErrClosedPipe},
+// 	{0, 0, std::io::Error::ErrUnexpectedEOF, io.ErrClosedPipe, io.ErrClosedPipe},
 // 	{0, 1, io.EOF, nil, nil},
 // }
 

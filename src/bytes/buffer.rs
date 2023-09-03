@@ -6,7 +6,6 @@
 //! Simple byte buffer for marshaling data.
 
 use crate::compat;
-use crate::io as ggio;
 use std::io::Write;
 
 const SMALL_BUFFER_SIZE: usize = 64;
@@ -148,45 +147,25 @@ impl Buffer {
     }
 }
 
-impl ggio::ReadWriter for Buffer {}
-impl ggio::Reader for Buffer {
+impl std::io::Read for Buffer {
     /// Read reads the next p.len() bytes from the buffer or until the buffer
-    /// is drained. The return value n is the number of bytes read. If the
-    /// buffer has no data to return, err is io.EOF (unless p.len() is zero);
-    /// otherwise it is nil.
-    fn read(&mut self, p: &mut [u8]) -> (usize, Option<ggio::Error>) {
+    /// is drained. The return value n is the number of bytes read.
+    fn read(&mut self, p: &mut [u8]) -> std::io::Result<usize> {
         // b.lastRead = opInvalid
         if self.empty() {
             // Buffer is empty, reset to recover space.
             self.reset();
             if p.len() == 0 {
-                return (0, None);
+                return Ok(0);
             }
-            return (0, Some(ggio::Error::EOF));
+            return Ok(0);
         }
         let n = compat::copy(p, &self.buf[self.off..]);
         self.off += n;
         if n > 0 {
             // self.lastRead = opRead
         }
-        return (n, None);
-    }
-}
-
-impl std::io::Read for Buffer {
-    /// Read reads the next p.len() bytes from the buffer or until the buffer
-    /// is drained. The return value n is the number of bytes read.
-    fn read(&mut self, p: &mut [u8]) -> std::io::Result<usize> {
-        Ok(self::ggio::Reader::read(self, p).0)
-    }
-}
-
-impl ggio::Writer for Buffer {
-    fn write(&mut self, p: &[u8]) -> (usize, Option<ggio::Error>) {
-        let n = p.len();
-        self.guarantee_space(n);
-        self.buf.extend_from_slice(p);
-        (n, None)
+        return Ok(n);
     }
 }
 

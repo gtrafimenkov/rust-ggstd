@@ -46,7 +46,7 @@ pub fn encode(dst: &mut [u8], src: &[u8]) -> usize {
 pub enum Error {
     /// ErrLength reports an attempt to decode an odd-length input
     // using Decode or decode_string.
-    // The stream-based Decoder returns ggio::Error::ErrUnexpectedEOF instead of ErrLength.
+    // The stream-based Decoder returns std::io::Error::ErrUnexpectedEOF instead of ErrLength.
     ErrLength,
     /// InvalidByteError values describe errors resulting from an invalid byte in a hex string.
     InvalidByteError(u8),
@@ -199,7 +199,7 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
 // 			if a := REVERSE_HEX_TABLE[d.in[len(d.in)-1]]; a > 0x0f {
 // 				d.err = InvalidByteError(d.in[len(d.in)-1])
 // 			} else {
-// 				d.err = ggio::Error::ErrUnexpectedEOF
+// 				d.err = std::io::Error::ErrUnexpectedEOF
 // 			}
 // 		}
 // 	}

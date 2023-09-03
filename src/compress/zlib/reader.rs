@@ -4,8 +4,8 @@
 // license that can be found in the LICENSE file.
 
 use crate::compress::flate;
+use crate::errors;
 use crate::hash::{self, adler32, Hash32};
-use crate::io as ggio;
 use std::io::{Read, Write};
 
 const ZLIB_DEFLATE: u8 = 8;
@@ -19,7 +19,7 @@ pub enum Error {
     ErrDictionary,
     /// ErrHeader is returned when reading ZLIB data that has an invalid header.
     ErrHeader,
-    GGIo(ggio::Error),
+    StdIo(std::io::Error),
 }
 
 impl PartialEq for Error {
@@ -37,8 +37,8 @@ impl PartialEq for Error {
                 Error::ErrHeader => true,
                 _ => false,
             },
-            Error::GGIo(e1) => match other {
-                Error::GGIo(e2) => e1 == e2,
+            Error::StdIo(e1) => match other {
+                Error::StdIo(e2) => e1.kind() == e2.kind(),
                 _ => false,
             },
         }
@@ -48,10 +48,7 @@ impl PartialEq for Error {
 impl Error {
     fn to_stdio_error(e: Self) -> std::io::Error {
         match e {
-            Error::GGIo(e) => match e {
-                ggio::Error::StdIo(e) => return std::io::Error::new(e.kind(), e.to_string()),
-                _ => return std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
-            },
+            Error::StdIo(e) => errors::copy_stdio_error(&e),
             _ => return std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
         }
     }
@@ -63,26 +60,20 @@ impl std::fmt::Display for Error {
             Error::ErrHeader => write!(f, "zlib: invalid header"),
             Error::ErrDictionary => write!(f, "zlib: invalid dictionary"),
             Error::ErrChecksum => write!(f, "zlib: invalid checksum"),
-            Error::GGIo(err) => write!(f, "{}", err),
+            Error::StdIo(err) => write!(f, "{}", err),
         }
     }
 }
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        Error::GGIo(ggio::Error::from(error))
+        Error::StdIo(std::io::Error::from(error))
     }
 }
 
 impl From<std::io::ErrorKind> for Error {
     fn from(kind: std::io::ErrorKind) -> Self {
-        Error::GGIo(ggio::Error::from(std::io::Error::from(kind)))
-    }
-}
-
-impl From<ggio::Error> for Error {
-    fn from(error: ggio::Error) -> Self {
-        Error::GGIo(error)
+        Error::StdIo(std::io::Error::from(std::io::Error::from(kind)))
     }
 }
 
@@ -140,9 +131,8 @@ impl<'a> Reader<'a> {
             return Ok(n);
         }
 
-        if !err.as_ref().is_some_and(|e| e.is_eof()) {
-            // an error happened and it is not EOF
-            return Err(Error::GGIo(err.unwrap()));
+        if let Some(err) = err {
+            return Err(Error::StdIo(err));
         }
 
         // n == 0 or an error happened and it is EOF
@@ -166,7 +156,7 @@ impl<'a> Reader<'a> {
     /// Calling close does not close the wrapped io.Reader originally passed to new_reader.
     /// In order for the ZLIB checksum to be verified, the reader must be
     /// fully consumed until the io.EOF.
-    pub fn close(&mut self) -> Result<(), flate::Error> {
+    pub fn close(&mut self) -> Result<(), std::io::Error> {
         self.decompressor.close()
     }
 

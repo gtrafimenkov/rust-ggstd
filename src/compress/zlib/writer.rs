@@ -5,8 +5,8 @@
 
 use crate::compress::flate;
 use crate::encoding::binary;
+use crate::errors;
 use crate::hash::{self, adler32};
-use crate::io as ggio;
 use std::io::Write;
 
 // These constants are copied from the flate package, so that code that imports
@@ -67,9 +67,9 @@ pub fn new_writer_level_dict<'a>(
     w: &'a mut dyn std::io::Write,
     level: isize,
     dict: &'a [u8],
-) -> ggio::Result<Writer<'a>> {
+) -> std::io::Result<Writer<'a>> {
     if level < HUFFMAN_ONLY || level > BEST_COMPRESSION {
-        return Err(ggio::Error::new_str_error(&format!(
+        return Err(errors::new_stdio_other_error(format!(
             "zlib: invalid compression level: {}",
             level
         )));

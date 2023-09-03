@@ -35,55 +35,6 @@ pub(super) fn get_fixed_huffman_decoder() -> &'static HuffmanDecoder {
     ENCODER.get_or_init(generate_fixed_huffman_decoder)
 }
 
-#[derive(Debug)]
-pub enum Error {
-    /// A CorruptInputError reports the presence of corrupt input at a given offset.
-    CorruptInputError(u64),
-    // An InternalError reports an error in the flate code itself.
-    InternalError(&'static str),
-    GGIo(ggio::Error),
-}
-
-impl Error {
-    pub fn is_eof(&self) -> bool {
-        match self {
-            Error::GGIo(err) => err.is_eof(),
-            _ => false,
-        }
-    }
-
-    /// lossy_copy makes a copy of an error as good as possible.
-    /// If it is not possibly to copy the error, Other(errors::StringError) will be returned instead.
-    fn lossy_copy(&self) -> Error {
-        match self {
-            Error::CorruptInputError(v) => return Error::CorruptInputError(*v),
-            Error::InternalError(v) => return Error::InternalError(v),
-            Error::GGIo(v) => return Error::GGIo(ggio::Error::lossy_copy(v)),
-        }
-    }
-
-    /// lossy_copy_ggio_error makes a copy of an error as good as possible and returns
-    /// it as an instance of ggio::Error.
-    fn lossy_copy_ggio_error(&self) -> ggio::Error {
-        match self {
-            Error::GGIo(v) => return ggio::Error::lossy_copy(v),
-            _ => return ggio::Error::Other(Box::new(errors::new_str(&self.to_string()))),
-        }
-    }
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Error::CorruptInputError(v) => write!(f, "flate: corrupt input before offset {}", v),
-            Error::InternalError(v) => write!(f, "flate: internal error: {}", v),
-            Error::GGIo(v) => write!(f, "{}", v),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
 // // Resetter resets a ReadCloser returned by new_reader or new_reader_dict
 // // to switch to a new underlying Reader. This permits reusing a ReadCloser
 // // instead of allocating a new one.
@@ -305,8 +256,8 @@ impl HuffmanDecoder {
 // pub trait Reader: ggio::Reader + ggio::ByteReader {}
 pub trait Reader {
     //: ggio::Reader + ggio::ByteReader {
-    fn read(&mut self, p: &mut [u8]) -> (usize, Option<ggio::Error>);
-    fn read_byte(&mut self) -> Result<u8, ggio::Error>;
+    fn read(&mut self, p: &mut [u8]) -> (usize, Option<std::io::Error>);
+    fn read_byte(&mut self) -> Result<u8, std::io::Error>;
 }
 
 #[derive(PartialEq)]
@@ -324,6 +275,7 @@ enum HLDecoder {
 pub struct Decompressor<'a> {
     /// Input source.
     r: std::io::BufReader<&'a mut dyn std::io::Read>,
+    err: Option<std::io::Error>,
     pub(super) td: DecompressorFilter,
 }
 
@@ -350,7 +302,8 @@ pub struct DecompressorFilter {
     step: fn(r: &mut std::io::BufReader<&mut dyn std::io::Read>, &mut DecompressorFilter),
     step_state: StepState,
     final_: bool,
-    err: Option<Error>,
+    end_of_stream: bool,
+    err: Option<std::io::Error>,
     hl: HLDecoder,
     hd: HDDecoder,
     copy_len: usize,
@@ -373,7 +326,7 @@ fn next_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Decomp
     while f.nb < 1 + 2 {
         let res = f.more_bits(r);
         if res.is_err() {
-            f.err = Some(Error::GGIo(res.err().unwrap()));
+            f.err = Some(res.err().unwrap());
             return;
         }
     }
@@ -401,7 +354,7 @@ fn next_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Decomp
         }
         _ => {
             // 3 is reserved.
-            f.err = Some(Error::CorruptInputError(f.roffset));
+            f.err = Some(new_corrupted_input_error(f.roffset));
         }
     }
 }
@@ -413,16 +366,30 @@ const CODE_ORDER: [usize; 19] = [
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ];
 
-impl ggio::Reader for Decompressor<'_> {
-    fn read(&mut self, b: &mut [u8]) -> (usize, Option<ggio::Error>) {
-        self.td.read(&mut self.r, b)
+impl std::io::Read for Decompressor<'_> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if self.err.is_some() {
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+        }
+        let (n, err) = self.td.read(&mut self.r, buf);
+        println!("decompr read: {}, {:?}", n, err);
+        self.err = err;
+        if n > 0 {
+            return Ok(n);
+        } else {
+            if self.err.is_some() {
+                return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+            } else {
+                return Ok(0);
+            }
+        }
     }
 }
 
 impl Decompressor<'_> {
     /// new returns a new Decompressor that can be used
     /// to read the uncompressed version of r.
-    /// The reader returns ggio::Error::EOF after the final block in the DEFLATE stream has
+    /// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has
     /// been encountered. Any trailing data after the final block is ignored.
     ///
     // ggrust: not implemented
@@ -443,15 +410,16 @@ impl Decompressor<'_> {
         let f = Decompressor {
             r: std::io::BufReader::new(r),
             td: DecompressorFilter::new_dict(dict),
+            err: None,
         };
         return f;
     }
 
-    pub fn read(&mut self, b: &mut [u8]) -> (usize, Option<ggio::Error>) {
+    pub fn read(&mut self, b: &mut [u8]) -> (usize, Option<std::io::Error>) {
         self.td.read(&mut self.r, b)
     }
 
-    pub fn close(&mut self) -> Result<(), Error> {
+    pub fn close(&mut self) -> Result<(), std::io::Error> {
         self.td.close()
     }
 }
@@ -538,7 +506,7 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                     }
                     _ => {
                         // 		default:
-                        f.err = Some(Error::CorruptInputError(f.roffset));
+                        f.err = Some(new_corrupted_input_error(f.roffset));
                         return;
                     }
                 };
@@ -546,7 +514,7 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                 if n > 0 {
                     while f.nb < n {
                         if let Err(err) = f.more_bits(r) {
-                            f.err = Some(Error::GGIo(err));
+                            f.err = Some(err);
                             return;
                         }
                     }
@@ -560,7 +528,7 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                     HDDecoder::None => {
                         while f.nb < 5 {
                             if let Err(err) = f.more_bits(r) {
-                                f.err = Some(Error::GGIo(err));
+                                f.err = Some(err);
                                 return;
                             }
                         }
@@ -590,7 +558,7 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                     let mut extra = (dist & 1) << nb;
                     while f.nb < nb {
                         if let Err(err) = f.more_bits(r) {
-                            f.err = Some(Error::GGIo(err));
+                            f.err = Some(err);
                             return;
                         }
                     }
@@ -600,13 +568,13 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                     dist = 1_usize.overflowing_shl((nb + 1) as u32).0 + 1 + extra;
                 } else {
                     // 		default:
-                    f.err = Some(Error::CorruptInputError(f.roffset));
+                    f.err = Some(new_corrupted_input_error(f.roffset));
                     return;
                 }
 
                 // No check on length; encoding can be prescient.
                 if dist > f.dict.hist_size() {
-                    f.err = Some(Error::CorruptInputError(f.roffset));
+                    f.err = Some(new_corrupted_input_error(f.roffset));
                     return;
                 }
 
@@ -642,8 +610,8 @@ fn copy_data(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Decompr
     f.roffset += n as u64;
     f.copy_len -= n;
     f.dict.write_mark(n);
-    if err.is_some() {
-        f.err = Some(Error::GGIo(no_eof_err(err.unwrap())));
+    if let Some(err) = err {
+        f.err = Some(err);
         return;
     }
 
@@ -658,30 +626,8 @@ fn copy_data(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Decompr
 impl Decompressor<'_> {
     /// Read the next Huffman-encoded symbol from f according to h.
     #[allow(dead_code)]
-    pub(super) fn huff_sym(&mut self, decoder: DecoderToUse) -> Result<usize, Error> {
+    pub(super) fn huff_sym(&mut self, decoder: DecoderToUse) -> Result<usize, std::io::Error> {
         self.td.huff_sym(&mut self.r, decoder)
-    }
-}
-
-/// no_eof returns err, unless err == ggio::Error::EOF, in which case it returns ggio::ErrUnexpectedEOF.
-fn no_eof<T>(e: ggio::Result<T>) -> ggio::Result<T> {
-    match e {
-        Ok(value) => Ok(value),
-        Err(err) => {
-            if err.is_eof() {
-                Err(ggio::Error::new_unexpected_eof())
-            } else {
-                Err(err)
-            }
-        }
-    }
-}
-
-/// no_eof_err returns err, unless err == ggio::Error::EOF, in which case it returns ggio::Error::new_unexpected_eof().
-fn no_eof_err(e: ggio::Error) -> ggio::Error {
-    match e {
-        ggio::Error::EOF => ggio::Error::new_unexpected_eof(),
-        _ => e,
     }
 }
 
@@ -719,7 +665,7 @@ impl<'a> Decompressor<'a> {
 
 /// new_reader returns a new Decompressor that can be used
 /// to read the uncompressed version of r.
-/// The reader returns ggio::Error::EOF after the final block in the DEFLATE stream has
+/// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has
 /// been encountered. Any trailing data after the final block is ignored.
 ///
 // ggrust: not implemented
@@ -743,25 +689,26 @@ pub fn new_reader_dict<'a>(r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Deco
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-// impl ggio::Reader for DecompressorFilter {
 impl DecompressorFilter {
     pub fn read(
         &mut self,
         r: &mut std::io::BufReader<&mut dyn std::io::Read>,
         b: &mut [u8],
-    ) -> (usize, Option<ggio::Error>) {
+    ) -> (usize, Option<std::io::Error>) {
         // first returning available data, then an error if it exists
         loop {
             // self.dict.stash_len()
             if self.dict.stash_len() > 0 {
                 let n = self.dict.stash_read(b);
-                if self.dict.stash_len() == 0 {
-                    return (n, self.copy_error());
+                if n > 0 {
+                    return (n, None);
                 }
-                return (n, None);
             }
             if self.err.is_some() {
                 return (0, self.copy_error());
+            }
+            if self.end_of_stream {
+                return (0, None);
             }
             (self.step)(r, self);
             if self.err.is_some() && self.dict.stash_len() == 0 {
@@ -769,17 +716,16 @@ impl DecompressorFilter {
             }
         }
     }
-    // }
 
-    fn copy_error(&self) -> Option<ggio::Error> {
+    fn copy_error(&self) -> Option<std::io::Error> {
         match self.err.as_ref() {
-            Some(err) => Some(err.lossy_copy_ggio_error()),
+            Some(err) => Some(errors::copy_stdio_error(err)),
             None => None,
         }
     }
     /// new returns a new DecompressorFilter that can be used
     /// to read the uncompressed version of r.
-    /// The reader returns ggio::Error::EOF after the final block in the DEFLATE stream has
+    /// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has
     /// been encountered. Any trailing data after the final block is ignored.
     ///
     // ggrust: not implemented
@@ -810,6 +756,7 @@ impl DecompressorFilter {
             step: next_block,
             step_state: StepState::StateInit,
             final_: false,
+            end_of_stream: false,
             err: None,
             hl: HLDecoder::Fixed,
             hd: HDDecoder::None,
@@ -819,7 +766,7 @@ impl DecompressorFilter {
         return f;
     }
 
-    pub fn close(&mut self) -> Result<(), Error> {
+    pub fn close(&mut self) -> Result<(), std::io::Error> {
         // if self.err.is_some() {
         //     let err = self.err.as_ref().unwrap();
         //     if err.is_eof() {
@@ -833,21 +780,21 @@ impl DecompressorFilter {
     fn read_huffman(
         &mut self,
         r: &mut std::io::BufReader<&mut dyn std::io::Read>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), std::io::Error> {
         // HLIT[5], HDIST[5], HCLEN[4].
         while self.nb < 5 + 5 + 4 {
             if let Err(err) = self.more_bits(r) {
-                return Err(Error::GGIo(err));
+                return Err(err);
             }
         }
         let nlit = (self.b & 0x1F) as usize + 257;
         if nlit > MAX_NUM_LIT {
-            return Err(Error::CorruptInputError(self.roffset));
+            return Err(new_corrupted_input_error(self.roffset));
         }
         self.b >>= 5;
         let ndist = (self.b & 0x1F) as usize + 1;
         if ndist > MAX_NUM_DIST {
-            return Err(Error::CorruptInputError(self.roffset));
+            return Err(new_corrupted_input_error(self.roffset));
         }
         self.b >>= 5;
         let nclen = (self.b & 0xF) as usize + 4;
@@ -859,7 +806,7 @@ impl DecompressorFilter {
         for i in 0..nclen {
             while self.nb < 3 {
                 if let Err(err) = self.more_bits(r) {
-                    return Err(Error::GGIo(err));
+                    return Err(err);
                 }
             }
             self.codebits[CODE_ORDER[i]] = (self.b & 0x7) as u32;
@@ -870,7 +817,7 @@ impl DecompressorFilter {
             self.codebits[CODE_ORDER[i]] = 0;
         }
         if !self.h1.init(&self.codebits[0..]) {
-            return Err(Error::CorruptInputError(self.roffset));
+            return Err(new_corrupted_input_error(self.roffset));
         }
 
         // HLIT + 257 code lengths, HDIST + 1 code lengths,
@@ -894,7 +841,7 @@ impl DecompressorFilter {
                     rep = 3;
                     nb = 2;
                     if i == 0 {
-                        return Err(Error::CorruptInputError(self.roffset));
+                        return Err(new_corrupted_input_error(self.roffset));
                     }
                     b = self.bits[i - 1];
                 }
@@ -908,18 +855,23 @@ impl DecompressorFilter {
                     nb = 7;
                     b = 0;
                 }
-                _ => return Err(Error::InternalError("unexpected length code")),
+                _ => {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "unexpected length code",
+                    ))
+                }
             };
             while self.nb < nb {
                 if let Err(err) = self.more_bits(r) {
-                    return Err(Error::GGIo(err));
+                    return Err(err);
                 }
             }
             rep += (self.b & ((1 << nb) - 1) as u32) as usize;
             self.b >>= nb;
             self.nb -= nb;
             if i + rep > n {
-                return Err(Error::CorruptInputError(self.roffset));
+                return Err(new_corrupted_input_error(self.roffset));
             }
             for _j in 0..rep {
                 self.bits[i] = b;
@@ -928,7 +880,7 @@ impl DecompressorFilter {
         }
 
         if !self.h1.init(&self.bits[0..nlit]) || !self.h2.init(&self.bits[nlit..nlit + ndist]) {
-            return Err(Error::CorruptInputError(self.roffset));
+            return Err(new_corrupted_input_error(self.roffset));
         }
 
         // As an optimization, we can initialize the min bits to read at a time
@@ -950,16 +902,15 @@ impl DecompressorFilter {
 
         // Length then ones-complement of length.
         let (n, err) = ggio::read_full(r, &mut self.buf[0..4]);
-        // 	nr, err := ggio::read_full(r, self.buf[0:4]);
         self.roffset += n as u64;
-        if err.is_some() {
-            self.err = Some(Error::GGIo(no_eof_err(err.unwrap())));
+        if let Some(err) = err {
+            self.err = Some(err);
             return;
         }
         let n = (self.buf[0]) as usize | ((self.buf[1] as usize) << 8);
         let nn = (self.buf[2]) as usize | ((self.buf[3] as usize) << 8);
         if (nn as u16) != (!n as u16) {
-            self.err = Some(Error::CorruptInputError(self.roffset));
+            self.err = Some(new_corrupted_input_error(self.roffset));
             return;
         }
 
@@ -978,7 +929,7 @@ impl DecompressorFilter {
             if self.dict.avail_read() > 0 {
                 self.dict.stash_flush();
             }
-            self.err = Some(Error::GGIo(ggio::Error::EOF));
+            self.end_of_stream = true;
         }
         self.step = next_block;
     }
@@ -986,8 +937,8 @@ impl DecompressorFilter {
     fn more_bits(
         &mut self,
         r: &mut std::io::BufReader<&mut dyn std::io::Read>,
-    ) -> ggio::Result<()> {
-        let c = no_eof(r.read_byte())?;
+    ) -> std::io::Result<()> {
+        let c = r.read_byte()?;
         self.roffset += 1;
         self.b |= (c as u32) << self.nb;
         self.nb += 8;
@@ -999,7 +950,7 @@ impl DecompressorFilter {
         &mut self,
         r: &mut std::io::BufReader<&mut dyn std::io::Read>,
         decoder: DecoderToUse,
-    ) -> Result<usize, Error> {
+    ) -> Result<usize, std::io::Error> {
         let h = match decoder {
             DecoderToUse::H1 => &self.h1,
             DecoderToUse::HL => match self.hl {
@@ -1019,11 +970,11 @@ impl DecompressorFilter {
         let (mut nb, mut b) = (self.nb, self.b);
         loop {
             while nb < n {
-                match no_eof(r.read_byte()) {
+                match r.read_byte() {
                     Err(err) => {
                         self.b = b;
                         self.nb = nb;
-                        return Err(Error::GGIo(err));
+                        return Err(err);
                     }
                     Ok(c) => {
                         self.roffset += 1;
@@ -1043,8 +994,8 @@ impl DecompressorFilter {
                 if n == 0 {
                     self.b = b;
                     self.nb = nb;
-                    self.err = Some(Error::CorruptInputError(self.roffset));
-                    return Err(self.err.as_ref().unwrap().lossy_copy());
+                    self.err = Some(new_corrupted_input_error(self.roffset));
+                    return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
                 }
                 self.b = b >> (n & 31);
                 self.nb = nb - n;
@@ -1070,10 +1021,16 @@ impl DecompressorFilter {
         self.step = next_block;
         self.step_state = StepState::StateInit;
         self.final_ = false;
+        self.end_of_stream = false;
         self.err = None;
         self.hl = HLDecoder::Fixed;
         self.hd = HDDecoder::None;
         self.copy_len = 0;
         self.copy_dist = 0;
     }
+}
+
+fn new_corrupted_input_error(offset: u64) -> std::io::Error {
+    let msg = format!("flate: corrupt input before offset {}", offset);
+    std::io::Error::new(std::io::ErrorKind::InvalidData, msg)
 }

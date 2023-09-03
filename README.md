@@ -44,7 +44,12 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 
 When a piece of functionality is needed, appropriate Go source code is copied from
 [go1.20.6](https://github.com/golang/go/tree/go1.20.6/src) and translated to Rust.
-Structures and functions are renamed to meet Rust naming conventions.
+
+Also:
+- structures and functions are renamed to meet Rust naming conventions
+- usage of Go Reader and Writer interfaces replaced with Rust `std::io::Read` and
+  `std::io::Write`.  That makes the code more idiomatic and more compatible with
+  the rest of Rust ecosystem
 
 ## Gotchas
 

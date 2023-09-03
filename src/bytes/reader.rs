@@ -52,43 +52,23 @@ impl std::io::Read for Reader<'_> {
     }
 }
 
-impl ggio::Reader for Reader<'_> {
-    /// read implements the io.Reader interface.
-    fn read(&mut self, b: &mut [u8]) -> (usize, Option<ggio::Error>) {
-        if self.i >= self.s.len() as u64 {
-            return (0, Some(ggio::Error::EOF));
-        }
-        // 	self.prevRune = -1
-        let n = compat::copy(b, &self.s[self.i as usize..]);
-        self.i += n as u64;
-        return (n, None);
-    }
-}
-
 impl Reader<'_> {
     /// read_at implements the io.ReaderAt interface.
-    pub fn read_at(&mut self, b: &mut [u8], off: u64) -> (usize, Option<ggio::Error>) {
+    pub fn read_at(&mut self, b: &mut [u8], off: u64) -> std::io::Result<usize> {
         if off >= self.s.len() as u64 {
-            return (0, Some(ggio::Error::EOF));
+            return Ok(0);
         }
         let n = compat::copy(b, &self.s[off as usize..]);
-        return (
-            n,
-            if n < b.len() {
-                Some(ggio::Error::EOF)
-            } else {
-                None
-            },
-        );
+        return Ok(n);
     }
 }
 
 impl ggio::ByteReader for Reader<'_> {
     /// read_byte implements the io.ByteReader interface.
-    fn read_byte(&mut self) -> Result<u8, ggio::Error> {
+    fn read_byte(&mut self) -> std::io::Result<u8> {
         // 	self.prevRune = -1
         if self.i >= self.s.len() as u64 {
-            return Err(ggio::Error::EOF);
+            return Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof));
         }
         let b = self.s[self.i as usize];
         self.i += 1;
@@ -98,10 +78,10 @@ impl ggio::ByteReader for Reader<'_> {
 
 impl<'a> Reader<'a> {
     /// unread_byte complements read_byte in implementing the io.ByteScanner interface.
-    pub fn unread_byte(&mut self) -> Result<(), ggio::Error> {
+    pub fn unread_byte(&mut self) -> std::io::Result<()> {
         if self.i == 0 {
-            return Err(ggio::Error::new_static_str_error(
-                "bytes::Reader::unread_byte: at beginning of slice",
+            return Err(errors::new_stdio_other_error(
+                "bytes::Reader::unread_byte: at beginning of slice".to_string(),
             ));
         }
         // 	self.prevRune = -1
@@ -139,7 +119,7 @@ impl<'a> Reader<'a> {
     // }
 
     /// seek implements the io.Seeker interface.
-    pub fn seek(&mut self, offset: i64, whence: ggio::Seek) -> Result<u64, ggio::Error> {
+    pub fn seek(&mut self, offset: i64, whence: ggio::Seek) -> std::io::Result<u64> {
         // 	self.prevRune = -1
         let abs = match whence {
             ggio::Seek::Start => offset,
@@ -147,30 +127,38 @@ impl<'a> Reader<'a> {
             ggio::Seek::End => self.s.len() as i64 + offset,
         };
         if abs < 0 {
-            return Err(ggio::Error::Other(Box::new(
-                errors::ErrorStaticString::new("bytes::Reader::seek: negative position"),
-            )));
+            return Err(errors::new_stdio_other_error(
+                "bytes::Reader::seek: negative position".to_string(),
+            ));
         }
         self.i = abs as u64;
         return Ok(self.i);
     }
 
     /// write_to implements the io.WriterTo interface.
-    pub fn write_to(&mut self, w: &mut dyn ggio::Writer) -> (usize, Option<ggio::Error>) {
+    pub fn write_to(&mut self, w: &mut dyn std::io::Write) -> std::io::Result<usize> {
         // 	self.prevRune = -1
         if self.i >= self.s.len() as u64 {
-            return (0, None);
+            return Ok(0);
         }
         let b = &self.s[self.i as usize..];
-        let (m, err) = w.write(b);
-        if m > b.len() {
-            panic!("bytes::Reader::write_to: invalid Write count");
+        // let (m, err) = w.write(b);
+        match w.write(b) {
+            Ok(m) => {
+                if m > b.len() {
+                    panic!("bytes::Reader::write_to: invalid Write count");
+                }
+                self.i += m as u64;
+                if m != b.len() {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "short write",
+                    ));
+                }
+                return Ok(m);
+            }
+            Err(err) => return Err(err),
         }
-        self.i += m as u64;
-        if m != b.len() && err.is_none() {
-            return (m, Some(ggio::Error::ErrShortWrite));
-        }
-        return (m, err);
     }
 
     /// reset resets the Reader to be reading from b.

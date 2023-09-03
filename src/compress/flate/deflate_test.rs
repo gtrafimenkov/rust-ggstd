@@ -258,10 +258,10 @@ struct SparseReader {
     cur: u64,
 }
 
-impl ggio::Reader for SparseReader {
-    fn read(&mut self, p: &mut [u8]) -> (usize, Option<ggio::Error>) {
+impl std::io::Read for SparseReader {
+    fn read(&mut self, p: &mut [u8]) -> std::io::Result<usize> {
         if self.cur >= self.l {
-            return (0, Some(ggio::Error::EOF));
+            return Ok(0);
         }
         let mut n = p.len();
         let mut cur = self.cur + n as u64;
@@ -277,8 +277,7 @@ impl ggio::Reader for SparseReader {
             };
         }
         self.cur = cur;
-        // println!("{}, {}", n, self.cur);
-        return (n, None);
+        return Ok(n);
     }
 }
 
