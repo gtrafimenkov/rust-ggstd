@@ -161,13 +161,13 @@
 // 		if c == '\n' || c == '\r' { // Don't confuse us.
 // 			c = 'N'
 // 		}
-// 		buf.WriteByte(c)
+// 		buf.write_byte(c)
 // 	}
 // 	if addNewline {
 // 		if doCR {
-// 			buf.WriteByte('\r')
+// 			buf.write_byte('\r')
 // 		}
-// 		buf.WriteByte('\n')
+// 		buf.write_byte('\n')
 // 	}
 // }
 

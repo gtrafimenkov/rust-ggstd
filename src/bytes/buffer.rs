@@ -11,7 +11,7 @@ use std::io::Write;
 const SMALL_BUFFER_SIZE: usize = 64;
 
 /// A Buffer is a variable-sized buffer of bytes with read and Write methods.
-/// The zero value for Buffer is an empty buffer ready to use.
+// The zero value for Buffer is an empty buffer ready to use.
 pub struct Buffer {
     // rust impl: it is much simpler then Go since we are using Vec,
     // which has support for growing.
@@ -259,12 +259,12 @@ impl Buffer {
 
     // // WriteRune appends the UTF-8 encoding of Unicode code point r to the
     // // buffer, returning its length and an error, which is always nil but is
-    // // included to match bufio.Writer's WriteRune. The buffer is grown as needed;
+    // // included to match bufio::Writer's WriteRune. The buffer is grown as needed;
     // // if it becomes too large, WriteRune will panic with ErrTooLarge.
     // fn WriteRune(&self, r rune) (n: usize, err error) {
     // 	// Compare as uint32 to correctly handle negative runes.
     // 	if uint32(r) < utf8.RuneSelf {
-    // 		b.WriteByte(byte(r))
+    // 		b.write_byte(byte(r))
     // 		return 1, nil
     // 	}
     // 	b.lastRead = opInvalid

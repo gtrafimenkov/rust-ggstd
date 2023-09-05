@@ -630,7 +630,7 @@ fn test_cap_with_slice_and_written_data() {
 // 	for i := 0; i < b.N; i += 1 {
 // 		buf.Reset()
 // 		for i := 0; i < n; i += 1 {
-// 			buf.WriteByte('x')
+// 			buf.write_byte('x')
 // 		}
 // 	}
 // }

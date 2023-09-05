@@ -1,5 +1,3 @@
-// #![feature(trait_upcasting)]
-
 pub mod bufio;
 pub mod builtin;
 pub mod bytes;

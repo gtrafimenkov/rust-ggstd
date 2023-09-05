@@ -1,3 +1,4 @@
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -6,8 +7,10 @@
 //! object, creating another object (Reader or Writer) that also implements
 //! the interface but provides buffering and some help for textual I/O.
 
+use crate::compat;
 use crate::errors;
 use crate::io as ggio;
+use std::io::Write;
 
 // import (
 // 	"bytes"
@@ -17,7 +20,7 @@ use crate::io as ggio;
 // 	"unicode/utf8"
 // )
 
-const DEFAULT_BUF_SIZE: usize = 4096;
+pub(crate) const DEFAULT_BUF_SIZE: usize = 4096;
 
 // 	ErrInvalidUnreadByte = errors.New("bufio: invalid use of UnreadByte")
 // 	ErrInvalidUnreadRune = errors.New("bufio: invalid use of UnreadRune")
@@ -27,6 +30,8 @@ static ERR_BUFFER_FULL: errors::ErrorStaticString = errors::new_static("bufio: b
 // buffered input.
 
 /// Reader implements buffering for an std::io::Read object.
+///
+/// Consider using native Rust std::io::BufReader.
 pub struct Reader<'a> {
     buf: Vec<u8>,
     rd: &'a mut dyn std::io::Read, // reader provided by the client
@@ -177,7 +182,7 @@ impl<'a> Reader<'a> {
     // // If Discard skips fewer than n bytes, it also returns an error.
     // // If 0 <= n <= b.buffered(), Discard is guaranteed to succeed without
     // // reading from the underlying std::io::Read.
-    // fn Discard(&mut self, n int) (discarded int, err error) {
+    // fn Discard(&mut self, n isize) (discarded isize, err error) {
     // 	if n < 0 {
     // 		return 0, ERR_NEGATIVE_COUNT
     // 	}
@@ -212,12 +217,12 @@ impl<'a> Reader<'a> {
     // // Read reads data into p.
     // // It returns the number of bytes read into p.
     // // The bytes are taken from at most one Read on the underlying Reader,
-    // // hence n may be less than len(p).
-    // // To read exactly len(p) bytes, use io.ReadFull(b, p).
+    // // hence n may be less than p.len().
+    // // To read exactly p.len() bytes, use io.ReadFull(b, p).
     // // If the underlying Reader can return a non-zero count with io.EOF,
     // // then this Read method can do so as well; see the [std::io::Read] docs.
-    // fn Read(&mut self, p [u8]) (n int, err error) {
-    // 	n = len(p)
+    // fn Read(&mut self, p [u8]) (n isize, err error) {
+    // 	n = p.len()
     // 	if n == 0 {
     // 		if b.buffered() > 0 {
     // 			return 0, nil
@@ -228,7 +233,7 @@ impl<'a> Reader<'a> {
     // 		if b.err.is_some() {
     // 			return 0, b.read_err()
     // 		}
-    // 		if len(p) >= b.buf.len() {
+    // 		if p.len() >= b.buf.len() {
     // 			// Large read, empty buffer.
     // 			// Read directly into p to avoid copy.
     // 			n, b.err = b.rd.Read(p)
@@ -236,7 +241,7 @@ impl<'a> Reader<'a> {
     // 				panic(errNegativeRead)
     // 			}
     // 			if n > 0 {
-    // 				b.lastByte = int(p[n-1])
+    // 				b.lastByte = isize(p[n-1])
     // 				b.lastRuneSize = -1
     // 			}
     // 			return n, b.read_err()
@@ -260,7 +265,7 @@ impl<'a> Reader<'a> {
     // 	// the underlying reader returned a bad count. See issue 49795.
     // 	n = copy(p, b.buf[b.r:b.w])
     // 	b.r += n
-    // 	b.lastByte = int(b.buf[b.r-1])
+    // 	b.lastByte = isize(b.buf[b.r-1])
     // 	b.lastRuneSize = -1
     // 	return n, nil
     // }
@@ -277,7 +282,7 @@ impl<'a> Reader<'a> {
     // 	}
     // 	c := b.buf[b.r]
     // 	b.r++
-    // 	b.lastByte = int(c)
+    // 	b.lastByte = isize(c)
     // 	return c, nil
     // }
 
@@ -306,7 +311,7 @@ impl<'a> Reader<'a> {
     // // ReadRune reads a single UTF-8 encoded Unicode character and returns the
     // // rune and its size in bytes. If the encoded rune is invalid, it consumes one byte
     // // and returns unicode.ReplacementChar (U+FFFD) with a size of 1.
-    // fn ReadRune (&mut self) (r rune, size int, err error) {
+    // fn ReadRune (&mut self) (r rune, size isize, err error) {
     // 	for b.r+utf8.UTFMax > b.w && !utf8.FullRune(b.buf[b.r:b.w]) && b.err.is_none() && b.w-b.r < b.buf.len() {
     // 		b.fill() // b.w-b.r < len(buf) => buffer is not full
     // 	}
@@ -319,7 +324,7 @@ impl<'a> Reader<'a> {
     // 		r, size = utf8.DecodeRune(b.buf[b.r:b.w])
     // 	}
     // 	b.r += size
-    // 	b.lastByte = int(b.buf[b.r-1])
+    // 	b.lastByte = isize(b.buf[b.r-1])
     // 	b.lastRuneSize = size
     // 	return r, size, nil
     // }
@@ -387,7 +392,7 @@ impl<'a> Reader<'a> {
 
     // 	// Handle last byte, if any.
     // 	if i := len(line) - 1; i >= 0 {
-    // 		b.lastByte = int(line[i])
+    // 		b.lastByte = isize(line[i])
     // 		b.lastRuneSize = -1
     // 	}
 
@@ -452,7 +457,7 @@ impl<'a> Reader<'a> {
     // // `bytes.Join(append(fullBuffers, finalFragment), nil)`, which has a
     // // length of `totalLen`. The result is structured in this way to allow callers
     // // to minimize allocations and copies.
-    // fn collectFragments(&mut self, delim byte) (fullBuffers [][u8], finalFragment [u8], totalLen int, err error) {
+    // fn collectFragments(&mut self, delim byte) (fullBuffers [][u8], finalFragment [u8], totalLen isize, err error) {
     // 	var frag [u8]
     // 	// Use ReadSlice to look for delim, accumulating full buffers.
     // 	for {
@@ -520,7 +525,7 @@ impl<'a> Reader<'a> {
     // // This may make multiple calls to the Read method of the underlying Reader.
     // // If the underlying reader supports the WriteTo method,
     // // this calls the underlying WriteTo without buffering.
-    // fn WriteTo(&mut self, w ggio::Writer) (n int64, err error) {
+    // fn WriteTo(&mut self, w std::io::Write) (n int64, err error) {
     // 	b.lastByte = -1
     // 	b.lastRuneSize = -1
 
@@ -565,7 +570,7 @@ impl<'a> Reader<'a> {
     // var errNegativeWrite = errors.New("bufio: writer returned negative count from Write")
 
     // // writeBuf writes the Reader's buffer to the writer.
-    // fn writeBuf(&mut self, w ggio::Writer) (int64, error) {
+    // fn writeBuf(&mut self, w std::io::Write) (int64, error) {
     // 	n, err := w.write(b.buf[b.r:b.w])
     // 	if n < 0 {
     // 		panic(errNegativeWrite)
@@ -575,228 +580,262 @@ impl<'a> Reader<'a> {
     // }
 }
 
-// // buffered output
+// buffered output
 
-// // Writer implements buffering for an ggio::Writer object.
-// // If an error occurs writing to a Writer, no more data will be
-// // accepted and all subsequent writes, and Flush, will return the error.
-// // After all data has been written, the client should call the
-// // Flush method to guarantee all data has been forwarded to
-// // the underlying ggio::Writer.
-// type Writer struct {
-// 	err error
-// 	buf [u8]
-// 	n   int
-// 	wr  ggio::Writer
-// }
+/// Writer implements buffering for an std::io::Write object.
+/// If an error occurs writing to a Writer, no more data will be
+/// accepted and all subsequent writes, and flush, will return the error.
+/// After all data has been written, the client should call the
+/// flush method to guarantee all data has been forwarded to
+/// the underlying std::io::Write.
+///
+/// Consider using native Rust std::io::BufWriter.
+pub struct Writer<'a> {
+    err: Option<std::io::Error>,
+    buf: Vec<u8>,
+    n: usize,
+    wr: &'a mut dyn std::io::Write,
+}
 
-// // NewWriterSize returns a new Writer whose buffer has at least the specified
-// // size. If the argument ggio::Writer is already a Writer with large enough
-// // size, it returns the underlying Writer.
-// fn NewWriterSize(w: &mut dyn ggio::Writer, size int) -> Writer {
-// 	// Is it already a Writer?
-// 	b, ok := w.(*Writer)
-// 	if ok && b.buf.len() >= size {
-// 		return b
-// 	}
-// 	if size <= 0 {
-// 		size = defaultBufSize
-// 	}
-// 	return &Writer{
-// 		buf: make([u8], size),
-// 		wr:  w,
-// 	}
-// }
+/// new_writer_size returns a new Writer whose buffer has at least the specified
+/// size.
+// If the argument std::io::Write is already a Writer with large enough
+// size, it returns the underlying Writer.
+pub fn new_writer_size(w: &mut dyn std::io::Write, size: usize) -> Writer {
+    // 	// Is it already a Writer?
+    // 	b, ok := w.(*Writer)
+    // 	if ok && b.buf.len() >= size {
+    // 		return b
+    // 	}
+    Writer {
+        err: None,
+        buf: vec![0; if size == 0 { DEFAULT_BUF_SIZE } else { size }],
+        n: 0,
+        wr: w,
+    }
+}
 
-// // new_writer returns a new Writer whose buffer has the default size.
-// // If the argument ggio::Writer is already a Writer with large enough buffer size,
-// // it returns the underlying Writer.
-// fn new_writer(w: &mut dyn ggio::Writer) -> Writer {
-// 	return NewWriterSize(w, defaultBufSize)
-// }
+/// new_writer returns a new Writer whose buffer has the default size.
+// If the argument std::io::Write is already a Writer with large enough buffer size,
+// it returns the underlying Writer.
+pub fn new_writer(w: &mut dyn std::io::Write) -> Writer {
+    new_writer_size(w, DEFAULT_BUF_SIZE)
+}
 
-// // size returns the size of the underlying buffer in bytes.
-// fn (b *Writer) size() int { return b.buf.len() }
+impl std::io::Write for Writer<'_> {
+    /// Write writes the contents of p into the buffer.
+    /// It returns the number of bytes written.
+    // If nn < p.len(), it also returns an error explaining
+    // why the write is short.
+    fn write(&mut self, p: &[u8]) -> std::io::Result<usize> {
+        if self.err.is_some() {
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+        }
+        let mut p = p;
+        let mut nn = 0;
+        while p.len() > self.available() && self.err.is_none() {
+            let mut n = 0;
+            if self.buffered() == 0 {
+                // Large write, empty buffer.
+                // Write directly from p to avoid copy.
+                match self.wr.write(p) {
+                    Ok(nw) => n = nw,
+                    Err(err) => self.err = Some(err),
+                }
+            } else {
+                n = compat::copy(&mut self.buf[self.n..], p);
+                self.n += n;
+                _ = self.flush();
+            }
+            nn += n;
+            p = &p[n..];
+        }
+        if self.err.is_some() {
+            if nn > 0 {
+                return Ok(nn);
+            }
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+        }
+        let n = compat::copy(&mut self.buf[self.n..], p);
+        self.n += n;
+        nn += n;
+        Ok(nn)
+    }
 
-// // Reset discards any unflushed buffered data, clears any error, and
-// // resets b to write its output to w.
-// // Calling Reset on the zero value of Writer initializes the internal buffer
-// // to the default size.
-// // Calling w.reset(w) (that is, resetting a Writer to itself) does nothing.
-// fn (b *Writer) Reset(w: &mut dyn ggio::Writer) {
-// 	// If a Writer w is passed to new_writer, new_writer will return w.
-// 	// Different layers of code may do that, and then later pass w
-// 	// to Reset. Avoid infinite recursion in that case.
-// 	if b == w {
-// 		return
-// 	}
-// 	if b.buf == nil {
-// 		b.buf = make([u8], defaultBufSize)
-// 	}
-// 	b.err = nil
-// 	b.n = 0
-// 	b.wr = w
-// }
+    /// flush writes any buffered data to the underlying std::io::Write.
+    fn flush(&mut self) -> std::io::Result<()> {
+        if self.err.is_some() {
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+        }
+        if self.n == 0 {
+            return Ok(());
+        }
 
-// // Flush writes any buffered data to the underlying ggio::Writer.
-// fn (b *Writer) Flush() error {
-// 	if b.err.is_some() {
-// 		return b.err
-// 	}
-// 	if b.n == 0 {
-// 		return nil
-// 	}
-// 	n, err := b.wr.Write(b.buf[0:b.n])
-// 	if n < b.n && err.is_none() {
-// 		err = io.ErrShortWrite
-// 	}
-// 	if err.is_some() {
-// 		if n > 0 && n < b.n {
-// 			copy(b.buf[0:b.n-n], b.buf[n:b.n])
-// 		}
-// 		b.n -= n
-// 		b.err = err
-// 		return err
-// 	}
-// 	b.n = 0
-// 	return nil
-// }
+        match self.wr.write(&self.buf[0..self.n]) {
+            Err(err) => {
+                self.err = Some(err);
+                return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+            }
+            Ok(n) => {
+                if n > 0 && n < self.n {
+                    compat::copy_within(&mut self.buf, n..self.n, 0);
+                }
+                self.n -= n;
+            }
+        }
+        if self.n > 0 {
+            self.err = Some(ggio::new_error_short_write());
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+        }
+        Ok(())
+    }
+}
 
-// // Available returns how many bytes are unused in the buffer.
-// fn (b *Writer) Available() int { return b.buf.len() - b.n }
+impl<'a> Writer<'a> {
+    /// new_writer returns a new Writer whose buffer has the default size.
+    pub fn new(w: &mut dyn std::io::Write) -> Writer {
+        new_writer_size(w, DEFAULT_BUF_SIZE)
+    }
 
-// // AvailableBuffer returns an empty buffer with b.Available() capacity.
-// // This buffer is intended to be appended to and
-// // passed to an immediately succeeding Write call.
-// // The buffer is only valid until the next write operation on b.
-// fn (b *Writer) AvailableBuffer() [u8] {
-// 	return b.buf[b.n..][..0]
-// }
+    /// size returns the size of the underlying buffer in bytes.
+    pub fn size(&self) -> usize {
+        self.buf.len()
+    }
 
-// // buffered returns the number of bytes that have been written into the current buffer.
-// fn (b *Writer) buffered() int { return b.n }
+    /// reset discards any unflushed buffered data, clears any error, and
+    /// resets b to write its output to w.
+    // Calling reset on the zero value of Writer initializes the internal buffer
+    // to the default size.
+    // Calling w.reset(w) (that is, resetting a Writer to itself) does nothing.
+    pub fn reset(&mut self, w: &'a mut dyn std::io::Write) {
+        // 	// If a Writer w is passed to new_writer, new_writer will return w.
+        // 	// Different layers of code may do that, and then later pass w
+        // 	// to reset. Avoid infinite recursion in that case.
+        // 	if b == w {
+        // 		return
+        // 	}
+        // 	if self.buf == nil {
+        // 		self.buf = make([u8], DEFAULT_BUF_SIZE)
+        // 	}
+        self.err = None;
+        self.n = 0;
+        self.wr = w;
+    }
 
-// // Write writes the contents of p into the buffer.
-// // It returns the number of bytes written.
-// // If nn < len(p), it also returns an error explaining
-// // why the write is short.
-// fn (b *Writer) Write(p [u8]) (nn int, err error) {
-// 	for len(p) > b.Available() && b.err.is_none() {
-// 		var n int
-// 		if b.buffered() == 0 {
-// 			// Large write, empty buffer.
-// 			// Write directly from p to avoid copy.
-// 			n, b.err = b.wr.Write(p)
-// 		} else {
-// 			n = copy(b.buf[b.n..], p)
-// 			b.n += n
-// 			b.Flush()
-// 		}
-// 		nn += n
-// 		p = p[n..]
-// 	}
-// 	if b.err.is_some() {
-// 		return nn, b.err
-// 	}
-// 	n := copy(b.buf[b.n..], p)
-// 	b.n += n
-// 	nn += n
-// 	return nn, nil
-// }
+    // available returns how many bytes are unused in the buffer.
+    pub fn available(&self) -> usize {
+        return self.buf.len() - self.n;
+    }
 
-// // WriteByte writes a single byte.
-// fn (b *Writer) WriteByte(c byte) error {
-// 	if b.err.is_some() {
-// 		return b.err
-// 	}
-// 	if b.Available() <= 0 && b.Flush() != nil {
-// 		return b.err
-// 	}
-// 	b.buf[b.n] = c
-// 	b.n++
-// 	return nil
-// }
+    // // AvailableBuffer returns an empty buffer with b.available() capacity.
+    // // This buffer is intended to be appended to and
+    // // passed to an immediately succeeding Write call.
+    // // The buffer is only valid until the next write operation on b.
+    // fn AvailableBuffer(&self) [u8] {
+    // 	return b.buf[b.n..][..0]
+    // }
 
-// // WriteRune writes a single Unicode code point, returning
-// // the number of bytes written and any error.
-// fn (b *Writer) WriteRune(r rune) (size int, err error) {
-// 	// Compare as uint32 to correctly handle negative runes.
-// 	if uint32(r) < utf8.RuneSelf {
-// 		err = b.WriteByte(byte(r))
-// 		if err.is_some() {
-// 			return 0, err
-// 		}
-// 		return 1, nil
-// 	}
-// 	if b.err.is_some() {
-// 		return 0, b.err
-// 	}
-// 	n := b.Available()
-// 	if n < utf8.UTFMax {
-// 		if b.Flush(); b.err.is_some() {
-// 			return 0, b.err
-// 		}
-// 		n = b.Available()
-// 		if n < utf8.UTFMax {
-// 			// Can only happen if buffer is silly small.
-// 			return b.write_string(string(r))
-// 		}
-// 	}
-// 	size = utf8.EncodeRune(b.buf[b.n..], r)
-// 	b.n += size
-// 	return size, nil
-// }
+    // buffered returns the number of bytes that have been written into the current buffer.
+    fn buffered(&self) -> usize {
+        return self.n;
+    }
 
-// // write_string writes a string.
-// // It returns the number of bytes written.
-// // If the count is less than len(s), it also returns an error explaining
-// // why the write is short.
-// fn (b *Writer) write_string(s string) (int, error) {
-// 	var sw io.StringWriter
-// 	tryStringWriter := true
+    /// write_byte writes a single byte.
+    pub fn write_byte(&mut self, c: u8) -> std::io::Result<()> {
+        if self.err.is_some() {
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+        }
+        if self.available() <= 0 && self.flush().is_err() {
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
+        }
+        self.buf[self.n] = c;
+        self.n += 1;
+        Ok(())
+    }
 
-// 	nn := 0
-// 	for len(s) > b.Available() && b.err.is_none() {
-// 		var n int
-// 		if b.buffered() == 0 && sw == nil && tryStringWriter {
-// 			// Check at most once whether b.wr is a StringWriter.
-// 			sw, tryStringWriter = b.wr.(io.StringWriter)
-// 		}
-// 		if b.buffered() == 0 && tryStringWriter {
-// 			// Large write, empty buffer, and the underlying writer supports
-// 			// write_string: forward the write to the underlying StringWriter.
-// 			// This avoids an extra copy.
-// 			n, b.err = sw.write_string(s)
-// 		} else {
-// 			n = copy(b.buf[b.n..], s)
-// 			b.n += n
-// 			b.Flush()
-// 		}
-// 		nn += n
-// 		s = s[n..]
-// 	}
-// 	if b.err.is_some() {
-// 		return nn, b.err
-// 	}
-// 	n := copy(b.buf[b.n..], s)
-// 	b.n += n
-// 	nn += n
-// 	return nn, nil
-// }
+    // // WriteRune writes a single Unicode code point, returning
+    // // the number of bytes written and any error.
+    // fn WriteRune(&self, r rune) (size isize, err error) {
+    // 	// Compare as uint32 to correctly handle negative runes.
+    // 	if uint32(r) < utf8.RuneSelf {
+    // 		err = b.write_byte(byte(r))
+    // 		if err.is_some() {
+    // 			return 0, err
+    // 		}
+    // 		return 1, nil
+    // 	}
+    // 	if b.err.is_some() {
+    // 		return 0, b.err
+    // 	}
+    // 	n := b.available()
+    // 	if n < utf8.UTFMax {
+    // 		if b.flush(); b.err.is_some() {
+    // 			return 0, b.err
+    // 		}
+    // 		n = b.available()
+    // 		if n < utf8.UTFMax {
+    // 			// Can only happen if buffer is silly small.
+    // 			return b.write_string(string(r))
+    // 		}
+    // 	}
+    // 	size = utf8.EncodeRune(b.buf[b.n..], r)
+    // 	b.n += size
+    // 	return size, nil
+    // }
+
+    /// write_string writes a string.
+    /// It returns the number of bytes written.
+    // // If the count is less than len(s), it also returns an error explaining
+    // // why the write is short.
+    pub fn write_string(&mut self, s: &str) -> std::io::Result<usize> {
+        self.write(s.as_bytes())
+
+        // 	var sw io.StringWriter
+        // 	tryStringWriter := true
+
+        // 	nn := 0
+        // 	for len(s) > b.available() && b.err.is_none() {
+        // 		var n isize
+        // 		if b.buffered() == 0 && sw == nil && tryStringWriter {
+        // 			// Check at most once whether b.wr is a StringWriter.
+        // 			sw, tryStringWriter = b.wr.(io.StringWriter)
+        // 		}
+        // 		if b.buffered() == 0 && tryStringWriter {
+        // 			// Large write, empty buffer, and the underlying writer supports
+        // 			// write_string: forward the write to the underlying StringWriter.
+        // 			// This avoids an extra copy.
+        // 			n, b.err = sw.write_string(s)
+        // 		} else {
+        // 			n = copy(b.buf[b.n..], s)
+        // 			b.n += n
+        // 			b.flush()
+        // 		}
+        // 		nn += n
+        // 		s = s[n..]
+        // 	}
+        // 	if b.err.is_some() {
+        // 		return nn, b.err
+        // 	}
+        // 	n := copy(b.buf[b.n..], s)
+        // 	b.n += n
+        // 	nn += n
+        // 	return nn, nil
+    }
+}
 
 // // ReadFrom implements io.ReaderFrom. If the underlying writer
 // // supports the ReadFrom method, this calls the underlying ReadFrom.
 // // If there is buffered data and an underlying ReadFrom, this fills
 // // the buffer and writes it before calling ReadFrom.
-// fn (b *Writer) ReadFrom(r std::io::Read) (n int64, err error) {
+// fn ReadFrom(&self, r std::io::Read) (n int64, err error) {
 // 	if b.err.is_some() {
 // 		return 0, b.err
 // 	}
 // 	readerFrom, readerFromOK := b.wr.(io.ReaderFrom)
-// 	var m int
+// 	var m isize
 // 	for {
-// 		if b.Available() == 0 {
-// 			if err1 := b.Flush(); err1 != nil {
+// 		if b.available() == 0 {
+// 			if err1 := b.flush(); err1 != nil {
 // 				return n, err1
 // 			}
 // 		}
@@ -825,8 +864,8 @@ impl<'a> Reader<'a> {
 // 	}
 // 	if err == io.EOF {
 // 		// If we filled the buffer exactly, flush preemptively.
-// 		if b.Available() == 0 {
-// 			err = b.Flush()
+// 		if b.available() == 0 {
+// 			err = b.flush()
 // 		} else {
 // 			err = nil
 // 		}

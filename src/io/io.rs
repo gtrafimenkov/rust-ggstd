@@ -265,9 +265,9 @@ pub trait ByteReader {
 // 	UnreadByte() error
 // }
 
-// // ByteWriter is the interface that wraps the WriteByte method.
+// // ByteWriter is the interface that wraps the write_byte method.
 // type ByteWriter interface {
-// 	WriteByte(c byte) error
+// 	write_byte(c byte) error
 // }
 
 // // RuneReader is the interface that wraps the ReadRune method.
@@ -294,18 +294,19 @@ pub trait ByteReader {
 
 // // StringWriter is the interface that wraps the write_string method.
 // type StringWriter interface {
-// 	write_string(s string) -> IOResult
+// 	write_string(s string) -> (usize, Option<Error>)
 // }
 
-// // write_string writes the contents of the string s to w, which accepts a slice of bytes.
+/// write_string writes the contents of the string s to w, which accepts a slice of bytes.
+/// w.write is called exactly once.
 // // If w implements StringWriter, its write_string method is invoked directly.
 // // Otherwise, w.write is called exactly once.
-// fn write_string(w Writer, s string) -> IOResult {
-// 	if sw, ok := w.(StringWriter); ok {
-// 		return sw.write_string(s)
-// 	}
-// 	return w.write([u8](s))
-// }
+pub fn write_string(w: &mut dyn std::io::Write, s: &str) -> std::io::Result<usize> {
+    // 	if sw, ok := w.(StringWriter); ok {
+    // 		return sw.write_string(s)
+    // 	}
+    return w.write(s.as_bytes());
+}
 
 /// read_at_least reads from r into buf until it has read at least min bytes.
 /// It returns the number of bytes copied and an error if fewer bytes were read.
@@ -780,12 +781,17 @@ pub fn read_all(r: &mut dyn std::io::Read) -> (Vec<u8>, Option<std::io::Error>) 
     }
 }
 
-fn new_error_short_write() -> std::io::Error {
-    // ErrShortWrite
-    errors::new_stdio_other_error("short write".to_string())
+const SHORT_WRITE_ERR_STR: &'static str = "ErrShortWrite: short write";
+
+pub fn new_error_short_write() -> std::io::Error {
+    errors::new_stdio_other_error(SHORT_WRITE_ERR_STR.to_string())
 }
 
 fn new_error_invalid_write() -> std::io::Error {
-    // ErrInvalidWrite
-    errors::new_stdio_other_error("invalid write result".to_string())
+    errors::new_stdio_other_error("ErrInvalidWrite: invalid write result".to_string())
+}
+
+/// Check if the error was created by new_error_short_write.
+pub fn is_short_write_error(err: &std::io::Error) -> bool {
+    err.to_string() == SHORT_WRITE_ERR_STR
 }

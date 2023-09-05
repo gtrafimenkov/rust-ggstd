@@ -11,9 +11,7 @@ use std::io::Write;
 
 // These constants are copied from the flate package, so that code that imports
 // "compress/zlib" does not also have to import "compress/flate".
-#[allow(dead_code)]
 pub const NO_COMPRESSION: isize = flate::NO_COMPRESSION;
-#[allow(dead_code)]
 pub const BEST_SPEED: isize = flate::BEST_SPEED;
 pub const BEST_COMPRESSION: isize = flate::BEST_COMPRESSION;
 pub const DEFAULT_COMPRESSION: isize = flate::DEFAULT_COMPRESSION;
