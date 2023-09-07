@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 use crate::compress::flate;
-use crate::encoding::binary;
+use crate::encoding::binary::{self, ByteOrder};
 use crate::errors;
 use crate::hash::{self, adler32};
 use std::io::Write;
@@ -126,7 +126,7 @@ impl<'a> Writer<'a> {
         self.w.write(&self.scratch[0..2])?;
         if self.dict.len() > 0 {
             // The next four bytes are the Adler-32 checksum of the dictionary.
-            binary::BigEndian::put_u32(&mut self.scratch[..], adler32::checksum(self.dict));
+            binary::BIG_ENDIAN.put_uint32(&mut self.scratch[..], adler32::checksum(self.dict));
             self.w.write(&self.scratch[0..4])?;
         }
         return Ok(());
@@ -173,7 +173,7 @@ impl<'a> Writer<'a> {
         self.compressor.close(self.w)?;
         let checksum = self.digest.sum32();
         // ZLIB (RFC 1950) is big-endian, unlike GZIP (RFC 1952).
-        binary::BigEndian::put_u32(&mut self.scratch[..], checksum);
+        binary::BIG_ENDIAN.put_uint32(&mut self.scratch[..], checksum);
         self.w.write(&self.scratch[0..4])?;
         Ok(())
     }

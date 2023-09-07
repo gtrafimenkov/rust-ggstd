@@ -12,7 +12,7 @@
 // )
 
 use super::sha256block::block_generic;
-use crate::encoding::binary::BigEndian;
+use crate::encoding::binary::{ByteOrder, BIG_ENDIAN};
 use crate::hash::{self, Hash};
 use std::io::Write;
 
@@ -262,7 +262,7 @@ impl Digest {
         // Length in bits.
         let len = len << 3;
         let padlen = &mut tmp[0..(t + 8) as usize];
-        BigEndian::put_u64(&mut padlen[(t as usize)..], len);
+        BIG_ENDIAN.put_uint64(&mut padlen[(t as usize)..], len);
         self.write(padlen).expect("write error is not expected");
 
         if self.nx != 0 {
@@ -271,15 +271,15 @@ impl Digest {
 
         let mut digest = [0; SIZE];
 
-        BigEndian::put_u32(&mut digest[0..], self.h[0]);
-        BigEndian::put_u32(&mut digest[4..], self.h[1]);
-        BigEndian::put_u32(&mut digest[8..], self.h[2]);
-        BigEndian::put_u32(&mut digest[12..], self.h[3]);
-        BigEndian::put_u32(&mut digest[16..], self.h[4]);
-        BigEndian::put_u32(&mut digest[20..], self.h[5]);
-        BigEndian::put_u32(&mut digest[24..], self.h[6]);
+        BIG_ENDIAN.put_uint32(&mut digest[0..], self.h[0]);
+        BIG_ENDIAN.put_uint32(&mut digest[4..], self.h[1]);
+        BIG_ENDIAN.put_uint32(&mut digest[8..], self.h[2]);
+        BIG_ENDIAN.put_uint32(&mut digest[12..], self.h[3]);
+        BIG_ENDIAN.put_uint32(&mut digest[16..], self.h[4]);
+        BIG_ENDIAN.put_uint32(&mut digest[20..], self.h[5]);
+        BIG_ENDIAN.put_uint32(&mut digest[24..], self.h[6]);
         if !self.is224 {
-            BigEndian::put_u32(&mut digest[28..], self.h[7]);
+            BIG_ENDIAN.put_uint32(&mut digest[28..], self.h[7]);
         }
 
         digest

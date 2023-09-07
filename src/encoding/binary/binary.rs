@@ -11,17 +11,17 @@
 // 	"sync"
 // )
 
-// // A ByteOrder specifies how to convert u8 slices into
-// // 16-, 32-, or 64-bit unsigned integers.
-// type ByteOrder interface {
-// 	Uint16([]u8) u16
-// 	Uint32([]u8) u32
-// 	Uint64([]u8) u64
-// 	PutUint16([]u8, u16)
-// 	put_u32([]u8, u32)
-// 	put_u64([]u8, u64)
-// 	String() string
-// }
+/// A ByteOrder specifies how to convert u8 slices into
+/// 16-, 32-, or 64-bit unsigned integers.
+pub trait ByteOrder {
+    // 	Uint16(b: &[u8]) u16
+    fn uint32(&self, b: &[u8]) -> u32;
+    fn uint64(&self, b: &[u8]) -> u64;
+    // 	PutUint16(b: &[u8], u16)
+    fn put_uint32(&self, b: &mut [u8], v: u32);
+    fn put_uint64(&self, b: &mut [u8], v: u64);
+    // 	String() string
+}
 
 // // AppendByteOrder specifies how to append 16-, 32-, or 64-bit unsigned integers
 // // into a u8 slice.
@@ -32,43 +32,69 @@
 // 	String() string
 // }
 
-// // LittleEndian is the little-endian implementation of ByteOrder and AppendByteOrder.
+/// LittleEndian is the little-endian implementation of ByteOrder and AppendByteOrder.
+pub struct LittleEndian {}
+
+pub const LITTLE_ENDIAN: LittleEndian = LittleEndian {};
+
+impl ByteOrder for LittleEndian {
+    fn uint32(&self, b: &[u8]) -> u32 {
+        (b[0] as u32) | (b[1] as u32) << 8 | (b[2] as u32) << 16 | (b[3] as u32) << 24
+    }
+
+    fn put_uint32(&self, b: &mut [u8], v: u32) {
+        b[0] = (v) as u8;
+        b[1] = (v >> 8) as u8;
+        b[2] = (v >> 16) as u8;
+        b[3] = (v >> 24) as u8;
+    }
+
+    fn uint64(&self, b: &[u8]) -> u64 {
+        (b[0] as u64)
+            | (b[1] as u64) << 8
+            | (b[2] as u64) << 16
+            | (b[3] as u64) << 24
+            | (b[4] as u64) << 32
+            | (b[5] as u64) << 40
+            | (b[6] as u64) << 48
+            | (b[7] as u64) << 56
+    }
+
+    fn put_uint64(&self, b: &mut [u8], v: u64) {
+        b[0] = (v) as u8;
+        b[1] = (v >> 8) as u8;
+        b[2] = (v >> 16) as u8;
+        b[3] = (v >> 24) as u8;
+        b[4] = (v >> 32) as u8;
+        b[5] = (v >> 40) as u8;
+        b[6] = (v >> 48) as u8;
+        b[7] = (v >> 56) as u8;
+    }
+}
+
 // var LittleEndian littleEndian
 
 // type littleEndian struct{}
 
-// func (littleEndian) Uint16(b []u8) u16 {
+// fn (littleEndian) Uint16(b: &[u8]) u16 {
 // 	_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808
 // 	return u16(b[0]) | u16(b[1])<<8
 // }
 
-// func (littleEndian) PutUint16(b []u8, v: u16) {
+// fn (littleEndian) PutUint16(b: &[u8], v: u16) {
 // 	_ = b[1] // early bounds check to guarantee safety of writes below
 // 	b[0] = u8(v)
 // 	b[1] = u8(v >> 8)
 // }
 
-// func (littleEndian) AppendUint16(b []u8, v: u16) []u8 {
+// fn (littleEndian) AppendUint16(b: &[u8], v: u16) []u8 {
 // 	return append(b,
 // 		u8(v),
 // 		u8(v>>8),
 // 	)
 // }
 
-// func (littleEndian) Uint32(b []u8) -> u32 {
-// 	_ = b[3] // bounds check hint to compiler; see golang.org/issue/14808
-// 	return u32(b[0]) | u32(b[1])<<8 | u32(b[2])<<16 | u32(b[3])<<24
-// }
-
-// func (littleEndian) put_u32(b []u8, v: u32) {
-// 	_ = b[3] // early bounds check to guarantee safety of writes below
-// 	b[0] = u8(v)
-// 	b[1] = u8(v >> 8)
-// 	b[2] = u8(v >> 16)
-// 	b[3] = u8(v >> 24)
-// }
-
-// func (littleEndian) AppendUint32(b []u8, v: u32) []u8 {
+// fn (littleEndian) AppendUint32(b: &[u8], v: u32) []u8 {
 // 	return append(b,
 // 		u8(v),
 // 		u8(v>>8),
@@ -77,25 +103,7 @@
 // 	)
 // }
 
-// func (littleEndian) Uint64(b []u8) -> u64 {
-// 	_ = b[7] // bounds check hint to compiler; see golang.org/issue/14808
-// 	return u64(b[0]) | u64(b[1])<<8 | u64(b[2])<<16 | u64(b[3])<<24 |
-// 		u64(b[4])<<32 | u64(b[5])<<40 | u64(b[6])<<48 | u64(b[7])<<56
-// }
-
-// func (littleEndian) put_u64(b []u8, v: u64) {
-// 	_ = b[7] // early bounds check to guarantee safety of writes below
-// 	b[0] = u8(v)
-// 	b[1] = u8(v >> 8)
-// 	b[2] = u8(v >> 16)
-// 	b[3] = u8(v >> 24)
-// 	b[4] = u8(v >> 32)
-// 	b[5] = u8(v >> 40)
-// 	b[6] = u8(v >> 48)
-// 	b[7] = u8(v >> 56)
-// }
-
-// func (littleEndian) AppendUint64(b []u8, v: u64) []u8 {
+// fn (littleEndian) AppendUint64(b: &[u8], v: u64) []u8 {
 // 	return append(b,
 // 		u8(v),
 // 		u8(v>>8),
@@ -108,60 +116,50 @@
 // 	)
 // }
 
-// func (littleEndian) String() string { return "LittleEndian" }
+// fn (littleEndian) String() string { return "LittleEndian" }
 
-// func (littleEndian) GoString() string { return "binary.LittleEndian" }
+// fn (littleEndian) GoString() string { return "binary.LittleEndian" }
 
 /// BigEndian is the big-endian implementation of ByteOrder and AppendByteOrder.
 pub struct BigEndian {}
 
-impl BigEndian {
+pub const BIG_ENDIAN: BigEndian = BigEndian {};
+
+impl ByteOrder for BigEndian {
     // pub fn Uint16(b: &[u8]) u16 {
     // 	_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808
     // 	return u16(b[1]) | u16(b[0])<<8
     // }
 
-    // pub fn PutUint16(b: &[u8], v: u16) {
+    fn uint32(&self, b: &[u8]) -> u32 {
+        (b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24
+    }
+
+    // fn PutUint16(b: &[u8], v: u16) {
     // 	_ = b[1] // early bounds check to guarantee safety of writes below
     // 	b[0] = u8(v >> 8)
     // 	b[1] = u8(v)
     // }
 
-    // pub fn AppendUint16(b: &[u8], v: u16) []u8 {
-    // 	return append(b,
-    // 		u8(v>>8),
-    // 		u8(v),
-    // 	)
-    // }
-
-    // pub fn Uint32(b: &[u8]) -> u32 {
-    // 	_ = b[3] // bounds check hint to compiler; see golang.org/issue/14808
-    // 	return u32(b[3]) | u32(b[2])<<8 | u32(b[1])<<16 | u32(b[0])<<24
-    // }
-
-    pub fn put_u32(b: &mut [u8], v: u32) {
+    fn put_uint32(&self, b: &mut [u8], v: u32) {
         b[0] = (v >> 24) as u8;
         b[1] = (v >> 16) as u8;
         b[2] = (v >> 8) as u8;
         b[3] = (v) as u8;
     }
 
-    // pub fn AppendUint32(b: &[u8], v: u32) []u8 {
-    // 	return append(b,
-    // 		u8(v>>24),
-    // 		u8(v>>16),
-    // 		u8(v>>8),
-    // 		u8(v),
-    // 	)
-    // }
+    fn uint64(&self, b: &[u8]) -> u64 {
+        (b[7] as u64)
+            | (b[6] as u64) << 8
+            | (b[5] as u64) << 16
+            | (b[4] as u64) << 24
+            | (b[3] as u64) << 32
+            | (b[2] as u64) << 40
+            | (b[1] as u64) << 48
+            | (b[0] as u64) << 56
+    }
 
-    // pub fn Uint64(b: &[u8]) -> u64 {
-    // 	_ = b[7] // bounds check hint to compiler; see golang.org/issue/14808
-    // 	return u64(b[7]) | u64(b[6])<<8 | u64(b[5])<<16 | u64(b[4])<<24 |
-    // 		u64(b[3])<<32 | u64(b[2])<<40 | u64(b[1])<<48 | u64(b[0])<<56
-    // }
-
-    pub fn put_u64(b: &mut [u8], v: u64) {
+    fn put_uint64(&self, b: &mut [u8], v: u64) {
         b[0] = (v >> 56) as u8;
         b[1] = (v >> 48) as u8;
         b[2] = (v >> 40) as u8;
@@ -171,6 +169,24 @@ impl BigEndian {
         b[6] = (v >> 8) as u8;
         b[7] = (v) as u8;
     }
+}
+
+impl BigEndian {
+    // pub fn AppendUint16(b: &[u8], v: u16) []u8 {
+    // 	return append(b,
+    // 		u8(v>>8),
+    // 		u8(v),
+    // 	)
+    // }
+
+    // pub fn AppendUint32(b: &[u8], v: u32) []u8 {
+    // 	return append(b,
+    // 		u8(v>>24),
+    // 		u8(v>>16),
+    // 		u8(v>>8),
+    // 		u8(v),
+    // 	)
+    // }
 
     // pub fn AppendUint64(b: &[u8], v: u64) []u8 {
     // 	return append(b,
@@ -206,7 +222,7 @@ impl BigEndian {
 // // The error is EOF only if no bytes were read.
 // // If an EOF happens after reading some but not all the bytes,
 // // Read returns ErrUnexpectedEOF.
-// func Read(r io.Reader, order ByteOrder, data any) error {
+// fn Read(r io.Reader, order ByteOrder, data any) error {
 // 	// Fast path for basic types and slices.
 // 	if n := intDataSize(data); n != 0 {
 // 		bs := make([]u8, n)
@@ -315,7 +331,7 @@ impl BigEndian {
 // // and read from successive fields of the data.
 // // When writing structs, zero values are written for fields
 // // with blank (_) field names.
-// func Write(w: &mut dyn ggio::Writer, order ByteOrder, data any) error {
+// fn Write(w: &mut dyn ggio::Writer, order ByteOrder, data any) error {
 // 	// Fast path for basic types and slices.
 // 	if n := intDataSize(data); n != 0 {
 // 		bs := make([]u8, n)
@@ -371,52 +387,52 @@ impl BigEndian {
 // 				order.PutUint16(bs[2*i:], x)
 // 			}
 // 		case *int32:
-// 			order.put_u32(bs, u32(*v))
+// 			order.put_uint32(bs, u32(*v))
 // 		case int32:
-// 			order.put_u32(bs, u32(v))
+// 			order.put_uint32(bs, u32(v))
 // 		case []int32:
 // 			for i, x := range v {
-// 				order.put_u32(bs[4*i:], u32(x))
+// 				order.put_uint32(bs[4*i:], u32(x))
 // 			}
 // 		case *u32:
-// 			order.put_u32(bs, *v)
+// 			order.put_uint32(bs, *v)
 // 		case u32:
-// 			order.put_u32(bs, v)
+// 			order.put_uint32(bs, v)
 // 		case []u32:
 // 			for i, x := range v {
-// 				order.put_u32(bs[4*i:], x)
+// 				order.put_uint32(bs[4*i:], x)
 // 			}
 // 		case *int64:
-// 			order.put_u64(bs, u64(*v))
+// 			order.put_uint64(bs, u64(*v))
 // 		case int64:
-// 			order.put_u64(bs, u64(v))
+// 			order.put_uint64(bs, u64(v))
 // 		case []int64:
 // 			for i, x := range v {
-// 				order.put_u64(bs[8*i:], u64(x))
+// 				order.put_uint64(bs[8*i:], u64(x))
 // 			}
 // 		case *u64:
-// 			order.put_u64(bs, *v)
+// 			order.put_uint64(bs, *v)
 // 		case u64:
-// 			order.put_u64(bs, v)
+// 			order.put_uint64(bs, v)
 // 		case []u64:
 // 			for i, x := range v {
-// 				order.put_u64(bs[8*i:], x)
+// 				order.put_uint64(bs[8*i:], x)
 // 			}
 // 		case *float32:
-// 			order.put_u32(bs, math.Float32bits(*v))
+// 			order.put_uint32(bs, math.Float32bits(*v))
 // 		case float32:
-// 			order.put_u32(bs, math.Float32bits(v))
+// 			order.put_uint32(bs, math.Float32bits(v))
 // 		case []float32:
 // 			for i, x := range v {
-// 				order.put_u32(bs[4*i:], math.Float32bits(x))
+// 				order.put_uint32(bs[4*i:], math.Float32bits(x))
 // 			}
 // 		case *float64:
-// 			order.put_u64(bs, math.Float64bits(*v))
+// 			order.put_uint64(bs, math.Float64bits(*v))
 // 		case float64:
-// 			order.put_u64(bs, math.Float64bits(v))
+// 			order.put_uint64(bs, math.Float64bits(v))
 // 		case []float64:
 // 			for i, x := range v {
-// 				order.put_u64(bs[8*i:], math.Float64bits(x))
+// 				order.put_uint64(bs[8*i:], math.Float64bits(x))
 // 			}
 // 		}
 // 		_, err := w.write(bs)
@@ -439,7 +455,7 @@ impl BigEndian {
 // // Size returns how many bytes Write would generate to encode the value v, which
 // // must be a fixed-size value or a slice of fixed-size values, or a pointer to such data.
 // // If v is neither of these, Size returns -1.
-// func Size(v any) int {
+// fn Size(v any) int {
 // 	return dataSize(reflect.Indirect(reflect.ValueOf(v)))
 // }
 
@@ -449,7 +465,7 @@ impl BigEndian {
 // // For compound structures, it sums the sizes of the elements. Thus, for instance, for a slice
 // // it returns the length of the slice times the element size and does not count the memory
 // // occupied by the header. If the type of v is not acceptable, dataSize returns -1.
-// func dataSize(v reflect.Value) int {
+// fn dataSize(v reflect.Value) int {
 // 	switch v.Kind() {
 // 	case reflect.Slice:
 // 		if s := sizeof(v.Type().Elem()); s >= 0 {
@@ -472,7 +488,7 @@ impl BigEndian {
 // }
 
 // // sizeof returns the size >= 0 of variables for the given type or -1 if the type is not acceptable.
-// func sizeof(t reflect.Type) int {
+// fn sizeof(t reflect.Type) int {
 // 	switch t.Kind() {
 // 	case reflect.Array:
 // 		if s := sizeof(t.Elem()); s >= 0 {
@@ -509,13 +525,13 @@ impl BigEndian {
 // type decoder coder
 // type encoder coder
 
-// func (d *decoder) bool() bool {
+// fn (d *decoder) bool() bool {
 // 	x := d.buf[d.offset]
 // 	d.offset++
 // 	return x != 0
 // }
 
-// func (e *encoder) bool(x bool) {
+// fn (e *encoder) bool(x bool) {
 // 	if x {
 // 		e.buf[e.offset] = 1
 // 	} else {
@@ -524,67 +540,67 @@ impl BigEndian {
 // 	e.offset++
 // }
 
-// func (d *decoder) uint8() uint8 {
+// fn (d *decoder) uint8() uint8 {
 // 	x := d.buf[d.offset]
 // 	d.offset++
 // 	return x
 // }
 
-// func (e *encoder) uint8(x uint8) {
+// fn (e *encoder) uint8(x uint8) {
 // 	e.buf[e.offset] = x
 // 	e.offset++
 // }
 
-// func (d *decoder) u16() u16 {
+// fn (d *decoder) u16() u16 {
 // 	x := d.order.Uint16(d.buf[d.offset : d.offset+2])
 // 	d.offset += 2
 // 	return x
 // }
 
-// func (e *encoder) u16(x u16) {
+// fn (e *encoder) u16(x u16) {
 // 	e.order.PutUint16(e.buf[e.offset:e.offset+2], x)
 // 	e.offset += 2
 // }
 
-// func (d *decoder) u32() -> u32 {
+// fn (d *decoder) u32() -> u32 {
 // 	x := d.order.Uint32(d.buf[d.offset : d.offset+4])
 // 	d.offset += 4
 // 	return x
 // }
 
-// func (e *encoder) u32(x u32) {
-// 	e.order.put_u32(e.buf[e.offset:e.offset+4], x)
+// fn (e *encoder) u32(x u32) {
+// 	e.order.put_uint32(e.buf[e.offset:e.offset+4], x)
 // 	e.offset += 4
 // }
 
-// func (d *decoder) u64() -> u64 {
+// fn (d *decoder) u64() -> u64 {
 // 	x := d.order.Uint64(d.buf[d.offset : d.offset+8])
 // 	d.offset += 8
 // 	return x
 // }
 
-// func (e *encoder) u64(x u64) {
-// 	e.order.put_u64(e.buf[e.offset:e.offset+8], x)
+// fn (e *encoder) u64(x u64) {
+// 	e.order.put_uint64(e.buf[e.offset:e.offset+8], x)
 // 	e.offset += 8
 // }
 
-// func (d *decoder) int8() int8 { return int8(d.uint8()) }
+// fn (d *decoder) int8() int8 { return int8(d.uint8()) }
 
-// func (e *encoder) int8(x int8) { e.uint8(uint8(x)) }
+// fn (e *encoder) int8(x int8) { e.uint8(uint8(x)) }
 
-// func (d *decoder) int16() int16 { return int16(d.u16()) }
+// fn (d *decoder) int16() int16 { return int16(d.u16()) }
 
-// func (e *encoder) int16(x int16) { e.u16(u16(x)) }
+// fn (e *encoder) int16(x int16) { e.u16(u16(x)) }
 
-// func (d *decoder) int32() int32 { return int32(d.u32()) }
+// fn (d *decoder) int32() int32 { return int32(d.u32()) }
 
-// func (e *encoder) int32(x int32) { e.u32(u32(x)) }
+// fn (e *encoder) int32(x int32) { e.u32(u32(x)) }
 
-// func (d *decoder) int64() int64 { return int64(d.u64()) }
+// fn (d *decoder) int64() int64 { return int64(d.u64()) }
 
-// func (e *encoder) int64(x int64) { e.u64(u64(x)) }
+// fn (e *encoder) int64(x int64) { e.u64(u64(x)) }
 
-// func (d *decoder) value(v reflect.Value) {
+// fn (d *decoder) value(v reflect.Value) {
 // 	switch v.Kind() {
 // 	case reflect.Array:
 // 		l := v.Len()
@@ -653,7 +669,7 @@ impl BigEndian {
 // 	}
 // }
 
-// func (e *encoder) value(v reflect.Value) {
+// fn (e *encoder) value(v reflect.Value) {
 // 	switch v.Kind() {
 // 	case reflect.Array:
 // 		l := v.Len()
@@ -728,11 +744,11 @@ impl BigEndian {
 // 	}
 // }
 
-// func (d *decoder) skip(v reflect.Value) {
+// fn (d *decoder) skip(v reflect.Value) {
 // 	d.offset += dataSize(v)
 // }
 
-// func (e *encoder) skip(v reflect.Value) {
+// fn (e *encoder) skip(v reflect.Value) {
 // 	n := dataSize(v)
 // 	zero := e.buf[e.offset : e.offset+n]
 // 	for i := range zero {
@@ -743,7 +759,7 @@ impl BigEndian {
 
 // // intDataSize returns the size of the data required to represent the data when encoded.
 // // It returns zero if the type cannot be implemented by the fast path in Read or Write.
-// func intDataSize(data any) int {
+// fn intDataSize(data any) int {
 // 	switch data := data.(type) {
 // 	case bool, int8, uint8, *bool, *int8, *uint8:
 // 		return 1
@@ -791,14 +807,14 @@ mod tests {
     #[test]
     fn test_bigendian_put_u32() {
         let mut buf = [0; 4];
-        BigEndian::put_u32(&mut buf, 0x01020304);
+        BIG_ENDIAN.put_uint32(&mut buf, 0x01020304);
         assert_eq!([0x01, 0x02, 0x03, 0x04], buf);
     }
 
     #[test]
     fn test_bigendian_put_u64() {
         let mut buf = [0; 8];
-        BigEndian::put_u64(&mut buf, 0x0102030405060708);
+        BIG_ENDIAN.put_uint64(&mut buf, 0x0102030405060708);
         assert_eq!([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08], buf);
     }
 }

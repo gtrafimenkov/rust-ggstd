@@ -18,4 +18,7 @@
 
 mod binary;
 
-pub use binary::BigEndian;
+pub use binary::{BigEndian, ByteOrder, LittleEndian, BIG_ENDIAN, LITTLE_ENDIAN};
+
+#[cfg(test)]
+mod binary_test;
