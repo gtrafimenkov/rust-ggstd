@@ -204,6 +204,13 @@ impl hash::Hash for Digest<'_> {
     fn block_size(&self) -> usize {
         1
     }
+
+    fn sum(&self, b: &[u8]) -> Vec<u8> {
+        let s = hash::Hash32::sum32(self);
+        let mut res = b.to_vec();
+        res.extend_from_slice(&[(s >> 24) as u8, (s >> 16) as u8, (s >> 8) as u8, (s) as u8]);
+        res
+    }
 }
 
 impl hash::Hash32 for Digest<'_> {
@@ -289,10 +296,6 @@ impl std::io::Write for Digest<'_> {
         Ok(())
     }
 }
-// func (d *digest) Sum(in [u8]) [u8] {
-// 	s := d.sum32()
-// 	return append(in, byte(s>>24), byte(s>>16), byte(s>>8), byte(s))
-// }
 
 // checksum returns the CRC-32 checksum of data
 // using the polynomial represented by the Table.

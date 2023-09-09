@@ -47,6 +47,14 @@ impl hash::Hash for Digest {
     fn block_size(&self) -> usize {
         4
     }
+
+    fn sum(&self, b: &[u8]) -> Vec<u8> {
+        // fn Sum(&mut self, in [u8]) [u8] {
+        let s = self.hash;
+        let mut res = b.to_vec();
+        res.extend_from_slice(&[(s >> 24) as u8, (s >> 16) as u8, (s >> 8) as u8, (s) as u8]);
+        res
+    }
 }
 
 impl std::io::Write for Digest {
@@ -105,11 +113,6 @@ impl Hash32 for Digest {
     fn sum32(&self) -> u32 {
         self.hash
     }
-
-    // fn Sum(&mut self, in [u8]) [u8] {
-    // 	s := uint32(*d)
-    // 	return append(in, byte(s>>24), byte(s>>16), byte(s>>8), byte(s))
-    // }
 }
 
 /// Checksum returns the Adler-32 checksum of data.

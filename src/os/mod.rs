@@ -1,3 +1,3 @@
 mod file;
 
-pub use file::read_file;
+pub use file::{open, read_file};

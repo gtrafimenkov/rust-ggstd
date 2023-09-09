@@ -49,6 +49,7 @@ const INIT6_224: u32 = 0x64F98FA7;
 const INIT7_224: u32 = 0xBEFA4FA4;
 
 /// digest represents the partial evaluation of a checksum.
+#[derive(Copy, Clone)]
 struct Digest {
     h: [u32; 8],
     x: [u8; CHUNK],
@@ -191,6 +192,19 @@ impl hash::Hash for Digest {
     fn block_size(&self) -> usize {
         BLOCK_SIZE
     }
+
+    fn sum(&self, b: &[u8]) -> Vec<u8> {
+        // Make a copy of d so that caller can keep writing and summing.
+        let mut d0 = self.clone();
+        let hash = d0.checksum();
+        let mut res = b.to_vec();
+        if d0.is224 {
+            res.extend_from_slice(&hash[..SIZE224]);
+        } else {
+            res.extend_from_slice(&hash);
+        }
+        res
+    }
 }
 
 impl Digest {
@@ -237,17 +251,6 @@ impl std::io::Write for Digest {
 }
 
 impl Digest {
-    // fn (d *Digest) Sum(in []u8) []u8 {
-    // 	boring.Unreachable()
-    // 	// Make a copy of d so that caller can keep writing and summing.
-    // 	d0 := *d
-    // 	hash := d0.checksum()
-    // 	if d0.is224 {
-    // 		return append(in, hash[..Size224]...)
-    // 	}
-    // 	return append(in, hash[..]...)
-    // }
-
     fn checksum(&mut self) -> [u8; SIZE] {
         let len = self.len;
         // Padding. Add a 1 bit and 0 bits until 56 bytes mod 64.

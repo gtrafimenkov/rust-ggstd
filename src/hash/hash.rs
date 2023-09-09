@@ -20,13 +20,9 @@
 //! subject to issues such as security fixes.
 //! See the Go compatibility document for background: <https://golang.org/doc/go1compat>
 pub trait Hash: std::io::Write {
-    // // Write (via the embedded ggio::Writer interface) adds more data to the running hash.
-    // // It never returns an error.
-    // ggio::Writer
-
-    // // Sum appends the current hash to b and returns the resulting slice.
-    // // It does not change the underlying hash state.
-    // fn Sum(b [u8]) [u8]
+    /// Sum appends the current hash to b and returns the resulting slice.
+    /// It does not change the underlying hash state.
+    fn sum(&self, b: &[u8]) -> Vec<u8>;
 
     /// reset resets the Hash to its initial state.
     fn reset(&mut self);

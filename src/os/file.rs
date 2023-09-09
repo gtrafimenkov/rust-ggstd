@@ -301,13 +301,12 @@ use std::io::Read;
 // 	return nil
 // }
 
-// // Open opens the named file for reading. If successful, methods on
-// // the returned file can be used for reading; the associated file
-// // descriptor has mode O_RDONLY.
-// // If there is an error, it will be of type *PathError.
-// fn Open(name string) (*File, error) {
-// 	return OpenFile(name, O_RDONLY, 0)
-// }
+/// Open opens the named file for reading. If successful, methods on
+/// the returned file can be used for reading; the associated file
+/// descriptor has mode O_RDONLY.
+pub fn open(name: &str) -> std::io::Result<std::fs::File> {
+    std::fs::File::open(name)
+}
 
 // // Create creates or truncates the named file. If the file already exists,
 // // it is truncated. If the file does not exist, it is created with mode 0666
