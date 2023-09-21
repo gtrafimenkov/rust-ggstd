@@ -7,11 +7,11 @@ pub fn copy(dest: &mut [u8], src: &[u8]) -> usize {
     let src_size = src.len();
     if dest_size == src_size {
         dest.copy_from_slice(src);
-        return src_size;
+        src_size
     } else {
         let size = src_size.min(dest_size);
         dest[..size].copy_from_slice(&src[..size]);
-        return size;
+        size
     }
 }
 
@@ -23,10 +23,10 @@ pub fn copy_within(buf: &mut [u8], src: std::ops::Range<usize>, dest: usize) -> 
     let src_size = src.end - src.start;
     if src_size > dest_size {
         buf.copy_within(src.start..src.start + dest_size, dest);
-        return dest_size;
+        dest_size
     } else {
         buf.copy_within(src, dest);
-        return src_size;
+        src_size
     }
 }
 
@@ -35,6 +35,15 @@ pub fn copy_within(buf: &mut [u8], src: std::ops::Range<usize>, dest: usize) -> 
 /// error kind and a message copied from the original error.
 pub fn copy_stdio_error(e: &std::io::Error) -> std::io::Error {
     std::io::Error::new(e.kind(), e.to_string())
+}
+
+/// string converts a byte slice into a string.
+/// This is somewhat similar to Go `string(b)`, but not exactly.
+/// In go any sequence of bytes can be converted into a string, but in Rust
+/// a string can contain only valid utf-8.
+/// This function panics if the byte slice cannot be converted into a valid Rust string.
+pub fn string(b: &[u8]) -> String {
+    String::from_utf8(b.to_vec()).unwrap()
 }
 
 pub mod readers;

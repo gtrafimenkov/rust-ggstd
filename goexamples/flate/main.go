@@ -24,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	result_str := hex.EncodeToString(buffer.Bytes())
+	result_str := hex.encode_to_string(buffer.Bytes())
 	fmt.Printf(
 		"input string    (%02d bytes): %s\n", len([]byte(msg)), msg)
 	fmt.Printf(

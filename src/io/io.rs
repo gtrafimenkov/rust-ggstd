@@ -329,7 +329,7 @@ pub fn read_at_least(
             Err(e) => return (n, Some(e)),
         }
     }
-    return (n, None);
+    (n, None)
 }
 
 /// read_full reads exactly buf.len() bytes from r into buf.
@@ -364,7 +364,7 @@ pub fn copy_n(
             Some(std::io::Error::from(std::io::ErrorKind::UnexpectedEof)),
         );
     }
-    return (written as usize, err);
+    (written as usize, err)
 }
 
 /// copy copies from src to dst until either EOF is reached
@@ -384,7 +384,7 @@ pub fn copy(
     dst: &mut dyn std::io::Write,
     src: &mut dyn std::io::Read,
 ) -> (u64, Option<std::io::Error>) {
-    return copy_buffer_int(dst, src, None);
+    copy_buffer_int(dst, src, None)
 }
 
 /// copy_buffer is identical to copy except that it stages through the
@@ -400,10 +400,10 @@ pub fn copy_buffer(
     src: &mut dyn std::io::Read,
     buf: Option<&mut [u8]>,
 ) -> (u64, Option<std::io::Error>) {
-    if buf.is_some() && buf.as_ref().unwrap().len() == 0 {
+    if buf.is_some() && buf.as_ref().unwrap().is_empty() {
         panic!("empty buffer in copy_buffer");
     }
-    return copy_buffer_int(dst, src, buf);
+    copy_buffer_int(dst, src, buf)
 }
 
 /// copy_buffer_int is the actual implementation of copy and copy_buffer.
@@ -459,11 +459,11 @@ fn copy_buffer_int(
             }
         }
     }
-    if buf.is_none() {
-        let mut buf = vec![0; 32 * 1024];
-        return copy_buf(dst, src, &mut buf);
+    if let Some(buf) = buf {
+        copy_buf(dst, src, buf)
     } else {
-        return copy_buf(dst, src, buf.unwrap());
+        let mut buf = vec![0; 32 * 1024];
+        copy_buf(dst, src, &mut buf)
     }
     // 	if buf == nil {
     // 		size := 32 * 1024
@@ -509,7 +509,7 @@ impl<'a> std::io::Read for LimitedReader<'a> {
         match self.r.read(&mut p[..size]) {
             Ok(n) => {
                 self.n -= n;
-                return Ok(n);
+                Ok(n)
             }
             Err(err) => Err(err),
         }
@@ -669,6 +669,12 @@ impl Discard {
     }
 }
 
+impl Default for Discard {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl std::io::Write for Discard {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         Ok(buf.len())
@@ -772,7 +778,7 @@ pub fn read_all(r: &mut dyn std::io::Read) -> (Vec<u8>, Option<std::io::Error>) 
     }
 }
 
-const SHORT_WRITE_ERR_STR: &'static str = "ErrShortWrite: short write";
+const SHORT_WRITE_ERR_STR: &str = "ErrShortWrite: short write";
 
 pub fn new_error_short_write() -> std::io::Error {
     errors::new_stdio_other_error(SHORT_WRITE_ERR_STR.to_string())

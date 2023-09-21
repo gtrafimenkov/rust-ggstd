@@ -11,7 +11,7 @@ use crate::io as ggio;
 fn test_nlit_out_of_range() {
     // Trying to decode this bogus flate data, which has a Huffman table
     // with nlit=288, should not panic.
-    let mut reader = bytes::new_reader(
+    let mut reader = bytes::Reader::new(
         b"\xfc\xfe\x36\xe7\x5e\x1c\xef\xb3\x55\x58\x77\xb6\x56\xb5\x43\xf4\
         \x6f\xf2\xd2\xe6\x3d\x99\xa0\x85\x8c\x48\xeb\xf8\xda\x83\x04\x2a\
         \x75\xc4\xf8\x0f\x12\x11\xb9\xb4\x4b\x09\xa0\xbe\x8b\x91\x4c",
@@ -46,7 +46,7 @@ fn test_nlit_out_of_range() {
 // 			if len(buf0) > n-i {
 // 				buf0 = buf0[..n-i]
 // 			}
-// 			ggio::copy(w, bytes::new_reader(buf0))
+// 			ggio::copy(w, bytes::Reader::new(buf0))
 // 		}
 // 		w.close()
 // 		buf1 := compressed.bytes()
@@ -54,7 +54,7 @@ fn test_nlit_out_of_range() {
 // 		runtime.GC()
 // 		b.StartTimer()
 // 		for i := 0; i < b.N; i += 1 {
-// 			ggio::copy(ggio::Discard::new(), new_reader(bytes::new_reader(buf1)))
+// 			ggio::copy(ggio::Discard::new(), new_reader(bytes::Reader::new(buf1)))
 // 		}
 // 	})
 // }

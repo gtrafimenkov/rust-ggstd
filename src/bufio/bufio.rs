@@ -89,7 +89,7 @@ impl<'a> Reader<'a> {
 
     /// size returns the size of the underlying buffer in bytes.
     pub fn size(&mut self) -> usize {
-        return self.buf.len();
+        self.buf.len()
     }
 
     /// reset discards any buffered data, resets all state, and switches
@@ -139,8 +139,7 @@ impl<'a> Reader<'a> {
     }
 
     fn read_err(&mut self) -> Option<Box<dyn std::error::Error>> {
-        let err = std::mem::replace(&mut self.err, None);
-        return err;
+        self.err.take()
     }
 
     /// peek returns the next n bytes without advancing the reader. The bytes stop
@@ -174,7 +173,7 @@ impl<'a> Reader<'a> {
                 err = Some(Box::new(ERR_BUFFER_FULL));
             }
         }
-        return (&self.buf[self.r..self.r + n], err);
+        (&self.buf[self.r..self.r + n], err)
     }
 
     // // Discard skips the next n bytes, returning the number of bytes discarded.
@@ -310,9 +309,9 @@ impl<'a> Reader<'a> {
 
     // // ReadRune reads a single UTF-8 encoded Unicode character and returns the
     // // rune and its size in bytes. If the encoded rune is invalid, it consumes one byte
-    // // and returns unicode.ReplacementChar (U+FFFD) with a size of 1.
+    // // and returns unicode:REPLACEMENT_CHAR (U+FFFD) with a size of 1.
     // fn ReadRune (&mut self) (r rune, size isize, err error) {
-    // 	for b.r+utf8.UTFMax > b.w && !utf8.FullRune(b.buf[b.r:b.w]) && b.err.is_none() && b.w-b.r < b.buf.len() {
+    // 	for b.r+utf8.UTFMAX > b.w && !utf8.full_rune(b.buf[b.r:b.w]) && b.err.is_none() && b.w-b.r < b.buf.len() {
     // 		b.fill() // b.w-b.r < len(buf) => buffer is not full
     // 	}
     // 	b.lastRuneSize = -1
@@ -320,8 +319,8 @@ impl<'a> Reader<'a> {
     // 		return 0, 0, b.read_err()
     // 	}
     // 	r, size = rune(b.buf[b.r]), 1
-    // 	if r >= utf8.RuneSelf {
-    // 		r, size = utf8.DecodeRune(b.buf[b.r:b.w])
+    // 	if r >= utf8::RUNE_SELF {
+    // 		r, size = utf8.decode_rune(b.buf[b.r:b.w])
     // 	}
     // 	b.r += size
     // 	b.lastByte = isize(b.buf[b.r-1])
@@ -345,7 +344,7 @@ impl<'a> Reader<'a> {
 
     /// buffered returns the number of bytes that can be read from the current buffer.
     pub fn buffered(&mut self) -> usize {
-        return self.w - self.r;
+        self.w - self.r
     }
 
     // // ReadSlice reads until the first occurrence of delim in the input,
@@ -724,7 +723,7 @@ impl<'a> Writer<'a> {
 
     // available returns how many bytes are unused in the buffer.
     pub fn available(&self) -> usize {
-        return self.buf.len() - self.n;
+        self.buf.len() - self.n
     }
 
     // // AvailableBuffer returns an empty buffer with b.available() capacity.
@@ -737,7 +736,7 @@ impl<'a> Writer<'a> {
 
     // buffered returns the number of bytes that have been written into the current buffer.
     fn buffered(&self) -> usize {
-        return self.n;
+        self.n
     }
 
     /// write_byte writes a single byte.
@@ -745,7 +744,7 @@ impl<'a> Writer<'a> {
         if self.err.is_some() {
             return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
         }
-        if self.available() <= 0 && self.flush().is_err() {
+        if self.available() == 0 && self.flush().is_err() {
             return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
         }
         self.buf[self.n] = c;
@@ -757,7 +756,7 @@ impl<'a> Writer<'a> {
     // // the number of bytes written and any error.
     // fn WriteRune(&self, r rune) (size isize, err error) {
     // 	// Compare as uint32 to correctly handle negative runes.
-    // 	if uint32(r) < utf8.RuneSelf {
+    // 	if uint32(r) < utf8::RUNE_SELF {
     // 		err = b.write_byte(byte(r))
     // 		if err.is_some() {
     // 			return 0, err
@@ -768,17 +767,17 @@ impl<'a> Writer<'a> {
     // 		return 0, b.err
     // 	}
     // 	n := b.available()
-    // 	if n < utf8.UTFMax {
+    // 	if n < utf8.UTFMAX {
     // 		if b.flush(); b.err.is_some() {
     // 			return 0, b.err
     // 		}
     // 		n = b.available()
-    // 		if n < utf8.UTFMax {
+    // 		if n < utf8.UTFMAX {
     // 			// Can only happen if buffer is silly small.
     // 			return b.write_string(string(r))
     // 		}
     // 	}
-    // 	size = utf8.EncodeRune(b.buf[b.n..], r)
+    // 	size = utf8.encode_rune(b.buf[b.n..], r)
     // 	b.n += size
     // 	return size, nil
     // }

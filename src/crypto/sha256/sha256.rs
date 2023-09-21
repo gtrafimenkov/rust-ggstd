@@ -142,7 +142,7 @@ pub fn new() -> impl hash::Hash {
     // }
     let mut d = Digest::new();
     d.reset();
-    return d;
+    d
 }
 
 /// New224 returns a new hash.Hash computing the SHA224 checksum.
@@ -195,7 +195,7 @@ impl hash::Hash for Digest {
 
     fn sum(&self, b: &[u8]) -> Vec<u8> {
         // Make a copy of d so that caller can keep writing and summing.
-        let mut d0 = self.clone();
+        let mut d0 = *self;
         let hash = d0.checksum();
         let mut res = b.to_vec();
         if d0.is224 {
@@ -239,7 +239,7 @@ impl std::io::Write for Digest {
             block_generic(&mut self.h, &p[..n]);
             p = &p[n..];
         }
-        if p.len() > 0 {
+        if !p.is_empty() {
             self.nx = self.fill_buf(p);
         }
         Ok(nn)
@@ -266,7 +266,7 @@ impl Digest {
         let len = len << 3;
         let padlen = &mut tmp[0..(t + 8) as usize];
         BIG_ENDIAN.put_uint64(&mut padlen[(t as usize)..], len);
-        self.write(padlen).expect("write error is not expected");
+        self.write_all(padlen).expect("write error is not expected");
 
         if self.nx != 0 {
             panic!("self.nx != 0");
@@ -296,7 +296,7 @@ pub fn sum256(data: &[u8]) -> [u8; SIZE] {
     // }
     let mut d = Digest::new();
     d.reset();
-    d.write(data).expect("write error is not expected");
+    d.write_all(data).expect("write error is not expected");
     d.checksum()
 }
 

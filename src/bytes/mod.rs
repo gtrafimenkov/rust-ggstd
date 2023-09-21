@@ -11,7 +11,7 @@ mod reader;
 
 pub use buffer::{new_buffer, new_buffer_string, Buffer};
 pub use bytes::{equal, has_suffix};
-pub use reader::{new_reader, Reader};
+pub use reader::Reader;
 
 #[cfg(test)]
 mod buffer_test;

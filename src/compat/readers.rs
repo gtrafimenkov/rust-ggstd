@@ -7,7 +7,7 @@ impl<R: std::io::Read> ggio::ByteReader for std::io::BufReader<R> {
             Ok(buf) => buf,
             Err(err) => return Err(err),
         };
-        if buf.len() == 0 {
+        if buf.is_empty() {
             return Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof));
         }
         let b = buf[0];

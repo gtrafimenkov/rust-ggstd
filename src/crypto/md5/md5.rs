@@ -68,7 +68,7 @@ impl Digest {
         binary::LITTLE_ENDIAN.put_uint32(&mut digest[4..], self.s[1]);
         binary::LITTLE_ENDIAN.put_uint32(&mut digest[8..], self.s[2]);
         binary::LITTLE_ENDIAN.put_uint32(&mut digest[12..], self.s[3]);
-        return digest;
+        digest
     }
 }
 
@@ -142,7 +142,7 @@ impl hash::Hash for Digest {
     /// It does not change the underlying hash state.
     fn sum(&self, b: &[u8]) -> Vec<u8> {
         // Make a copy of d so that caller can keep writing and summing.
-        let mut d0 = self.clone();
+        let mut d0 = *self;
         let hash = d0.checksum();
         let mut res = b.to_vec();
         res.extend_from_slice(&hash);
@@ -161,7 +161,7 @@ impl std::io::Write for Digest {
         let mut buf = buf;
         self.len += nn as u64;
         if self.nx > 0 {
-            let n = compat::copy(&mut self.x[self.nx..], &buf);
+            let n = compat::copy(&mut self.x[self.nx..], buf);
             self.nx += n;
             if self.nx == BLOCK_SIZE {
                 // 			if haveAsm {
@@ -182,7 +182,7 @@ impl std::io::Write for Digest {
             // 		}
             buf = &buf[n..];
         }
-        if buf.len() > 0 {
+        if !buf.is_empty() {
             self.nx = compat::copy(&mut self.x, buf);
         }
         Ok(nn)

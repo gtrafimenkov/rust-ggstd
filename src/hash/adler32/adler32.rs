@@ -80,7 +80,7 @@ impl Digest {
         let mut s1 = self.hash & 0xffff;
         let mut s2 = self.hash >> 16;
         let mut p = p;
-        while p.len() > 0 {
+        while !p.is_empty() {
             let mut q: &[u8] = &[];
             if p.len() > NMAX {
                 q = &p[NMAX..];
@@ -106,6 +106,12 @@ impl Digest {
             p = q
         }
         self.hash = s2 << 16 | s1;
+    }
+}
+
+impl Default for Digest {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

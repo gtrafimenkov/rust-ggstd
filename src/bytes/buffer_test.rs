@@ -144,9 +144,9 @@ fn test_basic_operations() {
             "TestBasicOperations (9)",
             &mut buf,
             &test_string[0..20],
-            &mut vec![0; 5],
+            &mut [0; 5],
         );
-        empty("TestBasicOperations (10)", &mut buf, "", &mut vec![0; 100]);
+        empty("TestBasicOperations (10)", &mut buf, "", &mut [0; 100]);
 
         _ = buf.write_byte(test_string.as_bytes()[1]);
         assert_eq!(test_string.as_bytes()[1], buf.read_byte().unwrap());
@@ -324,11 +324,11 @@ fn test_cap_with_slice_and_written_data() {
 // fn TestRuneIO() {
 // 	const NRune = 1000
 // 	// Built a test slice while we write the data
-// 	b := make([u8], utf8.UTFMax*NRune)
+// 	b := make([u8], utf8.UTFMAX*NRune)
 // 	var buf Buffer
 // 	n := 0
 // 	for r := rune(0); r < NRune; r++ {
-// 		size := utf8.EncodeRune(b[n:], r)
+// 		size := utf8.encode_rune(b[n:], r)
 // 		nbytes, err := buf.WriteRune(r)
 // 		if err != nil {
 // 			t.Fatalf("WriteRune(%U) error: %s", r, err)
@@ -345,10 +345,10 @@ fn test_cap_with_slice_and_written_data() {
 // 		t.Fatalf("incorrect result from WriteRune: %q not %q", buf.bytes(), b)
 // 	}
 
-// 	p := make([u8], utf8.UTFMax)
+// 	p := make([u8], utf8.UTFMAX)
 // 	// Read it back with ReadRune
 // 	for r := rune(0); r < NRune; r++ {
-// 		size := utf8.EncodeRune(p, r)
+// 		size := utf8.encode_rune(p, r)
 // 		nr, nbytes, err := buf.ReadRune()
 // 		if nr != r || nbytes != size || err != nil {
 // 			t.Fatalf("ReadRune(%U) got %U,{} not %U,{} (err=%s)", r, nr, nbytes, r, size, err)
@@ -386,8 +386,8 @@ fn test_cap_with_slice_and_written_data() {
 // #[test]
 // fn TestWriteInvalidRune() {
 // 	// Invalid runes, including negative ones, should be written as
-// 	// utf8.RuneError.
-// 	for _, r := range []rune{-1, utf8.MaxRune + 1} {
+// 	// utf8.RUNE_ERROR.
+// 	for _, r := range []rune{-1, utf8.MAX_RUNE + 1} {
 // 		var buf Buffer
 // 		buf.WriteRune(r)
 // 		check(fmt.Sprintf("TestWriteInvalidRune ({})", r), &buf, "\uFFFD")
@@ -638,8 +638,8 @@ fn test_cap_with_slice_and_written_data() {
 // fn BenchmarkWriteRune(b *testing.B) {
 // 	const n = 4 << 10
 // 	const r = '☺'
-// 	b.SetBytes(int64(n * utf8.RuneLen(r)))
-// 	let buf = new_buffer(make([u8], n*utf8.UTFMax))
+// 	b.SetBytes(int64(n * utf8.rune_len(r)))
+// 	let buf = new_buffer(make([u8], n*utf8.UTFMAX))
 // 	for i := 0; i < b.N; i += 1 {
 // 		buf.Reset()
 // 		for i := 0; i < n; i += 1 {

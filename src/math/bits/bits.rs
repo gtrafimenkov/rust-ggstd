@@ -203,7 +203,7 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
     }
     let n = 32;
     let s = (k as usize) & (n - 1);
-    return x << s | x >> (n - s);
+    x << s | x >> (n - s)
 }
 
 // // RotateLeft64 returns the value of x rotated left by (k mod 64) bits.
@@ -228,13 +228,13 @@ pub fn rotate_left32(x: u32, k: isize) -> u32 {
 
 // reverse8 returns the value of x with its bits in reversed order.
 pub fn reverse8(x: u8) -> u8 {
-    return bits_tables::REV8TAB[x as usize];
+    bits_tables::REV8TAB[x as usize]
 }
 
 // reverse16 returns the value of x with its bits in reversed order.
 pub fn reverse16(x: u16) -> u16 {
-    return ((bits_tables::REV8TAB[(x >> 8) as usize]) as u16)
-        | ((bits_tables::REV8TAB[(x & 0xff) as usize]) as u16) << 8;
+    ((bits_tables::REV8TAB[(x >> 8) as usize]) as u16)
+        | ((bits_tables::REV8TAB[(x & 0xff) as usize]) as u16) << 8
 }
 
 // // Reverse32 returns the value of x with its bits in reversed order.

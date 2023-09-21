@@ -491,7 +491,7 @@ fn test_byte_order() {
             // 				t.Errorf("AppendUint32: len(buf) = %d, want %d", len(buf), offset+4)
             // 			}
 
-            let want64 = value as u64;
+            let want64 = value;
             order.put_uint64(&mut buf[..8], want64);
             let got = order.uint64(&buf[..8]);
             assert_eq!(want64, got, "put_uint64: uint64 = {}, want {}", got, want64);

@@ -54,7 +54,7 @@ impl std::io::Write for ErrorWriter {
             ));
         }
         self.n -= 1;
-        return Ok(buf.len());
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
@@ -84,7 +84,7 @@ fn test_write_error() {
             // Fail after 'fail' writes
             let mut ew = ErrorWriter { n: fail };
             let mut w = flate::Writer::new(&mut ew, l).unwrap();
-            let mut reader = bytes::new_reader(input);
+            let mut reader = bytes::Reader::new(input);
             let (_n, err) = ggio::copy_buffer(&mut w, &mut reader, Some(&mut copy_buffer));
             assert!(
                 err.is_some(),

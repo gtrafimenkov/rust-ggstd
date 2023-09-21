@@ -66,12 +66,12 @@ pub(super) type Token = u32;
 
 /// Convert a literal into a literal token.
 pub(super) fn literal_token(literal: u32) -> Token {
-    return (LITERAL_TYPE + literal) as Token;
+    (LITERAL_TYPE + literal) as Token
 }
 
 /// Convert a < xlength, xoffset > pair into a match token.
 pub(super) fn match_token(xlength: u32, xoffset: u32) -> Token {
-    return (MATCH_TYPE + (xlength << LENGTH_SHIFT) + xoffset) as Token;
+    (MATCH_TYPE + (xlength << LENGTH_SHIFT) + xoffset) as Token
 }
 
 pub(super) trait TokenTrait {
@@ -83,16 +83,16 @@ pub(super) trait TokenTrait {
 impl TokenTrait for Token {
     /// Returns the literal of a literal token.
     fn literal(&self) -> u32 {
-        return self - LITERAL_TYPE;
+        self - LITERAL_TYPE
     }
 
     /// Returns the extra offset of a match token.
     fn offset(&self) -> u32 {
-        return self & OFFSET_MASK;
+        self & OFFSET_MASK
     }
 
     fn length(&self) -> u32 {
-        return (self - MATCH_TYPE) >> LENGTH_SHIFT;
+        (self - MATCH_TYPE) >> LENGTH_SHIFT
     }
 }
 
@@ -108,5 +108,5 @@ pub(super) fn offset_code(off: usize) -> usize {
     if off >> 7 < OFFSET_CODES.len() {
         return (OFFSET_CODES[off >> 7] + 14) as usize;
     }
-    return (OFFSET_CODES[off >> 14] + 28) as usize;
+    (OFFSET_CODES[off >> 14] + 28) as usize
 }

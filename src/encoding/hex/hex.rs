@@ -25,7 +25,7 @@ const REVERSE_HEX_TABLE: &[u8; 256] = b"\
 /// encoded_len returns the length of an encoding of n source bytes.
 /// Specifically, it returns n * 2.
 pub fn encoded_len(n: usize) -> usize {
-    return n * 2;
+    n * 2
 }
 
 // encode encodes src into encoded_len(src.len())
@@ -39,7 +39,7 @@ pub fn encode(dst: &mut [u8], src: &[u8]) -> usize {
         dst[j + 1] = HEXTABLE[(v & 0x0f) as usize];
         j += 2;
     }
-    return src.len() * 2;
+    src.len() * 2
 }
 
 #[derive(Debug)]
@@ -55,7 +55,7 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::ErrLength => write!(f, "{}", "encoding/hex: odd length hex string"),
+            Error::ErrLength => write!(f, "encoding/hex: odd length hex string"),
             Error::InvalidByteError(v) => write!(f, "encoding/hex: invalid byte: {:02x}", v),
         }
     }
@@ -64,7 +64,7 @@ impl std::fmt::Display for Error {
 /// decoded_len returns the length of a decoding of x source bytes.
 /// Specifically, it returns x / 2.
 pub fn decoded_len(x: usize) -> usize {
-    return x / 2;
+    x / 2
 }
 
 /// decode decodes src into decoded_len(src.len()) bytes,
@@ -101,7 +101,7 @@ pub fn decode(dst: &mut [u8], src: &[u8]) -> (usize, Option<Error>) {
         }
         return (i, Some(Error::ErrLength));
     }
-    return (i, None);
+    (i, None)
 }
 
 // encode_to_string returns the hexadecimal encoding of src.
@@ -122,7 +122,7 @@ pub fn decode_string(s: &str) -> (Vec<u8>, Option<Error>) {
     let mut buf = vec![0_u8; decoded_len(sbytes.len())];
     let (n, err) = decode(&mut buf, sbytes);
     buf.truncate(n);
-    return (buf, err);
+    (buf, err)
 }
 
 // // Dump returns a string that contains a hex dump of the given data. The format

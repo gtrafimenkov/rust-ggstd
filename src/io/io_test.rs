@@ -11,7 +11,7 @@ struct UnexpectedEOFErrorReader {}
 
 impl std::io::Read for UnexpectedEOFErrorReader {
     fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
-        return Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof));
+        Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
     }
 }
 
@@ -185,7 +185,7 @@ fn test_copy_n() {
 
 // fn BenchmarkCopyNSmall(b *testing.B) {
 // 	bs := bytes.Repeat([u8]{0}, 512+1)
-// 	rd := bytes::new_reader(bs)
+// 	rd := bytes::Reader::new(bs)
 // 	buf := new(Buffer)
 // 	b.ResetTimer()
 
@@ -197,7 +197,7 @@ fn test_copy_n() {
 
 // fn BenchmarkCopyNLarge(b *testing.B) {
 // 	bs := bytes.Repeat([u8]{0}, (32*1024)+1)
-// 	rd := bytes::new_reader(bs)
+// 	rd := bytes::Reader::new(bs)
 // 	buf := new(Buffer)
 // 	b.ResetTimer()
 
@@ -390,7 +390,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 
 // fn TestSectionReader_Seek() {
 // 	// Verifies that NewSectionReader's Seeker behaves like bytes::new_reader (which is like strings.new_reader)
-// 	br := bytes::new_reader([u8]("foo"))
+// 	br := bytes::Reader::new([u8]("foo"))
 // 	sr := NewSectionReader(br, 0, int64(len("foo")))
 
 // 	for _, whence := range []int{SeekStart, SeekCurrent, SeekEnd} {

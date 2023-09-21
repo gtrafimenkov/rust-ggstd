@@ -25,18 +25,9 @@ pub enum Error {
 impl PartialEq for Error {
     fn eq(&self, other: &Self) -> bool {
         match self {
-            Error::ErrChecksum => match other {
-                Error::ErrChecksum => true,
-                _ => false,
-            },
-            Error::ErrDictionary => match other {
-                Error::ErrDictionary => true,
-                _ => false,
-            },
-            Error::ErrHeader => match other {
-                Error::ErrHeader => true,
-                _ => false,
-            },
+            Error::ErrChecksum => matches!(other, Error::ErrChecksum),
+            Error::ErrDictionary => matches!(other, Error::ErrDictionary),
+            Error::ErrHeader => matches!(other, Error::ErrHeader),
             Error::StdIo(e1) => match other {
                 Error::StdIo(e2) => e1.kind() == e2.kind(),
                 _ => false,
@@ -49,7 +40,7 @@ impl Error {
     fn to_stdio_error(e: Self) -> std::io::Error {
         match e {
             Error::StdIo(e) => errors::copy_stdio_error(&e),
-            _ => return std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+            _ => std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
         }
     }
 }
@@ -67,13 +58,13 @@ impl std::fmt::Display for Error {
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        Error::StdIo(std::io::Error::from(error))
+        Error::StdIo(error)
     }
 }
 
 impl From<std::io::ErrorKind> for Error {
     fn from(kind: std::io::ErrorKind) -> Self {
-        Error::StdIo(std::io::Error::from(std::io::Error::from(kind)))
+        Error::StdIo(std::io::Error::from(kind))
     }
 }
 
@@ -125,7 +116,7 @@ impl<'a> Reader<'a> {
 
     pub fn read(&mut self, p: &mut [u8]) -> Result<usize, Error> {
         let (n, err) = self.decompressor.read(&mut self.r, p);
-        self.digest.write(&p[0..n])?;
+        self.digest.write_all(&p[0..n])?;
 
         if n > 0 {
             return Ok(n);
@@ -150,7 +141,7 @@ impl<'a> Reader<'a> {
         if checksum != self.digest.sum32() {
             return Err(Error::ErrChecksum);
         }
-        return Ok(n);
+        Ok(n)
     }
 
     /// Calling close does not close the wrapped io.Reader originally passed to new_reader.

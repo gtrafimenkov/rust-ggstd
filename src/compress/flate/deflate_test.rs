@@ -172,9 +172,9 @@ const REVERSE_BITS_TESTS: &[ReverseBitsTest] = &[
 fn large_data_chunk() -> Vec<u8> {
     let mut result = Vec::with_capacity(100000);
     for i in 0..result.len() {
-        result[i] = (i * i & 0xFF) as u8;
+        result[i] = ((i * i) & 0xFF) as u8;
     }
-    return result;
+    result
 }
 
 #[test]
@@ -248,7 +248,7 @@ fn test_writer_close() {
     assert!(res.is_err(), "Flush to closed writer");
 
     let res = zw.close();
-    assert!(!res.is_err(), "Close on a closed writer is not an error");
+    assert!(res.is_ok(), "Close on a closed writer is not an error");
 }
 
 /// A SparseReader returns a stream consisting of 0s followed by 1<<16 1s.
@@ -277,7 +277,7 @@ impl std::io::Read for SparseReader {
             };
         }
         self.cur = cur;
-        return Ok(n);
+        Ok(n)
     }
 }
 

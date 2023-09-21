@@ -293,7 +293,7 @@
 // 	return 1, data[0:1], nil
 // }
 
-// var errorRune = [u8](string(utf8.RuneError))
+// var errorRune = [u8](string(utf8.RUNE_ERROR))
 
 // // ScanRunes is a split function for a Scanner that returns each
 // // UTF-8-encoded rune as a token. The sequence of runes returned is
@@ -307,22 +307,22 @@
 // 	}
 
 // 	// Fast path 1: ASCII.
-// 	if data[0] < utf8.RuneSelf {
+// 	if data[0] < utf8::RUNE_SELF {
 // 		return 1, data[0:1], nil
 // 	}
 
 // 	// Fast path 2: Correct UTF-8 decode without error.
-// 	_, width := utf8.DecodeRune(data)
+// 	_, width := utf8.decode_rune(data)
 // 	if width > 1 {
 // 		// It's a valid encoding. Width cannot be one for a correctly encoded
 // 		// non-ASCII rune.
 // 		return width, data[0:width], nil
 // 	}
 
-// 	// We know it's an error: we have width==1 and implicitly r==utf8.RuneError.
+// 	// We know it's an error: we have width==1 and implicitly r==utf8.RUNE_ERROR.
 // 	// Is the error because there wasn't a full rune to be decoded?
-// 	// FullRune distinguishes correctly between erroneous and incomplete encodings.
-// 	if !atEOF && !utf8.FullRune(data) {
+// 	// full_rune distinguishes correctly between erroneous and incomplete encodings.
+// 	if !atEOF && !utf8.full_rune(data) {
 // 		// Incomplete; get more bytes.
 // 		return 0, nil, nil
 // 	}
@@ -397,7 +397,7 @@
 // 	start := 0
 // 	for width := 0; start < len(data); start += width {
 // 		var r rune
-// 		r, width = utf8.DecodeRune(data[start:])
+// 		r, width = utf8.decode_rune(data[start:])
 // 		if !isSpace(r) {
 // 			break
 // 		}
@@ -405,7 +405,7 @@
 // 	// Scan until space, marking end of word.
 // 	for width, i := 0, start; i < len(data); i += width {
 // 		var r rune
-// 		r, width = utf8.DecodeRune(data[i:])
+// 		r, width = utf8.decode_rune(data[i:])
 // 		if isSpace(r) {
 // 			return i + width, data[start:i], nil
 // 		}

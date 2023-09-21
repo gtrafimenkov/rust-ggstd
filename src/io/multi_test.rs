@@ -314,7 +314,7 @@
 // // chain continues to return EOF on its final read, rather than
 // // yielding a (0, EOF).
 // func TestMultiReaderFinalEOF(t *testing.T) {
-// 	r := MultiReader(bytes::new_reader(nil), byteAndEOFReader('a'))
+// 	r := MultiReader(bytes::Reader::new(nil), byteAndEOFReader('a'))
 // 	buf := make([u8], 2)
 // 	n, err := r.Read(buf)
 // 	if n != 1 || err != EOF {
@@ -329,8 +329,8 @@
 // 	// on our stack after MultiReader is inlined (Issue 18819).  This
 // 	// is a work around for a limitation in liveness analysis.
 // 	func() {
-// 		buf1 := bytes::new_reader([u8]("foo"))
-// 		buf2 := bytes::new_reader([u8]("bar"))
+// 		buf1 := bytes::Reader::new([u8]("foo"))
+// 		buf2 := bytes::Reader::new([u8]("bar"))
 // 		mr = MultiReader(buf1, buf2)
 // 		runtime.SetFinalizer(buf1, func(*bytes.Reader) {
 // 			close(closed)

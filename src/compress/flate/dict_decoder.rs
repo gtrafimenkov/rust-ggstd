@@ -72,17 +72,17 @@ impl DictDecoder {
         if self.full {
             return self.hist.len();
         }
-        return self.wr_pos;
+        self.wr_pos
     }
 
     /// avail_read reports the number of bytes that can be flushed by read_flush.
     pub fn avail_read(&self) -> usize {
-        return self.wr_pos - self.rd_pos;
+        self.wr_pos - self.rd_pos
     }
 
     /// avail_write reports the available amount of output buffer space.
     pub fn avail_write(&self) -> usize {
-        return self.hist.len() - self.wr_pos;
+        self.hist.len() - self.wr_pos
     }
 
     /// write_slice returns a slice of the available buffer to write data to.
@@ -164,7 +164,7 @@ impl DictDecoder {
         }
 
         self.wr_pos = dst_pos;
-        return dst_pos - dst_base;
+        dst_pos - dst_base
     }
 
     /// try_write_copy tries to copy a string at a given (distance, length) to the
@@ -192,7 +192,7 @@ impl DictDecoder {
         }
 
         self.wr_pos = dst_pos;
-        return dst_pos - dst_base;
+        dst_pos - dst_base
     }
 
     // read_flush returns a slice of the historical buffer that is ready to be
@@ -207,7 +207,7 @@ impl DictDecoder {
             self.rd_pos = 0;
             self.full = true;
         }
-        return to_read;
+        to_read
     }
 
     // stash_flush stashes data for further reading with stash_read.  The stashed
@@ -227,7 +227,7 @@ impl DictDecoder {
 
     /// stash_len returns amount of stashed and not yet read data
     pub(super) fn stash_len(&self) -> usize {
-        return self.stash_end_pos - self.stash_start_pos;
+        self.stash_end_pos - self.stash_start_pos
     }
 
     /// stash_read reads data from the stash to the output buffer b,

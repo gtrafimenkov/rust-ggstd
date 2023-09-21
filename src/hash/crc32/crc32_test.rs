@@ -397,7 +397,7 @@ fn test_golden() {
             }
             ieee.write(&b[..d]).unwrap();
             ieee.write(&b[d..]).unwrap();
-            return ieee.sum32();
+            ieee.sum32()
         })
     }
 

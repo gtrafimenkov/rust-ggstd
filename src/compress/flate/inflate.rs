@@ -168,7 +168,7 @@ impl HuffmanDecoder {
                     panic!("impossible: overwriting existing chunk");
                 }
                 self.chunks[reverse as usize] =
-                    ((off << HUFFMAN_VALUE_SHIFT) | (HUFFMAN_CHUNK_BITS + 1)) as u32;
+                    (off << HUFFMAN_VALUE_SHIFT) | (HUFFMAN_CHUNK_BITS + 1);
                 self.links[off as usize] = vec![0; num_links as usize];
             }
         }
@@ -246,7 +246,7 @@ impl HuffmanDecoder {
             }
         }
 
-        return true;
+        true
     }
 }
 
@@ -346,7 +346,7 @@ fn next_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Decomp
         2 => {
             // compressed, dynamic Huffman tables
             let res = f.read_huffman(r);
-            if !res.is_err() {
+            if res.is_ok() {
                 f.hl = HLDecoder::H1;
                 f.hd = HDDecoder::H2;
                 huffman_block(r, f);
@@ -375,13 +375,11 @@ impl std::io::Read for Decompressor<'_> {
         println!("decompr read: {}, {:?}", n, err);
         self.err = err;
         if n > 0 {
-            return Ok(n);
+            Ok(n)
+        } else if self.err.is_some() {
+            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
         } else {
-            if self.err.is_some() {
-                return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
-            } else {
-                return Ok(0);
-            }
+            return Ok(0);
         }
     }
 }
@@ -394,7 +392,7 @@ impl Decompressor<'_> {
     ///
     // ggrust: not implemented
     // The ReadCloser returned by new_reader also implements Resetter.
-    pub fn new<'a>(r: &'a mut dyn std::io::Read) -> Decompressor<'a> {
+    pub fn new(r: &mut dyn std::io::Read) -> Decompressor<'_> {
         Self::new_dict(r, &[])
     }
 
@@ -407,12 +405,11 @@ impl Decompressor<'_> {
     // ggrust: not implemented
     // The ReadCloser returned by new_reader also implements Resetter.
     pub fn new_dict<'a>(r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Decompressor<'a> {
-        let f = Decompressor {
+        Decompressor {
             r: std::io::BufReader::new(r),
             td: DecompressorFilter::new_dict(dict),
             err: None,
-        };
-        return f;
+        }
     }
 
     pub fn read(&mut self, b: &mut [u8]) -> (usize, Option<std::io::Error>) {
@@ -553,7 +550,7 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                     dist += 1;
                 } else if (4..MAX_NUM_DIST).contains(&dist) {
                     // 		case dist < MAX_NUM_DIST:
-                    let nb = ((dist - 2) >> 1) as usize;
+                    let nb = (dist - 2) >> 1;
                     // have 1 bit in bottom of dist, need nb more.
                     let mut extra = (dist & 1) << nb;
                     while f.nb < nb {
@@ -635,20 +632,24 @@ fn generate_fixed_huffman_decoder() -> HuffmanDecoder {
     let mut h = HuffmanDecoder::new();
     // These come from the RFC section 3.2.6.
     let mut bits = [0; 288];
+    #[allow(clippy::needless_range_loop)]
     for i in 0..144 {
         bits[i] = 8;
     }
+    #[allow(clippy::needless_range_loop)]
     for i in 144..256 {
         bits[i] = 9;
     }
+    #[allow(clippy::needless_range_loop)]
     for i in 256..280 {
         bits[i] = 7;
     }
+    #[allow(clippy::needless_range_loop)]
     for i in 280..288 {
         bits[i] = 8;
     }
     h.init(&bits);
-    return h;
+    h
 }
 
 impl<'a> Decompressor<'a> {
@@ -718,10 +719,7 @@ impl DecompressorFilter {
     }
 
     fn copy_error(&self) -> Option<std::io::Error> {
-        match self.err.as_ref() {
-            Some(err) => Some(errors::copy_stdio_error(err)),
-            None => None,
-        }
+        self.err.as_ref().map(errors::copy_stdio_error)
     }
     /// new returns a new DecompressorFilter that can be used
     /// to read the uncompressed version of r.
@@ -743,7 +741,7 @@ impl DecompressorFilter {
     // ggrust: not implemented
     // The ReadCloser returned by new_reader also implements Resetter.
     pub fn new_dict(dict: &[u8]) -> Self {
-        let f = Self {
+        Self {
             roffset: 0,
             b: 0,
             nb: 0,
@@ -762,8 +760,7 @@ impl DecompressorFilter {
             hd: HDDecoder::None,
             copy_len: 0,
             copy_dist: 0,
-        };
-        return f;
+        }
     }
 
     pub fn close(&mut self) -> Result<(), std::io::Error> {
@@ -783,9 +780,7 @@ impl DecompressorFilter {
     ) -> Result<(), std::io::Error> {
         // HLIT[5], HDIST[5], HCLEN[4].
         while self.nb < 5 + 5 + 4 {
-            if let Err(err) = self.more_bits(r) {
-                return Err(err);
-            }
+            self.more_bits(r)?
         }
         let nlit = (self.b & 0x1F) as usize + 257;
         if nlit > MAX_NUM_LIT {
@@ -803,16 +798,16 @@ impl DecompressorFilter {
         self.nb -= 5 + 5 + 4;
 
         // (HCLEN+4)*3 bits: code lengths in the magic CODE_ORDER order.
+        #[allow(clippy::needless_range_loop)]
         for i in 0..nclen {
             while self.nb < 3 {
-                if let Err(err) = self.more_bits(r) {
-                    return Err(err);
-                }
+                self.more_bits(r)?
             }
-            self.codebits[CODE_ORDER[i]] = (self.b & 0x7) as u32;
+            self.codebits[CODE_ORDER[i]] = self.b & 0x7;
             self.b >>= 3;
             self.nb -= 3;
         }
+        #[allow(clippy::needless_range_loop)]
         for i in nclen..CODE_ORDER.len() {
             self.codebits[CODE_ORDER[i]] = 0;
         }
@@ -863,9 +858,7 @@ impl DecompressorFilter {
                 }
             };
             while self.nb < nb {
-                if let Err(err) = self.more_bits(r) {
-                    return Err(err);
-                }
+                self.more_bits(r)?
             }
             rep += (self.b & ((1 << nb) - 1) as u32) as usize;
             self.b >>= nb;
@@ -942,7 +935,7 @@ impl DecompressorFilter {
         self.roffset += 1;
         self.b |= (c as u32) << self.nb;
         self.nb += 8;
-        return Ok(());
+        Ok(())
     }
 
     /// Read the next Huffman-encoded symbol from f according to h.
@@ -1027,6 +1020,12 @@ impl DecompressorFilter {
         self.hd = HDDecoder::None;
         self.copy_len = 0;
         self.copy_dist = 0;
+    }
+}
+
+impl Default for DecompressorFilter {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

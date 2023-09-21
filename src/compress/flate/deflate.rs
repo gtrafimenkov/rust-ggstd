@@ -75,7 +75,7 @@ impl CompressionLevel {
             lazy,
             nice,
             chain,
-            fast_skip_hashing: fast_skip_hashing,
+            fast_skip_hashing,
         }
     }
 }
@@ -122,14 +122,14 @@ fn fill_deflate(d: &mut CompressFilter, b: &[u8]) -> usize {
 
             for i in 0..d.hash_prev.len() {
                 if d.hash_prev[i] > delta {
-                    d.hash_prev[i] = d.hash_prev[i] - delta;
+                    d.hash_prev[i] -= delta;
                 } else {
                     d.hash_prev[i] = 0;
                 }
             }
             for i in 0..d.hash_head.len() {
                 if d.hash_head[i] > delta {
-                    d.hash_head[i] = d.hash_head[i] - delta;
+                    d.hash_head[i] -= delta;
                 } else {
                     d.hash_head[i] = 0;
                 }
@@ -138,7 +138,7 @@ fn fill_deflate(d: &mut CompressFilter, b: &[u8]) -> usize {
     }
     let n = compat::copy(&mut d.window[d.window_end..], b);
     d.window_end += n;
-    return n;
+    n
 }
 
 const HASHMUL: u32 = 0x1e35a7bd;
@@ -147,10 +147,10 @@ const HASHMUL: u32 = 0x1e35a7bd;
 /// of the supplied slice.
 /// The caller must ensure that b.len() >= 4.
 pub(super) fn hash4(b: &[u8]) -> u32 {
-    return ((b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24)
+    ((b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24)
         .overflowing_mul(HASHMUL)
         .0
-        >> (32 - HASH_BITS);
+        >> (32 - HASH_BITS)
 }
 
 /// bulkHash4 will compute hashes using the same
@@ -179,7 +179,7 @@ fn match_len(a: &[u8], b: &[u8], max: usize) -> usize {
             return i;
         }
     }
-    return max;
+    max
 }
 
 /// enc_speed will compress and store the currently added data,
@@ -250,7 +250,7 @@ fn deflate(d: &mut CompressFilter, writer: &mut dyn std::io::Write) {
                     d.tokens.push(literal_token(d.window[d.index - 1] as u32));
                     d.byte_available = false;
                 }
-                if d.tokens.len() > 0 {
+                if !d.tokens.is_empty() {
                     d.write_block(writer, d.index);
                     if d.error().is_err() {
                         return;
@@ -384,7 +384,7 @@ fn deflate(d: &mut CompressFilter, writer: &mut dyn std::io::Write) {
 fn fill_store(d: &mut CompressFilter, b: &[u8]) -> usize {
     let n = compat::copy(&mut d.window[d.window_end..], b);
     d.window_end += n;
-    return n;
+    n
 }
 
 fn store(d: &mut CompressFilter, writer: &mut dyn std::io::Write) {
@@ -432,6 +432,7 @@ impl<'a> Compressor<'a> {
 pub(super) struct CompressFilter<'a> {
     compression_level: &'a CompressionLevel,
     hbw: HuffmanBitWriteFilter,
+    #[allow(clippy::type_complexity)]
     bulk_hasher: Option<fn(&[u8], &mut [u32])>,
 
     // compression algorithm
@@ -478,7 +479,7 @@ impl<'a> CompressFilter<'a> {
         if writer_error.is_err() {
             return writer_error;
         }
-        return &self.err;
+        &self.err
     }
 
     fn write_block(&mut self, w: &mut dyn std::io::Write, index: usize) {
@@ -525,7 +526,7 @@ impl<'a> CompressFilter<'a> {
             let to_check = &self.window[index..end];
             let dst_size = to_check.len() - MIN_MATCH_LENGTH + 1;
 
-            if dst_size <= 0 {
+            if dst_size == 0 {
                 continue;
             }
 
@@ -613,7 +614,7 @@ impl<'a> CompressFilter<'a> {
             i = new_i as usize;
             tries -= 1;
         }
-        return (length, offset, ok);
+        (length, offset, ok)
     }
 
     fn write_stored_block(&mut self, w: &mut dyn std::io::Write) {
@@ -632,14 +633,14 @@ impl<'a> CompressFilter<'a> {
         }
         let mut b = b;
         let n = b.len();
-        while b.len() > 0 {
+        while !b.is_empty() {
             (self.step)(self, writer);
             b = &b[(self.fill)(self, b)..];
             if let Err(e) = self.error() {
                 return Err(compat::copy_stdio_error(e));
             }
         }
-        return Ok(n);
+        Ok(n)
     }
 
     fn sync_flush(&mut self, w: &mut dyn std::io::Write) -> std::io::Result<()> {
@@ -665,6 +666,7 @@ impl<'a> CompressFilter<'a> {
 
     fn new(level: isize) -> Self {
         let compression_level: &'a CompressionLevel;
+        #[allow(clippy::type_complexity)]
         let mut bulk_hasher: Option<fn(&[u8], &mut [u32])> = None;
         let fill: fn(&mut CompressFilter, &[u8]) -> usize;
         let step: fn(&mut CompressFilter, &mut dyn std::io::Write);
@@ -692,7 +694,7 @@ impl<'a> CompressFilter<'a> {
             step = enc_speed;
             best_speed = Some(DeflateFast::new());
             tokens = vec![Token::default(); MAX_STORE_BLOCK_SIZE];
-        } else if level == DEFAULT_COMPRESSION || (2 <= level && level <= 9) {
+        } else if level == DEFAULT_COMPRESSION || (2..=9).contains(&level) {
             let level = if level == DEFAULT_COMPRESSION {
                 6
             } else {
@@ -716,12 +718,12 @@ impl<'a> CompressFilter<'a> {
                 level
             );
         }
-        return Self {
+        Self {
             compression_level,
             hbw: HuffmanBitWriteFilter::new(),
             bulk_hasher,
-            fill: fill,
-            step: step,
+            fill,
+            step,
             sync: false,
             best_speed,
             chain_head,
@@ -729,18 +731,18 @@ impl<'a> CompressFilter<'a> {
             hash_prev: vec![0; WINDOW_SIZE],
             hash_offset,
             index: 0,
-            window: window,
+            window,
             window_end: 0,
             block_start: 0,
             byte_available: false,
-            tokens: tokens,
-            length: length,
+            tokens,
+            length,
             offset: 0,
             max_insert_index: 0,
             err: Ok(0),
             hash_match: vec![0; MAX_MATCH_LENGTH - 1],
             writer_closed: false,
-        };
+        }
     }
 
     fn reset(&mut self) {
@@ -793,7 +795,7 @@ impl<'a> CompressFilter<'a> {
             std::io::ErrorKind::BrokenPipe,
             "flate: closed writer",
         ));
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -820,10 +822,10 @@ impl<'a> Writer<'a> {
     /// If level is in the range [-2, 9] then the error returned will be nil.
     /// Otherwise the error returned will be non-nil.
     pub fn new(w: &'a mut dyn std::io::Write, level: isize) -> std::io::Result<Self> {
-        return Ok(Self {
+        Ok(Self {
             writer: w,
             tw: WriteFilter::new(level)?,
-        });
+        })
     }
 
     /// new_dict is like new but initializes the new
@@ -837,15 +839,15 @@ impl<'a> Writer<'a> {
         level: isize,
         dict: &[u8],
     ) -> std::io::Result<Self> {
-        return Ok(Self {
+        Ok(Self {
             writer: w,
             tw: WriteFilter::new_dict(level, dict)?,
-        });
+        })
     }
 
     /// close flushes and closes the writer.
     pub fn close(&mut self) -> std::io::Result<()> {
-        return self.tw.close(self.writer);
+        self.tw.close(self.writer)
     }
 
     /// reset discards the writer's state and makes it equivalent to
@@ -903,7 +905,7 @@ impl<'a> WriteFilter<'a> {
             || level == HUFFMAN_ONLY
             || level == BEST_SPEED
             || level == DEFAULT_COMPRESSION
-            || (2 <= level && level <= 9)
+            || (2..=9).contains(&level)
         {
             // correct level
         } else {
@@ -935,7 +937,7 @@ impl<'a> WriteFilter<'a> {
 
     /// close flushes and closes the writer.
     pub fn close(&mut self, writer: &mut dyn std::io::Write) -> std::io::Result<()> {
-        return self.d.close(writer);
+        self.d.close(writer)
     }
 
     /// reset discards the writer's state and makes it equivalent to
@@ -945,7 +947,7 @@ impl<'a> WriteFilter<'a> {
         if self.dict.is_some() {
             // w was created with Writer::new_dict
             self.d.reset();
-            self.d.fill_window(&self.dict.as_ref().unwrap());
+            self.d.fill_window(self.dict.as_ref().unwrap());
         } else {
             // w was created with new
             self.d.reset()

@@ -243,7 +243,7 @@ And that has made all the difference.
     // write string to dd as is, when dd is full, flush data to buf
     fn write_string(buf: &mut bytes::Buffer, dd: &mut DictDecoder, str: &str) {
         let mut str = str.as_bytes();
-        while str.len() > 0 {
+        while !str.is_empty() {
             let write_buf = dd.write_slice(str.len());
             let cnt = write_buf.len();
             write_buf[0..cnt].copy_from_slice(&str[0..cnt]);

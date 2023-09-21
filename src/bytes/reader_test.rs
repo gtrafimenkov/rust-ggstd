@@ -3,13 +3,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-use super::reader::{new_reader, Reader};
+use super::reader::Reader;
 use crate::io::{self as ggio, ByteReader};
 use std::io::Read;
 
 #[test]
 fn test_reader() {
-    let mut r = new_reader("0123456789".as_bytes());
+    let mut r = Reader::new("0123456789".as_bytes());
     struct Test {
         off: i64,
         seek: ggio::Seek,
@@ -136,20 +136,18 @@ fn test_reader() {
             if tt.readerr.is_some() {
                 assert!(false, "{}. read = no error; want {:?}", i, tt.readerr);
             }
+        } else if tt.readerr.is_none() {
+            assert!(false, "{}. read = {:?}; want = no error", i, res);
         } else {
-            if tt.readerr.is_none() {
-                assert!(false, "{}. read = {:?}; want = no error", i, res);
-            } else {
-                let errstr = res.as_ref().unwrap_err().to_string();
-                assert_eq!(
-                    tt.readerr.as_ref().unwrap(),
-                    &errstr,
-                    "{}. read error = '{}'; want '{}'",
-                    i,
-                    errstr,
-                    tt.readerr.as_ref().unwrap()
-                );
-            }
+            let errstr = res.as_ref().unwrap_err().to_string();
+            assert_eq!(
+                tt.readerr.as_ref().unwrap(),
+                &errstr,
+                "{}. read error = '{}'; want '{}'",
+                i,
+                errstr,
+                tt.readerr.as_ref().unwrap()
+            );
         }
         let n = res.unwrap();
         let got = &buf[..n];
@@ -159,7 +157,7 @@ fn test_reader() {
 
 #[test]
 fn test_read_after_big_seek() {
-    let mut r = new_reader("0123456789".as_bytes());
+    let mut r = Reader::new("0123456789".as_bytes());
     r.seek((1 << 31) + 5, ggio::Seek::Start).unwrap();
     let mut buf = [0; 10];
     let res = r.read(&mut buf);
@@ -168,7 +166,7 @@ fn test_read_after_big_seek() {
 
 #[test]
 fn test_reader_at() {
-    let mut r = new_reader("0123456789".as_bytes());
+    let mut r = Reader::new("0123456789".as_bytes());
     struct Test {
         off: u64,
         n: usize,
@@ -231,7 +229,7 @@ fn test_reader_at() {
 // fn TestReaderAtConcurrent() {
 // 	// Test for the race detector, to verify read_at doesn't mutate
 // 	// any state.
-// 	r := new_reader([u8]("0123456789"))
+// 	r := Reader::new([u8]("0123456789"))
 // 	var wg sync.WaitGroup
 // 	for i := 0; i < 5; i += 1 {
 // 		wg.Add(1)
@@ -248,7 +246,7 @@ fn test_reader_at() {
 // 	// Test for the race detector, to verify a read that doesn't yield any bytes
 // 	// is okay to use from multiple goroutines. This was our historic behavior.
 // 	// See golang.org/issue/7856
-// 	r := new_reader([u8]{})
+// 	r := Reader::new([u8]{})
 // 	var wg sync.WaitGroup
 // 	for i := 0; i < 5; i += 1 {
 // 		wg.Add(2)
@@ -272,7 +270,7 @@ fn test_reader_at() {
 // 			l = len(testString) / i
 // 		}
 // 		s := testString[..l]
-// 		r := new_reader(testBytes[..l])
+// 		r := Reader::new(testBytes[..l])
 // 		var b Buffer
 // 		n, err := r.write_to(&b)
 // 		if expect := int64(len(s)); n != expect {
@@ -293,7 +291,7 @@ fn test_reader_at() {
 #[test]
 fn test_reader_len() {
     let data = "hello world";
-    let mut r = new_reader(data.as_bytes());
+    let mut r = Reader::new(data.as_bytes());
 
     let want = 11;
     let got = r.len();
@@ -329,7 +327,7 @@ fn test_reader_len() {
 
 // fn TestUnreadRuneError() {
 // 	for _, tt := range UnreadRuneErrorTests {
-// 		reader := new_reader([u8]("0123456789"))
+// 		reader := Reader::new([u8]("0123456789"))
 // 		if _, _, err := reader.ReadRune(); err != nil {
 // 			// should not happen
 // 			t.Fatal(err)
@@ -373,8 +371,8 @@ fn test_reader_len() {
 // 	discard := justWriter{ggio::Discard::new()} // hide ReadFrom
 
 // 	var with, withOut nErr
-// 	with.n, with.err = io.Copy(discard, new_reader(nil))
-// 	withOut.n, withOut.err = io.Copy(discard, justReader{new_reader(nil)})
+// 	with.n, with.err = io.Copy(discard, Reader::new(nil))
+// 	withOut.n, withOut.err = io.Copy(discard, justReader{Reader::new(nil)})
 // 	if with != withOut {
 // 		t.Errorf("behavior differs: with = %#v; without: %#v", with, withOut)
 // 	}
@@ -383,14 +381,14 @@ fn test_reader_len() {
 /// tests that len is affected by reads, but size is not.
 #[test]
 fn test_reader_len_size() {
-    let mut r = new_reader("abc".as_bytes());
+    let mut r = Reader::new("abc".as_bytes());
     ggio::copy_n(&mut ggio::Discard::new(), &mut r, 1);
     assert_eq!(2, r.len(), "len = {}; want 2", r.len());
     assert_eq!(3, r.size(), "size = {}; want 3", r.size());
 }
 
 // fn TestReaderReset() {
-// 	r := new_reader([u8]("世界"))
+// 	r := Reader::new([u8]("世界"))
 // 	if _, _, err := r.ReadRune(); err != nil {
 // 		t.Errorf("ReadRune: unexpected error: '{}'", err)
 // 	}
@@ -411,40 +409,40 @@ fn test_reader_len_size() {
 
 #[test]
 fn test_reader_zero() {
-    let l = Reader::new().len();
+    let l = Reader::new(&[]).len();
     assert_eq!(0, l, "len: got {}, want 0", l);
 
     let mut buf = [];
-    let res = Reader::new().read(&mut buf);
+    let res = Reader::new(&[]).read(&mut buf);
     assert!(res.is_ok() && res.unwrap() == 0);
 
-    let res = Reader::new().read_at(&mut buf, 11);
+    let res = Reader::new(&[]).read_at(&mut buf, 11);
     assert!(res.is_ok_and(|x| x == 0));
 
-    let res = Reader::new().read_byte();
+    let res = Reader::new(&[]).read_byte();
     assert!(res.is_err());
     assert!(res.err().unwrap().kind() == std::io::ErrorKind::UnexpectedEof);
 
-    // 	if ch, size, err := Reader::new().ReadRune(); ch != 0 || size != 0 || err != io.EOF {
+    // 	if ch, size, err := Reader::new(&[]).ReadRune(); ch != 0 || size != 0 || err != io.EOF {
     // 		t.Errorf("ReadRune: got {}, {}, '{}'; want 0, 0, io.EOF", ch, size, err)
     // 	}
 
-    let offset = Reader::new().seek(11, ggio::Seek::Start).unwrap();
+    let offset = Reader::new(&[]).seek(11, ggio::Seek::Start).unwrap();
     assert!(offset == 11, "Seek: got {}; want 11", offset);
 
-    let s = Reader::new().size();
+    let s = Reader::new(&[]).size();
     assert_eq!(0, s, "size: got {}, want 0", s);
 
     assert!(
-        Reader::new().unread_byte().is_err(),
+        Reader::new(&[]).unread_byte().is_err(),
         "unread_byte: got nil, want error"
     );
 
-    // 	if Reader::new().UnreadRune() == nil {
+    // 	if Reader::new(&[]).UnreadRune() == nil {
     // 		t.Errorf("UnreadRune: got nil, want error")
     // 	}
 
-    let res = Reader::new().write_to(&mut ggio::Discard::new());
+    let res = Reader::new(&[]).write_to(&mut ggio::Discard::new());
     assert!(
         res.as_ref().is_ok_and(|x| *x == 0),
         "write_to: got {:?}; want 0, nil",
@@ -454,7 +452,7 @@ fn test_reader_zero() {
 
 #[test]
 fn test_reader_std_io_read() {
-    let mut r = new_reader(b"hello".as_slice());
+    let mut r = Reader::new(b"hello".as_slice());
     let mut buf = [0; 2];
     assert_eq!(2, std::io::Read::read(&mut r, &mut buf).unwrap());
     assert_eq!(b"he", &buf);

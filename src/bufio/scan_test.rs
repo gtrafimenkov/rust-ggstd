@@ -19,7 +19,7 @@
 
 // // Test white space table matches the Unicode definition.
 // func TestSpace(t *testing.T) {
-// 	for r := rune(0); r <= utf8.MaxRune; r++ {
+// 	for r := rune(0); r <= utf8.MAX_RUNE; r++ {
 // 		if IsSpace(r) != unicode.IsSpace(r) {
 // 			t.Fatalf("white space property disagrees: %#U should be %t", r, unicode.IsSpace(r))
 // 		}
@@ -32,7 +32,7 @@
 // 	"¼",
 // 	"☹",
 // 	"\x81",   // UTF-8 error
-// 	"\uFFFD", // correctly encoded RuneError
+// 	"\uFFFD", // correctly encoded RUNE_ERROR
 // 	"abcdefgh",
 // 	"abc def\n\t\tgh    ",
 // 	"abc¼☹\x81\uFFFD日本語\x82abc",
@@ -73,7 +73,7 @@
 // 				break
 // 			}
 // 			runeCount++
-// 			got, _ := utf8.DecodeRune(s.bytes())
+// 			got, _ := utf8.decode_rune(s.bytes())
 // 			if got != expect {
 // 				t.Errorf("#{}: {}: expected %q got %q", n, i, expect, got)
 // 			}

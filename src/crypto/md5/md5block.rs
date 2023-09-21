@@ -24,8 +24,8 @@ pub(super) fn block_generic(state: &mut md5::State, p: &[u8]) {
         let (aa, bb, cc, dd) = (a, b, c, d);
 
         // load input block
-        let x0 = binary::LITTLE_ENDIAN.uint32(&q[4 * 0x0..]);
-        let x1 = binary::LITTLE_ENDIAN.uint32(&q[4 * 0x1..]);
+        let x0 = binary::LITTLE_ENDIAN.uint32(&q[0..]);
+        let x1 = binary::LITTLE_ENDIAN.uint32(&q[4..]);
         let x2 = binary::LITTLE_ENDIAN.uint32(&q[4 * 0x2..]);
         let x3 = binary::LITTLE_ENDIAN.uint32(&q[4 * 0x3..]);
         let x4 = binary::LITTLE_ENDIAN.uint32(&q[4 * 0x4..]);

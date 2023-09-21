@@ -50,7 +50,7 @@ const ENC_DEC_TESTS: &[EncDecTest] = &[
 
 // fn TestEncode() {
 // 	for (i, test) in ENC_DEC_TESTS.iter().enumerate() {
-// 		dst := make([u8], EncodedLen(len(test.dec)))
+// 		dst := make([u8], encoded_len(len(test.dec)))
 // 		n := Encode(dst, test.dec)
 // 		if n != len(dst) {
 // 			t.Errorf("#{}: bad return value: got: {} want: {}", i, n, len(dst))
@@ -66,7 +66,7 @@ const ENC_DEC_TESTS: &[EncDecTest] = &[
 // 	// Encode always uses lowercase.
 // 	decTests := append(ENC_DEC_TESTS, EncDecTest{"F8F9FAFBFCFDFEFF", [u8]{0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff}})
 // 	for i, test := range decTests {
-// 		dst := make([u8], DecodedLen(len(test.enc)))
+// 		dst := make([u8], decoded_len(len(test.enc)))
 // 		n, err := Decode(dst, [u8](test.enc))
 // 		if err != nil {
 // 			t.Errorf("#{}: bad return value: got:{} want:{}", i, n, len(dst))
@@ -76,9 +76,9 @@ const ENC_DEC_TESTS: &[EncDecTest] = &[
 // 	}
 // }
 
-// fn TestEncodeToString() {
+// fn test_encode_to_string() {
 // 	for (i, test) in ENC_DEC_TESTS.iter().enumerate() {
-// 		s := EncodeToString(test.dec)
+// 		s := encode_to_string(test.dec)
 // 		if s != test.enc {
 // 			t.Errorf("#{} got:%s want:%s", i, s, test.enc)
 // 		}
@@ -142,7 +142,7 @@ fn test_decode_string() {
 
 // 			let mut buf = bytes::Buffer::new();
 // 			enc := NewEncoder(&buf)
-// 			r := struct{ io.Reader }{bytes::new_reader(input)} // io.Reader only; not io.WriterTo
+// 			r := struct{ io.Reader }{bytes::Reader::new(input)} // io.Reader only; not io.WriterTo
 // 			if n, err := io.CopyBuffer(enc, r, make([u8], 7)); n != int64(len(input)) || err != nil {
 // 				t.Errorf("encoder.Write(%q*{}) = ({}, {}), want ({}, nil)", test.dec, multiplier, n, err, len(input))
 // 				continue

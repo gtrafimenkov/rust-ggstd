@@ -25,7 +25,7 @@
 //!         33, 231, 4, 147,
 //!     ];
 //!
-//!     let mut b = bytes::new_reader(buff);
+//!     let mut b = bytes::Reader::new(buff);
 //!     let mut r = zlib::Reader::new(&mut b).unwrap();
 //!     let mut output = String::new();
 //!     r.read_to_string(&mut output).unwrap();

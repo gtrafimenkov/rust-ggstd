@@ -674,7 +674,7 @@ pub fn read_file(name: &str) -> std::io::Result<Vec<u8>> {
     let mut data = Vec::new();
     let mut f = std::fs::File::open(name)?;
     f.read_to_end(&mut data)?;
-    return Ok(data);
+    Ok(data)
 }
 
 // // WriteFile writes data to the named file, creating it if necessary.

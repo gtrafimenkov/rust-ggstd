@@ -81,11 +81,11 @@ fn generate_fixed_literal_encoding() -> HuffmanEncoder {
             // size 8, 000110000  .. 10111111
             bits = ch + 48;
             size = 8;
-        } else if ch >= 144 && ch < 256 {
+        } else if (144..256).contains(&ch) {
             // size 9, 110010000 .. 111111111
             bits = ch + 400 - 144;
             size = 9;
-        } else if ch >= 256 && ch < 280 {
+        } else if (256..280).contains(&ch) {
             // size 7, 0000000 .. 0010111
             bits = ch - 256;
             size = 7;
@@ -99,7 +99,7 @@ fn generate_fixed_literal_encoding() -> HuffmanEncoder {
             len: size,
         }
     }
-    return h;
+    h
 }
 
 fn generate_fixed_offset_encoding() -> HuffmanEncoder {
@@ -110,7 +110,7 @@ fn generate_fixed_offset_encoding() -> HuffmanEncoder {
             len: 5,
         }
     }
-    return h;
+    h
 }
 
 // var fixedLiteralEncoding *huffmanEncoder = generate_fixed_literal_encoding()
@@ -134,7 +134,7 @@ impl HuffmanEncoder {
                 total += *f as usize * self.codes[i].len as usize;
             }
         }
-        return total;
+        total
     }
 
     /// bit_counts computes the number of literals assigned to each bit size in the Huffman encoding.
@@ -274,7 +274,7 @@ impl HuffmanEncoder {
             bits += 1;
         }
         // return &self.bitCount[..max_bits + 1];
-        return max_bits;
+        max_bits
     }
 
     /// Look at the leaves and assign them a bit count and an encoding as specified
@@ -282,7 +282,7 @@ impl HuffmanEncoder {
     fn assign_encoding_and_size(&mut self, max_bits: usize, list_size: usize) {
         let bit_count = &self.bit_count[..max_bits + 1];
         let mut list = &mut self.freqcache.as_mut().unwrap()[..list_size];
-        let mut code = 0 as u16;
+        let mut code = 0_u16;
         for (n, bits) in bit_count.iter().enumerate() {
             code <<= 1;
             if n == 0 || *bits == 0 {
@@ -390,5 +390,5 @@ impl HuffmanEncoder {
 // fn (s byFreq) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 pub(super) fn reverse_bits(number: u16, bit_length: u8) -> u16 {
-    return bits::reverse16(number << (16 - bit_length));
+    bits::reverse16(number << (16 - bit_length))
 }

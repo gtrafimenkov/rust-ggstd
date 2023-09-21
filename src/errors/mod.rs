@@ -1,3 +1,5 @@
+//! Package errors implements functions to manipulate errors.
+
 mod errors;
 
 pub use errors::{

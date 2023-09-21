@@ -72,7 +72,7 @@ fn slow_checksum(p: &[u8]) -> u32 {
         s1 = (s1 + (*x as u32)) % adler32::MODULO;
         s2 = (s2 + s1) % adler32::MODULO;
     }
-    return s2 << 16 | s1;
+    s2 << 16 | s1
 }
 
 #[test]

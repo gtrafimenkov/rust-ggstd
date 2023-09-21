@@ -12,13 +12,13 @@ use crate::compress::zlib;
 use crate::os as ggos;
 use std::io::Read;
 
-const FILE_NAMES: &'static [&'static str] = &[
+const FILE_NAMES: &[&str] = &[
     "src/compress/testdata/gettysburg.txt",
     "src/compress/testdata/e.txt",
     "src/compress/testdata/pi.txt",
 ];
 
-const DATA: &'static [&'static str] = &["test a reasonable sized string that can be compressed"];
+const DATA: &[&str] = &["test a reasonable sized string that can be compressed"];
 
 /// Tests that compressing and then decompressing the given file at the given compression level and dictionary
 /// yields equivalent bytes to the original file.

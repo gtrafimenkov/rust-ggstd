@@ -8,7 +8,7 @@ fn main() {
         120, 156, 202, 72, 205, 201, 201, 215, 81, 40, 207, 47, 202, 73, 225, 2, 4, 0, 0, 255, 255,
         33, 231, 4, 147,
     ];
-    let mut b = bytes::new_reader(buff);
+    let mut b = bytes::Reader::new(buff);
     let mut r = zlib::Reader::new(&mut b).unwrap();
 
     // reading using Reader::read

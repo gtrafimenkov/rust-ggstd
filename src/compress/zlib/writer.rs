@@ -66,7 +66,7 @@ pub fn new_writer_level_dict<'a>(
     level: isize,
     dict: &'a [u8],
 ) -> std::io::Result<Writer<'a>> {
-    if level < HUFFMAN_ONLY || level > BEST_COMPRESSION {
+    if !(HUFFMAN_ONLY..=BEST_COMPRESSION).contains(&level) {
         return Err(errors::new_stdio_other_error(format!(
             "zlib: invalid compression level: {}",
             level
@@ -118,18 +118,18 @@ impl<'a> Writer<'a> {
                 panic!("unreachable");
             }
         };
-        if self.dict.len() > 0 {
+        if !self.dict.is_empty() {
             self.scratch[1] |= 1 << 5;
         }
         self.scratch[1] +=
             (31 - (((self.scratch[0] as u16) << 8) + (self.scratch[1] as u16)) % 31) as u8;
-        self.w.write(&self.scratch[0..2])?;
-        if self.dict.len() > 0 {
+        self.w.write_all(&self.scratch[0..2])?;
+        if !self.dict.is_empty() {
             // The next four bytes are the Adler-32 checksum of the dictionary.
             binary::BIG_ENDIAN.put_uint32(&mut self.scratch[..], adler32::checksum(self.dict));
-            self.w.write(&self.scratch[0..4])?;
+            self.w.write_all(&self.scratch[0..4])?;
         }
-        return Ok(());
+        Ok(())
     }
 
     /// write writes a compressed form of p to the underlying writer. The
@@ -137,7 +137,7 @@ impl<'a> Writer<'a> {
     /// explicitly flushed.
     pub fn write(&mut self, p: &[u8]) -> std::io::Result<usize> {
         self.write_header()?;
-        if p.len() == 0 {
+        if p.is_empty() {
             return Ok(0);
         }
         let written = self.compressor.write(self.w, p)?;
@@ -174,7 +174,7 @@ impl<'a> Writer<'a> {
         let checksum = self.digest.sum32();
         // ZLIB (RFC 1950) is big-endian, unlike GZIP (RFC 1952).
         binary::BIG_ENDIAN.put_uint32(&mut self.scratch[..], checksum);
-        self.w.write(&self.scratch[0..4])?;
+        self.w.write_all(&self.scratch[0..4])?;
         Ok(())
     }
 }

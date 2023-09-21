@@ -176,7 +176,7 @@ fn test_decompressor() {
         );
     }
     for tt in get_tests() {
-        let mut input = bytes::new_reader(tt.compressed);
+        let mut input = bytes::Reader::new(tt.compressed);
         let zr = if tt.dict.is_none() {
             zlib::Reader::new(&mut input)
         } else {

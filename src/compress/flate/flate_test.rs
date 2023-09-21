@@ -64,7 +64,7 @@ fn test_invalid_encoding() {
     assert!(h.init(&[1]), "Failed to initialize Huffman decoder");
 
     // Initialize decompressor with invalid Huffman coding.
-    let mut r = bytes::new_reader(&[0xff]);
+    let mut r = bytes::Reader::new(&[0xff]);
     let mut f = Decompressor::new(&mut r);
     f.td.h1 = h;
 
@@ -282,7 +282,7 @@ fn test_streams() {
     for (i, tc) in test_cases.iter().enumerate() {
         let (data, err) = hex::decode_string(tc.stream);
         assert!(err.is_none());
-        let (data, err) = ggio::read_all(&mut Decompressor::new(&mut bytes::new_reader(&data)));
+        let (data, err) = ggio::read_all(&mut Decompressor::new(&mut bytes::Reader::new(&data)));
         if tc.want == "fail" {
             assert!(
                 err.is_some(),
@@ -308,7 +308,7 @@ fn test_truncated_streams() {
 
     // // all data should be decompressed correctly
     // {
-    //     let mut reader = bytes::new_reader(data.as_slice());
+    //     let mut reader = bytes::Reader::new(data.as_slice());
     //     let mut r = Decompressor::new(&mut reader);
     //     let (_n, err) = ggio::copy(&mut ggio::Discard::new(), &mut r);
     //     assert!(err.is_none());
@@ -316,7 +316,7 @@ fn test_truncated_streams() {
 
     // truncated streams shoud report error
     for i in 0..data.len() - 1 {
-        let mut reader = bytes::new_reader(&data[..i]);
+        let mut reader = bytes::Reader::new(&data[..i]);
         let mut r = Decompressor::new(&mut reader);
         let (_n, err) = ggio::copy(&mut ggio::Discard::new(), &mut r);
         assert!(

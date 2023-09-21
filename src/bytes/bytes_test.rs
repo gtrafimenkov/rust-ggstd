@@ -426,7 +426,7 @@
 // 		{"☺a", 'a', 3},
 // 		{"a☻☺b", '☺', 4},
 
-// 		// RuneError should match any invalid UTF-8 byte sequence.
+// 		// RUNE_ERROR should match any invalid UTF-8 byte sequence.
 // 		{"�", '�', 0},
 // 		{"\xff", '�', 0},
 // 		{"☻x�", '�', len("☻x")},
@@ -437,7 +437,7 @@
 // 		// Invalid rune values should never match.
 // 		{"a☺b☻c☹d\xe2\x98�\xff�\xed\xa0\x80", -1, -1},
 // 		{"a☺b☻c☹d\xe2\x98�\xff�\xed\xa0\x80", 0xD800, -1}, // Surrogate pair
-// 		{"a☺b☻c☹d\xe2\x98�\xff�\xed\xa0\x80", utf8.MaxRune + 1, -1},
+// 		{"a☺b☻c☹d\xe2\x98�\xff�\xed\xa0\x80", utf8.MAX_RUNE + 1, -1},
 // 	}
 // 	for _, tt := range tests {
 // 		if got := IndexRune([u8](tt.in), tt.rune); got != tt.want {
@@ -602,7 +602,7 @@
 // func bmIndexRune(index func([u8], rune) int) func(b *testing.B, n int) {
 // 	return func(b *testing.B, n int) {
 // 		buf := bmbuf[0:n]
-// 		utf8.EncodeRune(buf[n-3:], '世')
+// 		utf8.encode_rune(buf[n-3:], '世')
 // 		for i := 0; i < b.N; i += 1 {
 // 			j := index(buf, '世')
 // 			if j != n-3 {
@@ -956,7 +956,7 @@
 // 	{"longStrinGwitHmixofsmaLLandcAps", [u8]("LONGSTRINGWITHMIXOFSMALLANDCAPS")},
 // 	{"long\u0250string\u0250with\u0250nonascii\u2C6Fchars", [u8]("LONG\u2C6FSTRING\u2C6FWITH\u2C6FNONASCII\u2C6FCHARS")},
 // 	{"\u0250\u0250\u0250\u0250\u0250", [u8]("\u2C6F\u2C6F\u2C6F\u2C6F\u2C6F")}, // grows one byte per char
-// 	{"a\u0080\U0010FFFF", [u8]("A\u0080\U0010FFFF")},                           // test utf8.RuneSelf and utf8.MaxRune
+// 	{"a\u0080\U0010FFFF", [u8]("A\u0080\U0010FFFF")},                           // test utf8::RUNE_SELF and utf8.MAX_RUNE
 // }
 
 // var lowerTests = []StringTest{
@@ -967,7 +967,7 @@
 // 	{"longStrinGwitHmixofsmaLLandcAps", [u8]("longstringwithmixofsmallandcaps")},
 // 	{"LONG\u2C6FSTRING\u2C6FWITH\u2C6FNONASCII\u2C6FCHARS", [u8]("long\u0250string\u0250with\u0250nonascii\u0250chars")},
 // 	{"\u2C6D\u2C6D\u2C6D\u2C6D\u2C6D", [u8]("\u0251\u0251\u0251\u0251\u0251")}, // shrinks one byte per char
-// 	{"A\u0080\U0010FFFF", [u8]("a\u0080\U0010FFFF")},                           // test utf8.RuneSelf and utf8.MaxRune
+// 	{"A\u0080\U0010FFFF", [u8]("a\u0080\U0010FFFF")},                           // test utf8::RUNE_SELF and utf8.MAX_RUNE
 // }
 
 // const space = "\t\v\r\f\n\u0085\u00a0\u2000\u3000"
@@ -1037,16 +1037,16 @@
 // 	a := tenRunes('a')
 
 // 	// 1.  Grow. This triggers two reallocations in Map.
-// 	maxRune := func(r rune) rune { return unicode.MaxRune }
+// 	maxRune := func(r rune) rune { return unicode.MAX_RUNE }
 // 	m := Map(maxRune, [u8](a))
-// 	expect := tenRunes(unicode.MaxRune)
+// 	expect := tenRunes(unicode.MAX_RUNE)
 // 	if string(m) != expect {
 // 		t.Errorf("growing: expected %q got %q", expect, m)
 // 	}
 
 // 	// 2. Shrink
 // 	minRune := func(r rune) rune { return 'a' }
-// 	m = Map(minRune, [u8](tenRunes(unicode.MaxRune)))
+// 	m = Map(minRune, [u8](tenRunes(unicode.MAX_RUNE)))
 // 	expect = a
 // 	if string(m) != expect {
 // 		t.Errorf("shrinking: expected %q got %q", expect, m)
@@ -1081,7 +1081,7 @@
 
 // 	// 6. Invalid rune
 // 	invalidRune := func(r rune) rune {
-// 		return utf8.MaxRune + 1
+// 		return utf8.MAX_RUNE + 1
 // 	}
 // 	m = Map(invalidRune, [u8]("x"))
 // 	expect = "\uFFFD"
@@ -1434,7 +1434,7 @@
 // var isUpper = predicate{unicode.IsUpper, "IsUpper"}
 // var isValidRune = predicate{
 // 	func(r rune) bool {
-// 		return r != utf8.RuneError
+// 		return r != utf8.RUNE_ERROR
 // 	},
 // 	"IsValidRune",
 // }

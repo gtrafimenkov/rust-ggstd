@@ -26,6 +26,7 @@ pub fn simple_make_table(poly: u32) -> crc32::Table {
 /// simple_populate_table constructs a Table for the specified polynomial, suitable
 /// for use with simple_update.
 pub fn simple_populate_table(poly: u32, t: &mut crc32::Table) {
+    #[allow(clippy::needless_range_loop)]
     for i in 0..256 {
         let mut crc = i as u32;
         for _j in 0..8 {

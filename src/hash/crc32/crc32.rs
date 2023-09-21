@@ -11,6 +11,7 @@ pub const SIZE: usize = 4;
 
 /// Predefined polynomials.
 #[allow(dead_code)]
+#[repr(usize)]
 pub enum PredefinedPolynomials {
     // IEEE is by far and away the most common CRC-32 polynomial.
     // Used by ethernet (IEEE 802.3), v.42, fddi, gzip, zip, png, ...
@@ -176,7 +177,7 @@ pub fn new(tab: &Table) -> impl hash::Hash32 + '_ {
     // if tab == IEEE_TABLE {
     // 	ieeeOnce.Do(ieeeInit)
     // }
-    return Digest { crc: 0, tab };
+    Digest { crc: 0, tab }
 }
 
 // new_ieee creates a new hash::Hash32 computing the CRC-32 checksum using
@@ -300,7 +301,7 @@ impl std::io::Write for Digest<'_> {
 // checksum returns the CRC-32 checksum of data
 // using the polynomial represented by the Table.
 pub fn checksum(data: &[u8], tab: &Table) -> u32 {
-    return update(0, tab, data);
+    update(0, tab, data)
 }
 
 // checksum_ieee returns the CRC-32 checksum of data

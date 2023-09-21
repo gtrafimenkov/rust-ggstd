@@ -312,9 +312,9 @@ impl HuffmanBitWriteFilter {
     /// Codes 0-15 are single u8 codes. Codes 16-18 are followed by additional
     /// information. Code badCode is an end marker
     ///
-    ///	num_literals      The number of literals in literal_encoding
-    ///	num_offsets       The number of offsets in offset_encoding
-    ///	offenc           The offset encoder to use.  If None, use internal.
+    /// num_literals      The number of literals in literal_encoding
+    /// num_offsets       The number of offsets in offset_encoding
+    /// offenc           The offset encoder to use.  If None, use internal.
     fn generate_codegen(
         &mut self,
         num_literals: usize,
@@ -457,7 +457,7 @@ impl HuffmanBitWriteFilter {
                 return ((input.len() + 5) * 8, true);
             }
         }
-        return (0, false);
+        (0, false)
     }
 
     fn write_code(&mut self, writer: &mut dyn std::io::Write, c: HCode) {
@@ -491,9 +491,9 @@ impl HuffmanBitWriteFilter {
 
     /// Write the header of a dynamic Huffman block to the output stream.
     ///
-    ///	num_literals  The number of literals specified in codegen
-    ///	num_offsets   The number of offsets specified in codegen
-    ///	num_codegens  The number of codegens used in codegen
+    /// num_literals  The number of literals specified in codegen
+    /// num_offsets   The number of offsets specified in codegen
+    /// num_codegens  The number of codegens used in codegen
     fn write_dynamic_header(
         &mut self,
         writer: &mut dyn std::io::Write,
@@ -511,6 +511,7 @@ impl HuffmanBitWriteFilter {
         self.write_bits(writer, (num_offsets - 1) as u32, 5);
         self.write_bits(writer, (num_codegens - 4) as u32, 4);
 
+        #[allow(clippy::needless_range_loop)]
         for i in 0..num_codegens {
             let value = self.codegen_encoding.codes[CODEGEN_ORDER[i] as usize].len;
             self.write_bits(writer, value as u32, 3);
@@ -600,6 +601,7 @@ impl HuffmanBitWriteFilter {
                 extra_bits += (self.literal_freq[length_code]) as usize
                     * (LENGTH_EXTRA_BITS[length_code - LENGTH_CODES_START]) as usize;
             }
+            #[allow(clippy::needless_range_loop)]
             for offset_code in 4..num_offsets {
                 // First four offset codes have extra size = 0.
                 extra_bits += (self.offset_freq[offset_code]) as usize
@@ -735,7 +737,7 @@ impl HuffmanBitWriteFilter {
         }
         self.literal_encoding.generate(&self.literal_freq, 15);
         self.offset_encoding.generate(&self.offset_freq, 15);
-        return (num_literals, num_offsets);
+        (num_literals, num_offsets)
     }
 
     /// write_tokens writes a slice of tokens to the output.

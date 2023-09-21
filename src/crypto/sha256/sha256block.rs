@@ -29,6 +29,7 @@ pub fn block_generic(h: &mut [u32; 8], p: &[u8]) {
     while p.len() >= CHUNK {
         // Can interlace the computation of w with the
         // rounds below if needed for speed.
+        #[allow(clippy::needless_range_loop)]
         for i in 0..16 {
             let j = i * 4;
             w[i] = (p[j] as u32) << 24

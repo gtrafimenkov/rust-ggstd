@@ -549,9 +549,9 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // 	byteBuf := new(bytes::Buffer::new())
 // 	w := new_writer(byteBuf)
 // 	// Write the runes out using WriteRune
-// 	buf := make([u8], utf8.UTFMax)
+// 	buf := make([u8], utf8.UTFMAX)
 // 	for r := rune(0); r < NRune; r++ {
-// 		size := utf8.EncodeRune(buf, r)
+// 		size := utf8.encode_rune(buf, r)
 // 		nbytes, err := w.WriteRune(r)
 // 		if err != nil {
 // 			t.Fatalf("WriteRune(0x%x) error: {}", r, err)
@@ -565,7 +565,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // 	r := new_reader(byteBuf)
 // 	// Read them back with ReadRune
 // 	for r1 := rune(0); r1 < NRune; r1++ {
-// 		size := utf8.EncodeRune(buf, r1)
+// 		size := utf8.encode_rune(buf, r1)
 // 		nr, nbytes, err := r.ReadRune()
 // 		if nr != r1 || nbytes != size || err != nil {
 // 			t.Fatalf("ReadRune(0x%x) got 0x%x,{} not 0x%x,{} (err={})", r1, nr, nbytes, r1, size, err)
@@ -576,7 +576,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // fn TestWriteInvalidRune() {
 // 	// Invalid runes, including negative ones, should be written as the
 // 	// replacement character.
-// 	for _, r := range []rune{-1, utf8.MaxRune + 1} {
+// 	for _, r := range []rune{-1, utf8.MAX_RUNE + 1} {
 // 		var buf strings.Builder
 // 		w := new_writer(&buf)
 // 		w.WriteRune(r)
@@ -701,10 +701,10 @@ impl std::io::Write for ShortWriter {
             self.capacity = 0;
             return Ok(n);
         }
-        return match self.errkind {
+        match self.errkind {
             Some(errkind) => Err(std::io::Error::from(errkind)),
             None => Ok(0),
-        };
+        }
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
@@ -732,7 +732,7 @@ fn test_short_write() {
         // flush should fail because the underlying buffer can take only 4 bytes
         let res = w.flush();
         assert!(
-            res.as_ref().is_err_and(|x| ggio::is_short_write_error(x)),
+            res.as_ref().is_err_and(ggio::is_short_write_error),
             "flush res: {:?}",
             res
         );
@@ -812,11 +812,11 @@ fn test_write_string() {
     // 	buf := new(strings.Builder)
     let mut buf = Vec::<u8>::new();
     let mut b = new_writer_size(&mut buf, BUF_SIZE);
-    b.write_string(&"0").unwrap(); // easy
-    b.write_string(&"123456").unwrap(); // still easy
-    b.write_string(&"7890").unwrap(); // easy after flush
-    b.write_string(&"abcdefghijklmnopqrstuvwxy").unwrap(); // hard
-    b.write_string(&"z").unwrap();
+    b.write_string("0").unwrap(); // easy
+    b.write_string("123456").unwrap(); // still easy
+    b.write_string("7890").unwrap(); // easy after flush
+    b.write_string("abcdefghijklmnopqrstuvwxy").unwrap(); // hard
+    b.write_string("z").unwrap();
     b.flush().unwrap();
     // 	s := "01234567890abcdefghijklmnopqrstuvwxyz"
     // 	if buf.String() != s {
@@ -1038,7 +1038,7 @@ fn test_write_string() {
 // 	for i := 0; i < MIN_READ_BUFFER_SIZE*5/2; i += 1 {
 // 		data = append(data, '0'+byte(i%10))
 // 	}
-// 	buf := bytes::new_reader(data)
+// 	buf := bytes::Reader::new(data)
 // 	l := new_reader_size(buf, MIN_READ_BUFFER_SIZE)
 // 	line, isPrefix, err := l.ReadLine()
 // 	if !isPrefix || !bytes::equal(line, data[..MIN_READ_BUFFER_SIZE]) || err != nil {
@@ -1063,7 +1063,7 @@ fn test_write_string() {
 // fn TestReadAfterLines() {
 // 	line1 := "this is line1"
 // 	restData := "this is line2\nthis is line 3\n"
-// 	inbuf := bytes::new_reader([u8](line1 + "\n" + restData))
+// 	inbuf := bytes::Reader::new([u8](line1 + "\n" + restData))
 // 	outbuf := new(strings.Builder)
 // 	maxLineLength := len(line1) + len(restData)/2
 // 	l := new_reader_size(inbuf, maxLineLength)
@@ -1089,7 +1089,7 @@ fn test_write_string() {
 // }
 
 // fn TestLinesAfterRead() {
-// 	l := new_reader_size(bytes::new_reader([u8]("foo")), MIN_READ_BUFFER_SIZE)
+// 	l := new_reader_size(bytes::Reader::new([u8]("foo")), MIN_READ_BUFFER_SIZE)
 // 	_, err := ggio::read_all(l)
 // 	if err != nil {
 // 		t.Error(err)
@@ -1179,7 +1179,7 @@ fn test_write_string() {
 
 // fn TestReaderWriteTo() {
 // 	input := createTestInput(8192)
-// 	r := new_reader(onlyReader{bytes::new_reader(input)})
+// 	r := new_reader(onlyReader{bytes::Reader::new(input)})
 // 	w := new(bytes::Buffer::new())
 // 	if n, err := r.WriteTo(w); err != nil || n != int64(len(input)) {
 // 		t.Fatalf("r.WriteTo(w) = {}, {}, want {}, nil", n, err, len(input))
@@ -1238,7 +1238,7 @@ fn test_write_string() {
 // 			input := createTestInput(8192)
 // 			b := new(strings.Builder)
 // 			w := new_writer(wfunc(b))
-// 			r := rfunc(bytes::new_reader(input))
+// 			r := rfunc(bytes::Reader::new(input))
 // 			if n, err := w.ReadFrom(r); err != nil || n != int64(len(input)) {
 // 				t.Errorf("ws[{}],rs[{}]: w.ReadFrom(r) = {}, {}, want {}, nil", wi, ri, n, err, len(input))
 // 				continue
@@ -1507,7 +1507,7 @@ fn test_write_string() {
 // 	if n, err := w.write(input[..writeSize]); n != writeSize || err != nil {
 // 		t.Errorf("w.write({} bytes) = {}, {}; want {}, nil", writeSize, n, err, writeSize)
 // 	}
-// 	n, err := w.ReadFrom(bytes::new_reader(input[writeSize:]))
+// 	n, err := w.ReadFrom(bytes::Reader::new(input[writeSize:]))
 // 	if wantn := len(input[writeSize:]); isize(n) != wantn || err != nil {
 // 		t.Errorf("io.Copy(w, {} bytes) = {}, {}; want {}, nil", wantn, n, err, wantn)
 // 	}
@@ -1942,7 +1942,7 @@ fn test_writer_size() {
 // fn BenchmarkReaderWriteToOptimal(b *testing.B) {
 // 	const bufSize = 16 << 10
 // 	buf := make([u8], bufSize)
-// 	r := bytes::new_reader(buf)
+// 	r := bytes::Reader::new(buf)
 // 	srcReader := new_reader_size(onlyReader{r}, 1<<10)
 // 	if _, ok := ggio::Discard::new().(io.ReaderFrom); !ok {
 // 		b.Fatal("ggio::Discard::new() doesn't support ReaderFrom")

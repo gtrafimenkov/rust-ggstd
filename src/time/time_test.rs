@@ -210,14 +210,14 @@ fn same(t: &time::Time, u: &ParsedTime) -> bool {
         return false;
     }
     // Check individual entries.
-    return t.year() == u.year
+    t.year() == u.year
         && t.month() == u.month
         && t.day() == u.day
         && t.hour() == u.hour as u8
         && t.minute() == u.minute as u8
         && t.second() == u.second as u8
         && t.nanosecond() == u.nanosecond
-        && t.weekday() == u.weekday;
+        && t.weekday() == u.weekday
 }
 
 #[test]
@@ -236,9 +236,9 @@ fn test_seconds_to_utc() {
 fn test_nanoseconds_to_utc() {
     for test in NANO_UTC_TESTS {
         let golden = &test.golden;
-        let nsec = test.seconds * 1000_000_000 + golden.nanosecond as i64;
+        let nsec = test.seconds * 1_000_000_000 + golden.nanosecond as i64;
         let tm = time::unix(0, nsec)/* .UTC() */;
-        let newnsec = tm.unix() * 1000_000_000 + tm.nanosecond() as i64;
+        let newnsec = tm.unix() * 1_000_000_000 + tm.nanosecond() as i64;
         assert_eq!(nsec, newnsec);
         assert!(same(&tm, golden));
     }
@@ -1112,8 +1112,8 @@ fn test_days_in() {
 // 	{"\x85\x85", `"\x85\x85"`},
 // 	{"\xffff", `"\xffff"`},
 // 	{"hello \xffff world", `"hello \xffff world"`},
-// 	{"\uFFFD", `"\xef\xbf\xbd"`},                                             // utf8.RuneError
-// 	{"\uFFFD hello \uFFFD world", `"\xef\xbf\xbd hello \xef\xbf\xbd world"`}, // utf8.RuneError
+// 	{"\uFFFD", `"\xef\xbf\xbd"`},                                             // utf8.RUNE_ERROR
+// 	{"\uFFFD hello \uFFFD world", `"\xef\xbf\xbd hello \xef\xbf\xbd world"`}, // utf8.RUNE_ERROR
 // 	// overflow
 // 	{"9223372036854775810ns", `"9223372036854775810ns"`},
 // 	{"9223372036854775808ns", `"9223372036854775808ns"`},

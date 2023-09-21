@@ -26,20 +26,20 @@ pub(super) const BUFFER_RESET: i32 = i32::MAX - (MAX_STORE_BLOCK_SIZE as i32) * 
 fn load32(b: &[u8], i: usize) -> u32 {
     // 	b = b[i : i+4 : b.len()] // Help the compiler eliminate bounds checks on the next line.
     let b = &b[i..i + 4];
-    return (b[0] as u32) | (b[1] as u32) << 8 | (b[2] as u32) << 16 | (b[3] as u32) << 24;
+    (b[0] as u32) | (b[1] as u32) << 8 | (b[2] as u32) << 16 | (b[3] as u32) << 24
 }
 
 fn load64(b: &[u8], i: usize) -> u64 {
     // 	b = b[i : i+8 : b.len()] // Help the compiler eliminate bounds checks on the next line.
     let b = &b[i..i + 8];
-    return (b[0] as u64)
+    (b[0] as u64)
         | (b[1] as u64) << 8
         | (b[2] as u64) << 16
         | (b[3] as u64) << 24
         | (b[4] as u64) << 32
         | (b[5] as u64) << 40
         | (b[6] as u64) << 48
-        | (b[7] as u64) << 56;
+        | (b[7] as u64) << 56
 }
 
 fn hash(u: u32) -> u32 {
@@ -70,11 +70,11 @@ pub(super) struct DeflateFast {
 
 impl DeflateFast {
     pub(super) fn new() -> Self {
-        return Self {
+        Self {
             table: vec![TableEntry::default(); TABLE_SIZE as usize],
             prev: vec![0; MAX_STORE_BLOCK_SIZE],
             cur: MAX_STORE_BLOCK_SIZE as i32,
-        };
+        }
     }
 }
 
@@ -102,8 +102,8 @@ impl DeflateFast {
         let s_limit = src.len() - INPUT_MARGIN;
 
         // nextEmit is where in src the next emitLiteral should start from.
-        let mut next_emit = 0 as usize;
-        let mut s = 0 as usize;
+        let mut next_emit = 0_usize;
+        let mut s = 0_usize;
         let mut cv = load32(src, s);
         let mut next_hash = hash(cv);
 
@@ -123,7 +123,7 @@ impl DeflateFast {
             // The "skip" variable keeps track of how many bytes there are since
             // the last match; dividing it by 32 (ie. right-shifting by five) gives
             // the number of bytes to move ahead for each iteration.
-            let mut skip = 32 as usize;
+            let mut skip = 32_usize;
 
             let mut next_s = s;
             let mut candidate: TableEntry;
@@ -155,7 +155,7 @@ impl DeflateFast {
             // A 4-byte match has been found. We'll later see if more than 4 bytes
             // match. But, prior to the match, src[nextEmit:s] are unmatched. Emit
             // them as literal bytes.
-            emit_literal(dst, &src[next_emit..s as usize]);
+            emit_literal(dst, &src[next_emit..s]);
 
             // Call emitCopy, and then see if another emitCopy could be our next
             // move. Repeat until we find no match for the input immediately after
@@ -291,7 +291,7 @@ impl DeflateFast {
                 return i + n;
             }
         }
-        return a.len() + n;
+        a.len() + n
     }
 
     /// reset resets the encoding history.
@@ -313,7 +313,7 @@ impl DeflateFast {
     ///
     /// See https://golang.org/issue/18636 and https://github.com/golang/go/issues/34121.
     pub(super) fn shift_offsets(&mut self) {
-        if self.prev.len() == 0 {
+        if self.prev.is_empty() {
             // We have no history; just clear the table.
             for i in 0..self.table.len() {
                 self.table[i] = TableEntry::default();

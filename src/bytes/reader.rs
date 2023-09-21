@@ -18,9 +18,17 @@ pub struct Reader<'a> {
             // 	prevRune int   // index of previous rune; or < 0
 }
 
-impl Reader<'_> {
-    pub fn new() -> Self {
-        Self { s: &[], i: 0 }
+impl<'a> Reader<'a> {
+    // pub fn new() -> Self {
+    //     Self { s: &[], i: 0 }
+    // }
+    /// new returns a new Reader reading from b.
+    pub fn new(b: &'a [u8]) -> Self {
+        Self {
+            s: b,
+            i: 0,
+            // prevRune:-1,
+        }
     }
 
     /// len returns the number of bytes of the unread portion of the
@@ -29,14 +37,19 @@ impl Reader<'_> {
         if self.i >= self.s.len() as u64 {
             return 0;
         }
-        return (self.s.len() as u64 - self.i) as usize;
+        (self.s.len() as u64 - self.i) as usize
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// size returns the original length of the underlying u8 slice.
     /// size is the number of bytes available for reading via read_at.
     /// The result is unaffected by any method calls except reset.
     pub fn size(&mut self) -> usize {
-        return self.s.len();
+        self.s.len()
     }
 }
 
@@ -48,7 +61,7 @@ impl std::io::Read for Reader<'_> {
         // 	self.prevRune = -1
         let n = compat::copy(buf, &self.s[self.i as usize..]);
         self.i += n as u64;
-        return Ok(n);
+        Ok(n)
     }
 }
 
@@ -59,7 +72,7 @@ impl Reader<'_> {
             return Ok(0);
         }
         let n = compat::copy(b, &self.s[off as usize..]);
-        return Ok(n);
+        Ok(n)
     }
 }
 
@@ -72,7 +85,7 @@ impl ggio::ByteReader for Reader<'_> {
         }
         let b = self.s[self.i as usize];
         self.i += 1;
-        return Ok(b);
+        Ok(b)
     }
 }
 
@@ -96,11 +109,11 @@ impl<'a> Reader<'a> {
     // 		return 0, 0, io.EOF
     // 	}
     // 	self.prevRune = int(self.i)
-    // 	if c := self.s[self.i]; c < utf8.RuneSelf {
+    // 	if c := self.s[self.i]; c < utf8::RUNE_SELF {
     // 		self.i += 1
     // 		return rune(c), 1, nil
     // 	}
-    // 	ch, size = utf8.DecodeRune(self.s[self.i..])
+    // 	ch, size = utf8.decode_rune(self.s[self.i..])
     // 	self.i += i64(size)
     // 	return
     // }
@@ -132,7 +145,7 @@ impl<'a> Reader<'a> {
             ));
         }
         self.i = abs as u64;
-        return Ok(self.i);
+        Ok(self.i)
     }
 
     /// write_to implements the io.WriterTo interface.
@@ -155,9 +168,9 @@ impl<'a> Reader<'a> {
                         "short write",
                     ));
                 }
-                return Ok(m);
+                Ok(m)
             }
-            Err(err) => return Err(err),
+            Err(err) => Err(err),
         }
     }
 
@@ -166,14 +179,5 @@ impl<'a> Reader<'a> {
         self.s = b;
         self.i = 0;
         // self.prevRune = -1;
-    }
-}
-
-/// new_reader returns a new Reader reading from b.
-pub fn new_reader(b: &[u8]) -> Reader {
-    Reader {
-        s: b,
-        i: 0,
-        // prevRune:-1,
     }
 }

@@ -413,8 +413,8 @@
 // }
 
 // func ExampleReader_Len() {
-// 	fmt.Println(bytes::new_reader([u8]("Hi!")).Len())
-// 	fmt.Println(bytes::new_reader([u8]("こんにちは!")).Len())
+// 	fmt.Println(bytes::Reader::new([u8]("Hi!")).Len())
+// 	fmt.Println(bytes::Reader::new([u8]("こんにちは!")).Len())
 // 	// Output:
 // 	// 3
 // 	// 16

@@ -41,7 +41,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 			na++
 // 			break
 // 		}
-// 		_, size = utf8.DecodeRune(s)
+// 		_, size = utf8.decode_rune(s)
 // 		a[na] = s[0:size:size]
 // 		s = s[size..]
 // 		na++
@@ -54,7 +54,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // fn Count(s, sep [u8]) int {
 // 	// special case
 // 	if len(sep) == 0 {
-// 		return utf8.RuneCount(s) + 1
+// 		return utf8.rune_count(s) + 1
 // 	}
 // 	if len(sep) == 1 {
 // 		return bytealg.Count(s, sep[0])
@@ -149,16 +149,16 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // // IndexRune interprets s as a sequence of UTF-8-encoded code points.
 // // It returns the byte index of the first occurrence in s of the given rune.
 // // It returns -1 if rune is not present in s.
-// // If r is utf8.RuneError, it returns the first instance of any
+// // If r is utf8.RUNE_ERROR, it returns the first instance of any
 // // invalid UTF-8 byte sequence.
 // fn IndexRune(s [u8], r rune) int {
 // 	switch {
-// 	case 0 <= r && r < utf8.RuneSelf:
+// 	case 0 <= r && r < utf8::RUNE_SELF:
 // 		return IndexByte(s, byte(r))
-// 	case r == utf8.RuneError:
+// 	case r == utf8.RUNE_ERROR:
 // 		for i := 0; i < s.len(); {
-// 			r1, n := utf8.DecodeRune(s[i..])
-// 			if r1 == utf8.RuneError {
+// 			r1, n := utf8.decode_rune(s[i..])
+// 			if r1 == utf8.RUNE_ERROR {
 // 				return i
 // 			}
 // 			i += n
@@ -167,8 +167,8 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	case !utf8.ValidRune(r):
 // 		return -1
 // 	default:
-// 		var b [utf8.UTFMax]byte
-// 		n := utf8.EncodeRune(b[..], r)
+// 		var b [utf8.UTFMAX]byte
+// 		n := utf8.encode_rune(b[..], r)
 // 		return Index(s, b[..n])
 // 	}
 // }
@@ -184,10 +184,10 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	}
 // 	if s.len() == 1 {
 // 		r := rune(s[0])
-// 		if r >= utf8.RuneSelf {
-// 			// search utf8.RuneError.
+// 		if r >= utf8::RUNE_SELF {
+// 			// search utf8.RUNE_ERROR.
 // 			for _, r = range chars {
-// 				if r == utf8.RuneError {
+// 				if r == utf8.RUNE_ERROR {
 // 					return 0
 // 				}
 // 			}
@@ -200,8 +200,8 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	}
 // 	if len(chars) == 1 {
 // 		r := rune(chars[0])
-// 		if r >= utf8.RuneSelf {
-// 			r = utf8.RuneError
+// 		if r >= utf8::RUNE_SELF {
+// 			r = utf8.RUNE_ERROR
 // 		}
 // 		return IndexRune(s, r)
 // 	}
@@ -218,15 +218,15 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	var width int
 // 	for i := 0; i < s.len(); i += width {
 // 		r := rune(s[i])
-// 		if r < utf8.RuneSelf {
+// 		if r < utf8::RUNE_SELF {
 // 			if bytealg.IndexByteString(chars, s[i]) >= 0 {
 // 				return i
 // 			}
 // 			width = 1
 // 			continue
 // 		}
-// 		r, width = utf8.DecodeRune(s[i..])
-// 		if r != utf8.RuneError {
+// 		r, width = utf8.decode_rune(s[i..])
+// 		if r != utf8.RUNE_ERROR {
 // 			// r is 2 to 4 bytes
 // 			if len(chars) == width {
 // 				if chars == string(r) {
@@ -272,9 +272,9 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	}
 // 	if s.len() == 1 {
 // 		r := rune(s[0])
-// 		if r >= utf8.RuneSelf {
+// 		if r >= utf8::RUNE_SELF {
 // 			for _, r = range chars {
-// 				if r == utf8.RuneError {
+// 				if r == utf8.RUNE_ERROR {
 // 					return 0
 // 				}
 // 			}
@@ -287,8 +287,8 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	}
 // 	if len(chars) == 1 {
 // 		cr := rune(chars[0])
-// 		if cr >= utf8.RuneSelf {
-// 			cr = utf8.RuneError
+// 		if cr >= utf8::RUNE_SELF {
+// 			cr = utf8.RUNE_ERROR
 // 		}
 // 		for i := s.len(); i > 0; {
 // 			r, size := utf8.DecodeLastRune(s[..i])
@@ -301,7 +301,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	}
 // 	for i := s.len(); i > 0; {
 // 		r := rune(s[i-1])
-// 		if r < utf8.RuneSelf {
+// 		if r < utf8::RUNE_SELF {
 // 			if bytealg.IndexByteString(chars, s[i-1]) >= 0 {
 // 				return i - 1
 // 			}
@@ -310,7 +310,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 		}
 // 		r, size := utf8.DecodeLastRune(s[..i])
 // 		i -= size
-// 		if r != utf8.RuneError {
+// 		if r != utf8.RUNE_ERROR {
 // 			// r is 2 to 4 bytes
 // 			if len(chars) == size {
 // 				if chars == string(r) {
@@ -428,7 +428,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 		wasSpace = isSpace
 // 	}
 
-// 	if setBits >= utf8.RuneSelf {
+// 	if setBits >= utf8::RUNE_SELF {
 // 		// Some runes in the input slice are not ASCII.
 // 		return FieldsFunc(s, unicode.IsSpace)
 // 	}
@@ -487,8 +487,8 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	for i := 0; i < s.len(); {
 // 		size := 1
 // 		r := rune(s[i])
-// 		if r >= utf8.RuneSelf {
-// 			r, size = utf8.DecodeRune(s[i..])
+// 		if r >= utf8::RUNE_SELF {
+// 			r, size = utf8.decode_rune(s[i..])
 // 		}
 // 		if f(r) {
 // 			if start >= 0 {
@@ -548,7 +548,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 
 /// has_suffix tests whether the byte slice s ends with suffix.
 pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
-    return s.len() >= suffix.len() && equal(&s[s.len() - suffix.len()..], suffix);
+    s.len() >= suffix.len() && equal(&s[s.len() - suffix.len()..], suffix)
 }
 
 // // Map returns a copy of the byte slice s with all its characters modified
@@ -563,8 +563,8 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	for i := 0; i < s.len(); {
 // 		wid := 1
 // 		r := rune(s[i])
-// 		if r >= utf8.RuneSelf {
-// 			r, wid = utf8.DecodeRune(s[i..])
+// 		if r >= utf8::RUNE_SELF {
+// 			r, wid = utf8.decode_rune(s[i..])
 // 		}
 // 		r = mapping(r)
 // 		if r >= 0 {
@@ -635,7 +635,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	isASCII, hasLower := true, false
 // 	for i := 0; i < s.len(); i += 1 {
 // 		c := s[i]
-// 		if c >= utf8.RuneSelf {
+// 		if c >= utf8::RUNE_SELF {
 // 			isASCII = false
 // 			break
 // 		}
@@ -666,7 +666,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	isASCII, hasUpper := true, false
 // 	for i := 0; i < s.len(); i += 1 {
 // 		c := s[i]
-// 		if c >= utf8.RuneSelf {
+// 		if c >= utf8::RUNE_SELF {
 // 			isASCII = false
 // 			break
 // 		}
@@ -718,13 +718,13 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	invalid := false // previous byte was from an invalid UTF-8 sequence
 // 	for i := 0; i < s.len(); {
 // 		c := s[i]
-// 		if c < utf8.RuneSelf {
+// 		if c < utf8::RUNE_SELF {
 // 			i += 1
 // 			invalid = false
 // 			b = append(b, c)
 // 			continue
 // 		}
-// 		_, wid := utf8.DecodeRune(s[i..])
+// 		_, wid := utf8.decode_rune(s[i..])
 // 		if wid == 1 {
 // 			i += 1
 // 			if !invalid {
@@ -801,8 +801,8 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // // UTF-8-encoded code points c that satisfy f(c).
 // fn TrimRightFunc(s [u8], f fn(r rune) bool) [u8] {
 // 	i := lastIndexFunc(s, f, false)
-// 	if i >= 0 && s[i] >= utf8.RuneSelf {
-// 		_, wid := utf8.DecodeRune(s[i..])
+// 	if i >= 0 && s[i] >= utf8::RUNE_SELF {
+// 		_, wid := utf8.decode_rune(s[i..])
 // 		i += wid
 // 	} else {
 // 		i += 1
@@ -856,8 +856,8 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	for start < s.len() {
 // 		wid := 1
 // 		r := rune(s[start])
-// 		if r >= utf8.RuneSelf {
-// 			r, wid = utf8.DecodeRune(s[start..])
+// 		if r >= utf8::RUNE_SELF {
+// 			r, wid = utf8.decode_rune(s[start..])
 // 		}
 // 		if f(r) == truth {
 // 			return start
@@ -873,7 +873,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // fn lastIndexFunc(s [u8], f fn(r rune) bool, truth bool) int {
 // 	for i := s.len(); i > 0; {
 // 		r, size := rune(s[i-1]), 1
-// 		if r >= utf8.RuneSelf {
+// 		if r >= utf8::RUNE_SELF {
 // 			r, size = utf8.DecodeLastRune(s[0:i])
 // 		}
 // 		i -= size
@@ -899,7 +899,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // fn makeASCIISet(chars string) (as asciiSet, ok bool) {
 // 	for i := 0; i < len(chars); i += 1 {
 // 		c := chars[i]
-// 		if c >= utf8.RuneSelf {
+// 		if c >= utf8::RUNE_SELF {
 // 			return as, false
 // 		}
 // 		as[c/32] |= 1 << (c % 32)
@@ -934,7 +934,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	if cutset == "" {
 // 		return s
 // 	}
-// 	if len(cutset) == 1 && cutset[0] < utf8.RuneSelf {
+// 	if len(cutset) == 1 && cutset[0] < utf8::RUNE_SELF {
 // 		return trimLeftByte(trimRightByte(s, cutset[0]), cutset[0])
 // 	}
 // 	if as, ok := makeASCIISet(cutset); ok {
@@ -953,7 +953,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	if cutset == "" {
 // 		return s
 // 	}
-// 	if len(cutset) == 1 && cutset[0] < utf8.RuneSelf {
+// 	if len(cutset) == 1 && cutset[0] < utf8::RUNE_SELF {
 // 		return trimLeftByte(s, cutset[0])
 // 	}
 // 	if as, ok := makeASCIISet(cutset); ok {
@@ -990,8 +990,8 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // fn trimLeftUnicode(s [u8], cutset string) [u8] {
 // 	for s.len() > 0 {
 // 		r, n := rune(s[0]), 1
-// 		if r >= utf8.RuneSelf {
-// 			r, n = utf8.DecodeRune(s)
+// 		if r >= utf8::RUNE_SELF {
+// 			r, n = utf8.decode_rune(s)
 // 		}
 // 		if !containsRune(cutset, r) {
 // 			break
@@ -1011,7 +1011,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	if s.len() == 0 || cutset == "" {
 // 		return s
 // 	}
-// 	if len(cutset) == 1 && cutset[0] < utf8.RuneSelf {
+// 	if len(cutset) == 1 && cutset[0] < utf8::RUNE_SELF {
 // 		return trimRightByte(s, cutset[0])
 // 	}
 // 	if as, ok := makeASCIISet(cutset); ok {
@@ -1040,7 +1040,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // fn trimRightUnicode(s [u8], cutset string) [u8] {
 // 	for s.len() > 0 {
 // 		r, n := rune(s[s.len()-1]), 1
-// 		if r >= utf8.RuneSelf {
+// 		if r >= utf8::RUNE_SELF {
 // 			r, n = utf8.DecodeLastRune(s)
 // 		}
 // 		if !containsRune(cutset, r) {
@@ -1058,7 +1058,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	start := 0
 // 	for ; start < s.len(); start++ {
 // 		c := s[start]
-// 		if c >= utf8.RuneSelf {
+// 		if c >= utf8::RUNE_SELF {
 // 			// If we run into a non-ASCII byte, fall back to the
 // 			// slower unicode-aware method on the remaining bytes
 // 			return TrimFunc(s[start..], unicode.IsSpace)
@@ -1072,7 +1072,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	stop := s.len()
 // 	for ; stop > start; stop-- {
 // 		c := s[stop-1]
-// 		if c >= utf8.RuneSelf {
+// 		if c >= utf8::RUNE_SELF {
 // 			return TrimFunc(s[start:stop], unicode.IsSpace)
 // 		}
 // 		if asciiSpace[c] == 0 {
@@ -1094,10 +1094,10 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // // Runes interprets s as a sequence of UTF-8-encoded code points.
 // // It returns a slice of runes (Unicode code points) equivalent to s.
 // fn Runes(s [u8]) []rune {
-// 	t := make([]rune, utf8.RuneCount(s))
+// 	t := make([]rune, utf8.rune_count(s))
 // 	i := 0
 // 	for s.len() > 0 {
-// 		r, l := utf8.DecodeRune(s)
+// 		r, l := utf8.decode_rune(s)
 // 		t[i] = r
 // 		i += 1
 // 		s = s[l..]
@@ -1133,7 +1133,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 		j := start
 // 		if len(old) == 0 {
 // 			if i > 0 {
-// 				_, wid := utf8.DecodeRune(s[start..])
+// 				_, wid := utf8.decode_rune(s[start..])
 // 				j += wid
 // 			}
 // 		} else {
@@ -1165,7 +1165,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	for ; i < s.len() && i < len(t); i += 1 {
 // 		sr := s[i]
 // 		tr := t[i]
-// 		if sr|tr >= utf8.RuneSelf {
+// 		if sr|tr >= utf8::RUNE_SELF {
 // 			goto hasUnicode
 // 		}
 
@@ -1193,16 +1193,16 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	for s.len() != 0 && len(t) != 0 {
 // 		// Extract first rune from each.
 // 		var sr, tr rune
-// 		if s[0] < utf8.RuneSelf {
+// 		if s[0] < utf8::RUNE_SELF {
 // 			sr, s = rune(s[0]), s[1..]
 // 		} else {
-// 			r, size := utf8.DecodeRune(s)
+// 			r, size := utf8.decode_rune(s)
 // 			sr, s = r, s[size..]
 // 		}
-// 		if t[0] < utf8.RuneSelf {
+// 		if t[0] < utf8::RUNE_SELF {
 // 			tr, t = rune(t[0]), t[1..]
 // 		} else {
-// 			r, size := utf8.DecodeRune(t)
+// 			r, size := utf8.decode_rune(t)
 // 			tr, t = r, t[size..]
 // 		}
 
@@ -1218,7 +1218,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 			tr, sr = sr, tr
 // 		}
 // 		// Fast check for ASCII.
-// 		if tr < utf8.RuneSelf {
+// 		if tr < utf8::RUNE_SELF {
 // 			// ASCII only, sr/tr must be upper/lower case
 // 			if 'A' <= sr && sr <= 'Z' && tr == sr+'a'-'A' {
 // 				continue

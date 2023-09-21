@@ -565,7 +565,7 @@ impl Time {
 
     // weekday returns the day of the week specified by self.
     pub fn weekday(&self) -> usize {
-        return abs_weekday(self.abs());
+        abs_weekday(self.abs())
     }
 }
 
@@ -620,7 +620,7 @@ impl Time {
 
     /// clock returns the hour, minute, and second within the day specified by self.
     pub fn clock(&self) -> HMS {
-        return abs_clock(self.abs());
+        abs_clock(self.abs())
     }
 
     /// hour returns the hour within the day specified by t, in the range [0, 23].
@@ -641,7 +641,7 @@ impl Time {
     /// nanosecond returns the nanosecond offset within the second specified by t,
     /// in the range [0, 999999999].
     pub fn nanosecond(&self) -> usize {
-        return self.nsec() as usize;
+        self.nsec() as usize
     }
 
     /// year_day returns the day of the year specified by t, in the range \[1,365\] for non-leap years,
@@ -1007,6 +1007,7 @@ impl Time {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 struct YMDY {
     year: isize,
     month: usize, // Month
@@ -1066,6 +1067,7 @@ fn abs_date(abs: u64, full: bool) -> YMDY {
     let mut day = yday;
     if is_leap(year) {
         // Leap year
+        #[allow(clippy::comparison_chain)]
         if day > 31 + 29 - 1 {
             // After leap day; pretend it wasn't there.
             day -= 1;
@@ -1086,13 +1088,12 @@ fn abs_date(abs: u64, full: bool) -> YMDY {
     // The estimate may be too low by at most one month, so adjust.
     let mut month = day / 31;
     let end = DAYS_BEFORE[month as usize + 1] as isize;
-    let begin;
-    if day >= end {
+    let begin = if day >= end {
         month += 1;
-        begin = end;
+        end
     } else {
-        begin = DAYS_BEFORE[month as usize] as isize;
-    }
+        DAYS_BEFORE[month as usize] as isize
+    };
 
     month += 1; // because January is 1
     day = day - begin + 1;
@@ -1156,7 +1157,7 @@ fn days_since_epoch(year: isize) -> u64 {
     let n = y;
     d += 365 * n;
 
-    return d;
+    d
 }
 
 // // Provided by package runtime.
@@ -1481,7 +1482,7 @@ impl Time {
 pub fn unix(sec: i64, nsec: i64) -> Time {
     let mut sec = sec;
     let mut nsec = nsec;
-    if nsec < 0 || nsec >= 1_000_000_000 {
+    if !(0..1_000_000_000).contains(&nsec) {
         let n = nsec / 1_000_000_000;
         sec += n;
         nsec -= n * 1_000_000_000;
@@ -1517,8 +1518,8 @@ fn is_leap(year: isize) -> bool {
 
 /// norm returns nhi, nlo such that
 ///
-///	hi * base + lo == nhi * base + nlo
-///	0 <= nlo < base
+/// hi * base + lo == nhi * base + nlo
+/// 0 <= nlo < base
 fn norm(hi: isize, lo: isize, base: isize) -> (isize, isize) {
     let mut hi = hi;
     let mut lo = lo;
@@ -1532,12 +1533,12 @@ fn norm(hi: isize, lo: isize, base: isize) -> (isize, isize) {
         hi += n;
         lo -= n * base;
     }
-    return (hi, lo);
+    (hi, lo)
 }
 
 /// date returns the Time corresponding to
 ///
-///	yyyy-mm-dd hh:mm:ss + nsec nanoseconds
+/// yyyy-mm-dd hh:mm:ss + nsec nanoseconds
 ///
 /// in the appropriate zone for that time in the given location.
 ///
@@ -1618,9 +1619,8 @@ pub fn date(
     // 		unix -= i64(offset)
     // 	}
 
-    let t = unix_time(unix, nsec as i32);
     // 	t.setLoc(loc)
-    t
+    unix_time(unix, nsec as i32)
 }
 
 // // Truncate returns the result of rounding t down to a multiple of d (since the zero time).

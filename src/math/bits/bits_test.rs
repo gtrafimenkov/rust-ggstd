@@ -368,7 +368,7 @@ fn test_rotate_left() {
 
         let x32 = m as u32;
         let got32 = bits::rotate_left32(x32, k as isize);
-        let want32 = x32 << (k & 0x1f) | x32 >> (32 - k & 0x1f);
+        let want32 = x32 << (k & 0x1f) | x32 >> ((32 - k) & 0x1f);
         assert_eq!(want32, got32);
         let got32 = bits::rotate_left32(want32, -k as isize);
         assert_eq!(x32, got32);
@@ -454,7 +454,7 @@ fn test_rotate_left() {
 fn test_reverse() {
     // test each bit
     for i in 0..64 {
-        test_reverse_internal((1 as u64) << i, (1 as u64) << (63 - i));
+        test_reverse_internal(1_u64 << i, 1_u64 << (63 - i));
     }
 
     fn test2(x: u64, r: u64) {

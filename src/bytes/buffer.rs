@@ -13,6 +13,8 @@ const SMALL_BUFFER_SIZE: usize = 64;
 /// A Buffer is a variable-sized buffer of bytes with read and Write methods.
 // The zero value for Buffer is an empty buffer ready to use.
 pub struct Buffer {
+    // ggstd TODO: use std::io::Cursor instead?
+
     // rust impl: it is much simpler then Go since we are using Vec,
     // which has support for growing.
     // buf[off..buf.len()] - unread data in the buffer
@@ -58,7 +60,7 @@ impl Buffer {
     /// The slice aliases the buffer content at least until the next buffer modification,
     /// so immediate changes to the slice will affect the result of future reads.
     pub fn bytes(&self) -> &[u8] {
-        return &self.buf[self.off..];
+        &self.buf[self.off..]
     }
 
     /// string returns the contents of the unread portion of the buffer
@@ -82,6 +84,11 @@ impl Buffer {
     /// b.Len() == len(b.bytes()).
     pub fn len(&self) -> usize {
         self.buf.len() - self.off
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// cap returns the capacity of the buffer's underlying byte slice, that is, the
@@ -147,6 +154,12 @@ impl Buffer {
     }
 }
 
+impl Default for Buffer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl std::io::Read for Buffer {
     /// Read reads the next p.len() bytes from the buffer or until the buffer
     /// is drained. The return value n is the number of bytes read.
@@ -155,7 +168,7 @@ impl std::io::Read for Buffer {
         if self.empty() {
             // Buffer is empty, reset to recover space.
             self.reset();
-            if p.len() == 0 {
+            if p.is_empty() {
                 return Ok(0);
             }
             return Ok(0);
@@ -165,7 +178,7 @@ impl std::io::Read for Buffer {
         if n > 0 {
             // self.lastRead = opRead
         }
-        return Ok(n);
+        Ok(n)
     }
 }
 
@@ -263,14 +276,14 @@ impl Buffer {
     // // if it becomes too large, WriteRune will panic with ErrTooLarge.
     // fn WriteRune(&self, r rune) (n: usize, err error) {
     // 	// Compare as uint32 to correctly handle negative runes.
-    // 	if uint32(r) < utf8.RuneSelf {
+    // 	if uint32(r) < utf8::RUNE_SELF {
     // 		b.write_byte(byte(r))
     // 		return 1, nil
     // 	}
     // 	b.lastRead = opInvalid
-    // 	m, ok := b.tryGrowByReslice(utf8.UTFMax)
+    // 	m, ok := b.tryGrowByReslice(utf8.UTFMAX)
     // 	if !ok {
-    // 		m = b.guarantee_space(utf8.UTFMax)
+    // 		m = b.guarantee_space(utf8.UTFMAX)
     // 	}
     // 	self.buf = utf8.AppendRune(self.buf[..m], r)
     // 	return self.buf.len() - m, nil
@@ -305,7 +318,7 @@ impl Buffer {
         let c = self.buf[self.off];
         self.off += 1;
         // 	self.lastRead = opRead
-        return Some(c);
+        Some(c)
     }
 
     // // ReadRune reads and returns the next UTF-8-encoded
@@ -320,12 +333,12 @@ impl Buffer {
     // 		return 0, 0, io.EOF
     // 	}
     // 	c := self.buf[self.off]
-    // 	if c < utf8.RuneSelf {
+    // 	if c < utf8::RUNE_SELF {
     // 		self.off++
     // 		b.lastRead = opReadRune1
     // 		return rune(c), 1, nil
     // 	}
-    // 	r, n := utf8.DecodeRune(self.buf[self.off..])
+    // 	r, n := utf8.decode_rune(self.buf[self.off..])
     // 	self.off += n
     // 	b.lastRead = readOp(n)
     // 	return r, n, nil

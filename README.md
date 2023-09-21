@@ -22,28 +22,39 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - bufio
 - builtin
 - bytes
+- compress
 - compress::flate
 - compress::zlib
+- crypto
+- crypto::md5
 - crypto::sha256
+- encoding
+- encoding::base64
 - encoding::binary
 - encoding::hex
 - errors
+- hash
 - hash::adler32
 - hash::crc32
 - io
+- math
 - math::bits
 - os
+- strconv
+- strings
 - time
   - limitations:
     - no time zone support
     - no duration support
     - no formatting support
     - no monothonic time support
+- unicode
+- unicode::utf8
 
 ## Development process
 
 When a piece of functionality is needed, appropriate Go source code is copied from
-[go1.20.6](https://github.com/golang/go/tree/go1.20.6/src) and translated to Rust.
+[go1.20.7](https://github.com/golang/go/tree/go1.20.7/src) and translated to Rust.
 
 Also:
 - structures and functions are renamed to meet Rust naming conventions
