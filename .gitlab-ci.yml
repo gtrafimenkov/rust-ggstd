@@ -8,3 +8,8 @@ test-debug:
 test-release:
   script:
     - cargo test --workspace --verbose --release
+
+clippy:
+  script:
+    - rustup component add clippy
+    - cargo clippy

@@ -16,9 +16,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build
+    - name: cargo build
       run: cargo build --verbose
-    - name: Run tests in debug mode
+    - name: cargo test
       run: cargo test --verbose
-    - name: Run tests in release mode
+    - name: cargo test --release
       run: cargo test --verbose --release
+    - name: cargo clippy
+      run: cargo clippy

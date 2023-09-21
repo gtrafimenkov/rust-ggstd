@@ -136,8 +136,8 @@ impl Encoding {
             strict,
         };
 
-        for v in encoder {
-            e.decode_map[*v as usize] = *v;
+        for (i, v) in encoder.iter().enumerate() {
+            e.decode_map[*v as usize] = i as u8;
         }
         e
     }
