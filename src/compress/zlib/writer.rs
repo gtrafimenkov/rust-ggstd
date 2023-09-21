@@ -111,9 +111,9 @@ impl<'a> Writer<'a> {
         // The final five FCHECK bits form a mod-31 checksum.
         self.scratch[1] = match self.level {
             -2 | 0 | 1 => 0 << 6,
-            2 | 3 | 4 | 5 => 1 << 6,
+            2..=5 => 1 << 6,
             6 | -1 => 2 << 6,
-            7 | 8 | 9 => 3 << 6,
+            7..=9 => 3 << 6,
             _ => {
                 panic!("unreachable");
             }

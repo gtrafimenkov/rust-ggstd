@@ -107,7 +107,7 @@ impl HuffmanDecoder {
 
         // Count number of codes of each length,
         // compute min and max length.
-        let mut count = vec![0_u32; MAX_CODE_LEN];
+        let mut count = [0_u32; MAX_CODE_LEN];
         let mut min: u32 = 0;
         let mut max: u32 = 0;
         for n in lengths {
@@ -136,7 +136,7 @@ impl HuffmanDecoder {
         }
 
         let mut code = 0_u32;
-        let mut nextcode = vec![0_u32; MAX_CODE_LEN];
+        let mut nextcode = [0_u32; MAX_CODE_LEN];
         for i in min..=max {
             code <<= 1;
             nextcode[i as usize] = code;
