@@ -170,7 +170,7 @@ fn test_decode_string() {
 
 // fn TestDecoderErr() {
 // 	for _, tt := range errTests {
-// 		dec := NewDecoder(strings.new_reader(tt.in))
+// 		dec := NewDecoder(strings::Reader::new(tt.in))
 // 		out, err := ggio::read_all(dec)
 // 		wantErr := tt.err
 // 		// Decoder is reading from stream, so it reports std::io::Error::ErrUnexpectedEOF instead of ErrLength.

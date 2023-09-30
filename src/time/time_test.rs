@@ -982,7 +982,7 @@ fn test_days_in() {
 // 			t.Errorf("Time.UnmarshalJSON(%s) = {}, want {}", tt.in, err, want)
 // 		}
 
-// 		if strings.HasPrefix(tt.in, `"`) && strings.has_suffix(tt.in, `"`) {
+// 		if strings.HasPrefix(tt.in, `"`) && strings::has_suffix(tt.in, `"`) {
 // 			err = ts.UnmarshalText([u8](strings.Trim(tt.in, `"`)))
 // 			if fmt.Sprint(err) != want {
 // 				t.Errorf("Time.UnmarshalText(%s) = {}, want {}", tt.in, err, want)
@@ -1129,7 +1129,7 @@ fn test_days_in() {
 // 		_, err := ParseDuration(tc.in)
 // 		if err == nil {
 // 			t.Errorf("ParseDuration(%q) = _, nil, want _, non-nil", tc.in)
-// 		} else if !strings.Contains(err.Error(), tc.expect) {
+// 		} else if !strings::contains(err.Error(), tc.expect) {
 // 			t.Errorf("ParseDuration(%q) = _, %q, error does not contain %q", tc.in, err, tc.expect)
 // 		}
 // 	}
@@ -1790,7 +1790,7 @@ fn test_days_in() {
 // 		t.Skip("skipping test without a /dev/zero")
 // 	}
 // 	_, err := read_file(zero)
-// 	if err == nil || !strings.Contains(err.Error(), "is too large") {
+// 	if err == nil || !strings::contains(err.Error(), "is too large") {
 // 		t.Errorf("readFile(%q) error = {}; want error containing 'is too large'", zero, err)
 // 	}
 // }

@@ -510,7 +510,7 @@ impl BigEndian {
 // 		reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 // 		reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 // 		reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128:
-// 		return int(t.Size())
+// 		return int(t.size())
 // 	}
 
 // 	return -1

@@ -21,9 +21,9 @@
 // 	var buf [u8]
 // 	nread := 0
 // 	withFooBar := func(tests func()) {
-// 		r1 := strings.new_reader("foo ")
-// 		r2 := strings.new_reader("")
-// 		r3 := strings.new_reader("bar")
+// 		r1 := strings::Reader::new("foo ")
+// 		r2 := strings::Reader::new("")
+// 		r3 := strings::Reader::new("bar")
 // 		mr = MultiReader(r1, r2, r3)
 // 		buf = make([u8], 20)
 // 		tests()
@@ -65,10 +65,10 @@
 
 // func TestMultiReaderAsWriterTo(t *testing.T) {
 // 	mr := MultiReader(
-// 		strings.new_reader("foo "),
+// 		strings::Reader::new("foo "),
 // 		MultiReader( // Tickle the buffer reusing codepath
-// 			strings.new_reader(""),
-// 			strings.new_reader("bar"),
+// 			strings::Reader::new(""),
+// 			strings::Reader::new("bar"),
 // 		),
 // 	)
 // 	mrAsWriterTo, ok := mr.(WriterTo)
@@ -145,7 +145,7 @@
 // 	mw := MultiWriter(sha1, sink)
 
 // 	sourceString := "My input text."
-// 	source := strings.new_reader(sourceString)
+// 	source := strings::Reader::new(sourceString)
 // 	written, err := Copy(mw, source)
 
 // 	if written != int64(len(sourceString)) {
@@ -217,7 +217,7 @@
 
 // // Test that MultiReader copies the input slice and is insulated from future modification.
 // func TestMultiReaderCopy(t *testing.T) {
-// 	slice := []Reader{strings.new_reader("hello world")}
+// 	slice := []Reader{strings::Reader::new("hello world")}
 // 	r := MultiReader(slice...)
 // 	slice[0] = nil
 // 	data, err := read_all(r)
@@ -355,8 +355,8 @@
 // }
 
 // func TestInterleavedMultiReader(t *testing.T) {
-// 	r1 := strings.new_reader("123")
-// 	r2 := strings.new_reader("45678")
+// 	r1 := strings::Reader::new("123")
+// 	r2 := strings::Reader::new("45678")
 
 // 	mr1 := MultiReader(r1, r2)
 // 	mr2 := MultiReader(mr1)

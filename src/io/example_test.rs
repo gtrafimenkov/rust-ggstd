@@ -13,7 +13,7 @@
 // )
 
 // func ExampleCopy() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 
 // 	if _, err := io.Copy(os.Stdout, r); err != nil {
 // 		log.Fatal(err)
@@ -24,8 +24,8 @@
 // }
 
 // func ExampleCopyBuffer() {
-// 	r1 := strings.new_reader("first reader\n")
-// 	r2 := strings.new_reader("second reader\n")
+// 	r1 := strings::Reader::new("first reader\n")
+// 	r2 := strings::Reader::new("second reader\n")
 // 	buf := make([u8], 8)
 
 // 	// buf is used here...
@@ -44,7 +44,7 @@
 // }
 
 // func ExampleCopyN() {
-// 	r := strings.new_reader("some io.Reader stream to be read")
+// 	r := strings::Reader::new("some io.Reader stream to be read")
 
 // 	if _, err := ggio::copy_n(os.Stdout, r, 4); err != nil {
 // 		log.Fatal(err)
@@ -55,7 +55,7 @@
 // }
 
 // func ExampleReadAtLeast() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 
 // 	buf := make([u8], 14)
 // 	if _, err := io.read_at_least(r, buf, 4); err != nil {
@@ -82,7 +82,7 @@
 // }
 
 // func ExampleReadFull() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 
 // 	buf := make([u8], 4)
 // 	if _, err := io.read_full(r, buf); err != nil {
@@ -110,7 +110,7 @@
 // }
 
 // func ExampleLimitReader() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 // 	lr := io.LimitReader(r, 4)
 
 // 	if _, err := io.Copy(os.Stdout, lr); err != nil {
@@ -122,9 +122,9 @@
 // }
 
 // func ExampleMultiReader() {
-// 	r1 := strings.new_reader("first reader ")
-// 	r2 := strings.new_reader("second reader ")
-// 	r3 := strings.new_reader("third reader\n")
+// 	r1 := strings::Reader::new("first reader ")
+// 	r2 := strings::Reader::new("second reader ")
+// 	r3 := strings::Reader::new("third reader\n")
 // 	r := io.MultiReader(r1, r2, r3)
 
 // 	if _, err := io.Copy(os.Stdout, r); err != nil {
@@ -136,7 +136,7 @@
 // }
 
 // func ExampleTeeReader() {
-// 	var r io.Reader = strings.new_reader("some io.Reader stream to be read\n")
+// 	var r io.Reader = strings::Reader::new("some io.Reader stream to be read\n")
 
 // 	r = io.TeeReader(r, os.Stdout)
 
@@ -150,7 +150,7 @@
 // }
 
 // func ExampleSectionReader() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 // 	s := io.NewSectionReader(r, 5, 17)
 
 // 	if _, err := io.Copy(os.Stdout, s); err != nil {
@@ -162,7 +162,7 @@
 // }
 
 // func ExampleSectionReader_Read() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 // 	s := io.NewSectionReader(r, 5, 17)
 
 // 	buf := make([u8], 9)
@@ -177,7 +177,7 @@
 // }
 
 // func ExampleSectionReader_ReadAt() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 // 	s := io.NewSectionReader(r, 5, 17)
 
 // 	buf := make([u8], 6)
@@ -192,7 +192,7 @@
 // }
 
 // func ExampleSectionReader_Seek() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 // 	s := io.NewSectionReader(r, 5, 17)
 
 // 	if _, err := s.Seek(10, ggio::Seek::Start); err != nil {
@@ -208,17 +208,17 @@
 // }
 
 // func ExampleSectionReader_Size() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 // 	s := io.NewSectionReader(r, 5, 17)
 
-// 	fmt.Println(s.Size())
+// 	fmt.Println(s.size())
 
 // 	// Output:
 // 	// 17
 // }
 
 // func ExampleSeeker_Seek() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 
 // 	r.Seek(5, ggio::Seek::Start) // move to the 5th char from the start
 // 	if _, err := io.Copy(os.Stdout, r); err != nil {
@@ -236,7 +236,7 @@
 // }
 
 // func ExampleMultiWriter() {
-// 	r := strings.new_reader("some io.Reader stream to be read\n")
+// 	r := strings::Reader::new("some io.Reader stream to be read\n")
 
 // 	var buf1, buf2 strings.Builder
 // 	w := io.MultiWriter(&buf1, &buf2)
@@ -270,7 +270,7 @@
 // }
 
 // func ExampleReadAll() {
-// 	r := strings.new_reader("Go is a general-purpose language designed with systems programming in mind.")
+// 	r := strings::Reader::new("Go is a general-purpose language designed with systems programming in mind.")
 
 // 	b, err := ggio::read_all(r)
 // 	if err != nil {

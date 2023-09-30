@@ -141,7 +141,7 @@
 // 	for i := 0; i <= len(str); i++ {
 // 		s := str[i:]
 // 		r := strings.NewReader(s)
-// 		var b bytes.Buffer
+// 		let mut b = bytes::Buffer::new();
 // 		n, err := r.WriteTo(&b)
 // 		if expect := int64(len(s)); n != expect {
 // 			t.Errorf("got %v; want %v", n, expect)
@@ -165,8 +165,8 @@
 // 	if r.Len() != 2 {
 // 		t.Errorf("Len = %d; want 2", r.Len())
 // 	}
-// 	if r.Size() != 3 {
-// 		t.Errorf("Size = %d; want 3", r.Size())
+// 	if r.size() != 3 {
+// 		t.Errorf("Size = %d; want 3", r.size())
 // 	}
 // }
 
@@ -215,7 +215,7 @@
 // 		t.Errorf("Seek: got %d, %v; want 11, nil", offset, err)
 // 	}
 
-// 	if s := (&strings.Reader{}).Size(); s != 0 {
+// 	if s := (&strings.Reader{}).size(); s != 0 {
 // 		t.Errorf("Size: got %d, want 0", s)
 // 	}
 

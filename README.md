@@ -36,6 +36,13 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - hash
 - hash::adler32
 - hash::crc32
+- image
+- image::color
+- image::color/palette
+- image::draw
+- image::png
+- internal
+- internal::bytealg
 - io
 - math
 - math::bits
@@ -54,17 +61,23 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 ## Development process
 
 When a piece of functionality is needed, appropriate Go source code is copied from
-[go1.20.7](https://github.com/golang/go/tree/go1.20.7/src) and translated to Rust.
+[go1.20.8](https://github.com/golang/go/tree/go1.20.8/src) and translated to Rust.
 
-Also:
+### Changes during convertion from Go to Rust
+
 - structures and functions are renamed to meet Rust naming conventions
 - usage of Go Reader and Writer interfaces replaced with Rust `std::io::Read` and
   `std::io::Write`.  That makes the code more idiomatic and more compatible with
   the rest of Rust ecosystem
+- functions for creating objects are replaced with associated functions.  For example,
+  Go `NewObject()` is changed to Rust `Object::new()`
+- functions that return Go interfaces are usually changed to return specific types,
+  because in Go it is easy to convert an interface to the underlying type, but in Rust
+  it is not always possible
 
-## Gotchas
+### Gotchas
 
-### Different priority of '<<' operator
+#### Different priority of '<<' operator
 
 Go: ` 1 << 1 + 1 == 3`
 Rust: `1 << 1 + 1 == 4`

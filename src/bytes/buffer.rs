@@ -10,7 +10,7 @@ use std::io::Write;
 
 const SMALL_BUFFER_SIZE: usize = 64;
 
-/// A Buffer is a variable-sized buffer of bytes with read and Write methods.
+/// A Buffer is a variable-sized buffer of bytes with read and write methods.
 // The zero value for Buffer is an empty buffer ready to use.
 pub struct Buffer {
     // ggstd TODO: use std::io::Cursor instead?
@@ -393,7 +393,7 @@ impl Buffer {
 
     // // readSlice is like ReadBytes but returns a reference to internal buffer data.
     // fn readSlice(&self, delim byte) (line [u8], err error) {
-    // 	i := IndexByte(self.buf[self.off..], delim)
+    // 	i := index_byte(self.buf[self.off..], delim)
     // 	end := self.off + i + 1
     // 	if i < 0 {
     // 		end = self.buf.len()

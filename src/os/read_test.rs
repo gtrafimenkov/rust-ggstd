@@ -16,8 +16,8 @@
 // 	if err != nil {
 // 		t.Fatalf("Stat %q (looking for size %d): %s", path, size, err)
 // 	}
-// 	if dir.Size() != size {
-// 		t.Errorf("Stat %q: size %d want %d", path, dir.Size(), size)
+// 	if dir.size() != size {
+// 		t.Errorf("Stat %q: size %d want %d", path, dir.size(), size)
 // 	}
 // }
 

@@ -37,10 +37,10 @@ impl PartialEq for Error {
 }
 
 impl Error {
-    fn to_stdio_error(e: Self) -> std::io::Error {
-        match e {
+    pub fn to_stdio_error(&self) -> std::io::Error {
+        match self {
             Error::StdIo(e) => errors::copy_stdio_error(&e),
-            _ => std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+            _ => std::io::Error::new(std::io::ErrorKind::Other, self.to_string()),
         }
     }
 }
@@ -173,7 +173,7 @@ impl std::io::Read for Reader<'_> {
         let res = Reader::read(self, buf);
         match res {
             Ok(n) => Ok(n),
-            Err(err) => Err(Error::to_stdio_error(err)),
+            Err(err) => Err(err.to_stdio_error()),
         }
     }
 }

@@ -227,22 +227,22 @@ fn test_copy_n() {
 
 // 	b := new(bytes::Buffer::new())
 
-// 	n, err := copy_n(&noReadFrom{b}, strings.new_reader("foo"), 3)
+// 	n, err := copy_n(&noReadFrom{b}, strings::Reader::new("foo"), 3)
 // 	if n != 3 || err != nil {
 // 		t.Errorf("copy_n(noReadFrom, foo, 3) = {}, {}; want 3, nil", n, err)
 // 	}
 
-// 	n, err = copy_n(&noReadFrom{b}, strings.new_reader("foo"), 4)
+// 	n, err = copy_n(&noReadFrom{b}, strings::Reader::new("foo"), 4)
 // 	if n != 3 || err != EOF {
 // 		t.Errorf("copy_n(noReadFrom, foo, 4) = {}, {}; want 3, EOF", n, err)
 // 	}
 
-// 	n, err = copy_n(b, strings.new_reader("foo"), 3) // b has read from
+// 	n, err = copy_n(b, strings::Reader::new("foo"), 3) // b has read from
 // 	if n != 3 || err != nil {
 // 		t.Errorf("copy_n(bytes::Buffer::new(), foo, 3) = {}, {}; want 3, nil", n, err)
 // 	}
 
-// 	n, err = copy_n(b, strings.new_reader("foo"), 4) // b has read from
+// 	n, err = copy_n(b, strings::Reader::new("foo"), 4) // b has read from
 // 	if n != 3 || err != EOF {
 // 		t.Errorf("copy_n(bytes::Buffer::new(), foo, 4) = {}, {}; want 3, EOF", n, err)
 // 	}
@@ -379,7 +379,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 		{data: dat, off: 0, n: 0, bufLen: 0, at: 1, exp: "", err: EOF},
 // 	}
 // 	for i, tt := range tests {
-// 		r := strings.new_reader(tt.data)
+// 		r := strings::Reader::new(tt.data)
 // 		s := NewSectionReader(r, int64(tt.off), int64(tt.n))
 // 		buf := make([u8], tt.bufLen)
 // 		if n, err := s.ReadAt(buf, int64(tt.at)); n != len(tt.exp) || string(buf[..n]) != tt.exp || err != tt.err {
@@ -389,7 +389,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // }
 
 // fn TestSectionReader_Seek() {
-// 	// Verifies that NewSectionReader's Seeker behaves like bytes::new_reader (which is like strings.new_reader)
+// 	// Verifies that NewSectionReader's Seeker behaves like bytes::new_reader (which is like strings::Reader::new)
 // 	br := bytes::Reader::new([u8]("foo"))
 // 	sr := NewSectionReader(br, 0, int64(len("foo")))
 
@@ -426,16 +426,16 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 	}
 
 // 	for _, tt := range tests {
-// 		r := strings.new_reader(tt.data)
+// 		r := strings::Reader::new(tt.data)
 // 		sr := NewSectionReader(r, 0, int64(len(tt.data)))
-// 		if got := sr.Size(); got != tt.want {
+// 		if got := sr.size(); got != tt.want {
 // 			t.Errorf("Size = {}; want {}", got, tt.want)
 // 		}
 // 	}
 // }
 
 // fn TestSectionReader_Max() {
-// 	r := strings.new_reader("abcdef")
+// 	r := strings::Reader::new("abcdef")
 // 	const maxint64 = 1<<63 - 1
 // 	sr := NewSectionReader(r, 3, maxint64)
 // 	n, err := sr.Read(make([u8], 3))
@@ -666,7 +666,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // 	t.Run(name, fn() {
 // 		w, f := makeOffsetWriter(name)
 // 		defer f.Close()
-// 		Copy(w, strings.new_reader(content))
+// 		Copy(w, strings::Reader::new(content))
 // 		checkContent(name, f)
 // 	})
 // }

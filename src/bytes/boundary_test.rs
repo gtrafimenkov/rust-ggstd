@@ -56,9 +56,9 @@
 // 	t.Parallel()
 // 	b := dangerousSlice(t)
 // 	for i := range b {
-// 		idx := IndexByte(b[i:], 1)
+// 		idx := index_byte(b[i:], 1)
 // 		if idx != -1 {
-// 			t.Fatalf("IndexByte(b[{}:])={}, want -1\n", i, idx)
+// 			t.Fatalf("index_byte(b[{}:])={}, want -1\n", i, idx)
 // 		}
 // 	}
 // }

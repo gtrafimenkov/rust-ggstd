@@ -308,14 +308,16 @@ pub fn open(name: &str) -> std::io::Result<std::fs::File> {
     std::fs::File::open(name)
 }
 
-// // Create creates or truncates the named file. If the file already exists,
-// // it is truncated. If the file does not exist, it is created with mode 0666
-// // (before umask). If successful, methods on the returned File can
-// // be used for I/O; the associated file descriptor has mode O_RDWR.
-// // If there is an error, it will be of type *PathError.
-// fn Create(name string) (*File, error) {
-// 	return OpenFile(name, O_RDWR|O_CREATE|O_TRUNC, 0666)
-// }
+/// Create creates or truncates the named file. If the file already exists,
+/// it is truncated. If the file does not exist, it is created.
+// with mode 0666
+// (before umask). If successful, methods on the returned File can
+// be used for I/O; the associated file descriptor has mode O_RDWR.
+// If there is an error, it will be of type *PathError.
+pub fn create(name: &str) -> std::io::Result<std::fs::File> {
+    std::fs::File::create(name)
+    // 	return OpenFile(name, O_RDWR|O_CREATE|O_TRUNC, 0666)
+}
 
 // // OpenFile is the generalized open call; most users will use Open
 // // or Create instead. It opens the named file with specified flag

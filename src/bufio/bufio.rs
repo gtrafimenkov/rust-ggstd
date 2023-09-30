@@ -43,7 +43,7 @@ pub struct Reader<'a> {
 }
 
 const MIN_READ_BUFFER_SIZE: usize = 16;
-const MAX_CONSECUTIVE_EMPTY_READS: usize = 100;
+pub(super) const MAX_CONSECUTIVE_EMPTY_READS: usize = 100;
 
 /// new_reader_size returns a new Reader whose buffer has at least the specified
 /// size.
@@ -135,7 +135,7 @@ impl<'a> Reader<'a> {
                 }
             }
         }
-        self.err = Some(Box::new(ggio::ERR_NO_PROGRESS));
+        self.err = Some(Box::new(ggio::err_no_progress()));
     }
 
     fn read_err(&mut self) -> Option<Box<dyn std::error::Error>> {
@@ -361,7 +361,7 @@ impl<'a> Reader<'a> {
     // 	s := 0 // search start index
     // 	for {
     // 		// Search buffer.
-    // 		if i := bytes.IndexByte(b.buf[b.r+s:b.w], delim); i >= 0 {
+    // 		if i := bytes.index_byte(b.buf[b.r+s:b.w], delim); i >= 0 {
     // 			i += s
     // 			line = b.buf[b.r : b.r+i+1]
     // 			b.r += i + 1

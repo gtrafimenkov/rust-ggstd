@@ -199,12 +199,12 @@
 
 // func TestSize(t *testing.T) {
 // 	c := New()
-// 	if got := c.Size(); got != Size {
+// 	if got := c.size(); got != Size {
 // 		t.Errorf("Size = %d; want %d", got, Size)
 // 	}
 // 	c = New224()
-// 	if got := c.Size(); got != Size224 {
-// 		t.Errorf("New224.Size = %d; want %d", got, Size224)
+// 	if got := c.size(); got != Size224 {
+// 		t.Errorf("New224.size = %d; want %d", got, Size224)
 // 	}
 // }
 
@@ -329,7 +329,7 @@
 // var buf = make([]byte, 8192)
 
 // func benchmarkSize(b *testing.B, size int) {
-// 	sum := make([]byte, bench.Size())
+// 	sum := make([]byte, bench.size())
 // 	b.Run("New", func(b *testing.B) {
 // 		b.ReportAllocs()
 // 		b.SetBytes(int64(size))

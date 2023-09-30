@@ -11,7 +11,7 @@ mod crc32;
 mod crc32_generic;
 
 pub use crc32::{
-    checksum, checksum_ieee, new, new_ieee, update, PredefinedPolynomials, Table, SIZE,
+    checksum, checksum_ieee, new, new_ieee, update, Digest, PredefinedPolynomials, Table, SIZE,
 };
 
 #[cfg(test)]

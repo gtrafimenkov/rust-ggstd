@@ -1,8 +1,11 @@
-// // Copyright 2013 The Go Authors. All rights reserved.
-// // Use of this source code is governed by a BSD-style
-// // license that can be found in the LICENSE file.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2013 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// package bufio_test
+use super::{scan_bytes, scan_lines, Error, Scanner};
+use crate::bytes;
+use crate::strings;
 
 // import (
 // 	. "bufio"
@@ -18,7 +21,8 @@
 // const smallMaxTokenSize = 256 // Much smaller for more efficient testing.
 
 // // Test white space table matches the Unicode definition.
-// func TestSpace(t *testing.T) {
+// #[test]
+// fn TestSpace() {
 // 	for r := rune(0); r <= utf8.MAX_RUNE; r++ {
 // 		if IsSpace(r) != unicode.IsSpace(r) {
 // 			t.Fatalf("white space property disagrees: %#U should be %t", r, unicode.IsSpace(r))
@@ -26,50 +30,61 @@
 // 	}
 // }
 
-// var scanTests = []string{
-// 	"",
-// 	"a",
-// 	"¼",
-// 	"☹",
-// 	"\x81",   // UTF-8 error
-// 	"\uFFFD", // correctly encoded RUNE_ERROR
-// 	"abcdefgh",
-// 	"abc def\n\t\tgh    ",
-// 	"abc¼☹\x81\uFFFD日本語\x82abc",
-// }
+const SCAN_TESTS: &[&[u8]] = &[
+    "".as_bytes(),
+    "a".as_bytes(),
+    "¼".as_bytes(),
+    "☹".as_bytes(),
+    b"\x81",               // UTF-8 error
+    "\u{FFFD}".as_bytes(), // correctly encoded RUNE_ERROR
+    "abcdefgh".as_bytes(),
+    "abc def\n\t\tgh    ".as_bytes(),
+    // "abc¼☹\x81\u{FFFD}日本語\x82abc".as_bytes(),
+];
 
-// func TestScanByte(t *testing.T) {
-// 	for n, test := range scanTests {
-// 		buf := strings.new_reader(test)
-// 		s := NewScanner(buf)
-// 		s.Split(ScanBytes)
-// 		var i int
-// 		for i = 0; s.Scan(); i += 1 {
-// 			if b := s.bytes(); b.len() != 1 || b[0] != test[i] {
-// 				t.Errorf("#{}: {}: expected %q got %q", n, i, test, b)
-// 			}
-// 		}
-// 		if i != len(test) {
-// 			t.Errorf("#{}: termination expected at {}; got {}", n, len(test), i)
-// 		}
-// 		err := s.Err()
-// 		if err != nil {
-// 			t.Errorf("#{}: {}", n, err)
-// 		}
-// 	}
-// }
+#[test]
+fn test_scan_byte() {
+    for (n, test) in SCAN_TESTS.iter().enumerate() {
+        let mut buf = bytes::Reader::new(*test);
+        let mut s = Scanner::new(&mut buf);
+        s.split(scan_bytes);
+        let mut i = 0;
+        while s.scan() {
+            let b = s.bytes();
+            assert!(
+                b.len() == 1 && b[0] == test[i],
+                "#{}: {}: expected {:?} got {:?}",
+                n,
+                i,
+                test,
+                b
+            );
+            i += 1;
+        }
+        assert_eq!(
+            i,
+            test.len(),
+            "#{}: termination expected at {}; got {}",
+            n,
+            test.len(),
+            i
+        );
+        assert!(s.err().is_none(), "#{}: {:?}", n, s.err());
+    }
+}
 
 // // Test that the rune splitter returns same sequence of runes (not bytes) as for range string.
-// func TestScanRune(t *testing.T) {
-// 	for n, test := range scanTests {
-// 		buf := strings.new_reader(test)
-// 		s := NewScanner(buf)
-// 		s.Split(ScanRunes)
+// #[test]
+// fn TestScanRune() {
+// 	for n, test in SCAN_TESTS.iter().enumerate() {
+// 		buf := strings::Reader::new(test)
+// 		s := Scanner::new(buf)
+// 		s.split(ScanRunes)
 // 		var i, runeCount int
 // 		var expect rune
 // 		// Use a string range loop to validate the sequence of runes.
 // 		for i, expect = range string(test) {
-// 			if !s.Scan() {
+// 			if !s.scan() {
 // 				break
 // 			}
 // 			runeCount++
@@ -78,7 +93,7 @@
 // 				t.Errorf("#{}: {}: expected %q got %q", n, i, expect, got)
 // 			}
 // 		}
-// 		if s.Scan() {
+// 		if s.scan() {
 // 			t.Errorf("#{}: scan ran too long, got %q", n, s.Text())
 // 		}
 // 		testRuneCount := utf8.RuneCountInString(test)
@@ -104,15 +119,16 @@
 // }
 
 // // Test that the word splitter returns the same data as strings.Fields.
-// func TestScanWords(t *testing.T) {
+// #[test]
+// fn TestScanWords() {
 // 	for n, test := range wordScanTests {
-// 		buf := strings.new_reader(test)
-// 		s := NewScanner(buf)
-// 		s.Split(ScanWords)
+// 		buf := strings::Reader::new(test)
+// 		s := Scanner::new(buf)
+// 		s.split(ScanWords)
 // 		words := strings.Fields(test)
 // 		var wordCount int
 // 		for wordCount = 0; wordCount < len(words); wordCount++ {
-// 			if !s.Scan() {
+// 			if !s.scan() {
 // 				break
 // 			}
 // 			got := s.Text()
@@ -120,7 +136,7 @@
 // 				t.Errorf("#{}: {}: expected %q got %q", n, wordCount, words[wordCount], got)
 // 			}
 // 		}
-// 		if s.Scan() {
+// 		if s.scan() {
 // 			t.Errorf("#{}: scan ran too long, got %q", n, s.Text())
 // 		}
 // 		if wordCount != len(words) {
@@ -133,24 +149,30 @@
 // 	}
 // }
 
-// // slowReader is a reader that returns only a few bytes at a time, to test the incremental
-// // reads in Scanner.Scan.
-// type slowReader struct {
-// 	max int
-// 	buf io.Reader
-// }
+/// SlowReader is a reader that returns only a few bytes at a time, to test the incremental
+/// reads in Scanner.scan.
+struct SlowReader<'a> {
+    max: usize,
+    r: &'a mut dyn std::io::Read,
+}
 
-// func (sr *slowReader) Read(p [u8]) (n int, err error) {
-// 	if len(p) > sr.max {
-// 		p = p[0:sr.max]
-// 	}
-// 	return sr.buf.Read(p)
-// }
+impl<'a> SlowReader<'a> {
+    fn new(max: usize, r: &'a mut dyn std::io::Read) -> Self {
+        Self { max, r }
+    }
+}
+
+impl std::io::Read for SlowReader<'_> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let len = self.max.min(buf.len());
+        self.r.read(&mut buf[0..len])
+    }
+}
 
 // // genLine writes to buf a predictable but non-trivial line of text of length
 // // n, including the terminal newline and an occasional carriage return.
 // // If addNewline is false, the \r and \n are not emitted.
-// func genLine(buf *bytes::Buffer::new(), lineNum, n int, addNewline bool) {
+// fn genLine(buf *bytes::Buffer::new(), lineNum, n int, addNewline bool) {
 // 	buf.Reset()
 // 	doCR := lineNum%5 == 0
 // 	if doCR {
@@ -172,7 +194,8 @@
 // }
 
 // // Test the line splitter, including some carriage returns but no long lines.
-// func TestScanLongLines(t *testing.T) {
+// #[test]
+// fn TestScanLongLines() {
 // 	// Build a buffer of lots of line lengths up to but not exceeding smallMaxTokenSize.
 // 	tmp := new(bytes::Buffer::new())
 // 	let mut buf = bytes::Buffer::new();
@@ -188,11 +211,11 @@
 // 		buf.Write(tmp.bytes())
 // 		lineNum++
 // 	}
-// 	s := NewScanner(&slowReader{1, buf})
-// 	s.Split(ScanLines)
+// 	s := Scanner::new(&SlowReader::new(1, buf))
+// 	s.split(scan_lines)
 // 	s.MaxTokenSize(smallMaxTokenSize)
 // 	j = 0
-// 	for lineNum := 0; s.Scan(); lineNum++ {
+// 	for lineNum := 0; s.scan(); lineNum++ {
 // 		genLine(tmp, lineNum, j, false)
 // 		if j < smallMaxTokenSize {
 // 			j++
@@ -211,7 +234,8 @@
 // }
 
 // // Test that the line splitter errors out on a long line.
-// func TestScanLineTooLong(t *testing.T) {
+// #[test]
+// fn TestScanLineTooLong() {
 // 	const smallMaxTokenSize = 256 // Much smaller for more efficient testing.
 // 	// Build a buffer of lots of line lengths up to but not exceeding smallMaxTokenSize.
 // 	tmp := new(bytes::Buffer::new())
@@ -224,11 +248,11 @@
 // 		buf.Write(tmp.bytes())
 // 		lineNum++
 // 	}
-// 	s := NewScanner(&slowReader{3, buf})
-// 	s.Split(ScanLines)
+// 	s := Scanner::new(&SlowReader::new(3, buf))
+// 	s.split(scan_lines)
 // 	s.MaxTokenSize(smallMaxTokenSize)
 // 	j = 0
-// 	for lineNum := 0; s.Scan(); lineNum++ {
+// 	for lineNum := 0; s.scan(); lineNum++ {
 // 		genLine(tmp, lineNum, j, false)
 // 		if j < smallMaxTokenSize {
 // 			j++
@@ -246,73 +270,71 @@
 // 	}
 // }
 
-// // Test that the line splitter handles a final line without a newline.
-// func testNoNewline(text string, lines []string, t *testing.T) {
-// 	buf := strings.new_reader(text)
-// 	s := NewScanner(&slowReader{7, buf})
-// 	s.Split(ScanLines)
-// 	for lineNum := 0; s.Scan(); lineNum++ {
-// 		line := lines[lineNum]
-// 		if s.Text() != line {
-// 			t.Errorf("{}: bad line: {} {}\n%.100q\n%.100q\n", lineNum, len(s.bytes()), len(line), s.bytes(), line)
-// 		}
-// 	}
-// 	err := s.Err()
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
+/// Test that the line splitter handles a final line without a newline.
+fn test_no_newline(text: &str, lines: &[&str]) {
+    let mut buf = strings::Reader::new(text);
+    let mut sr = SlowReader::new(7, &mut buf);
+    let mut s = Scanner::new(&mut sr);
+    s.split(scan_lines);
+    let mut line_num = 0;
+    while s.scan() {
+        let line = lines[line_num];
+        assert_eq!(
+            s.text(),
+            line,
+            "{}: bad line: {:?} {:?}",
+            line_num,
+            s.text(),
+            line
+        );
+        line_num += 1;
+    }
+    assert!(s.err().is_none());
+}
 
-// // Test that the line splitter handles a final line without a newline.
-// func TestScanLineNoNewline(t *testing.T) {
-// 	const text = "abcdefghijklmn\nopqrstuvwxyz"
-// 	lines := []string{
-// 		"abcdefghijklmn",
-// 		"opqrstuvwxyz",
-// 	}
-// 	testNoNewline(text, lines, t)
-// }
+/// Test that the line splitter handles a final line without a newline.
+#[test]
+fn test_scan_line_no_newline() {
+    let text = "abcdefghijklmn\nopqrstuvwxyz";
+    let lines = &["abcdefghijklmn", "opqrstuvwxyz"];
+    test_no_newline(text, lines);
+}
 
-// // Test that the line splitter handles a final line with a carriage return but no newline.
-// func TestScanLineReturnButNoNewline(t *testing.T) {
-// 	const text = "abcdefghijklmn\nopqrstuvwxyz\r"
-// 	lines := []string{
-// 		"abcdefghijklmn",
-// 		"opqrstuvwxyz",
-// 	}
-// 	testNoNewline(text, lines, t)
-// }
+/// Test that the line splitter handles a final line with a carriage return but no newline.
+#[test]
+fn test_scan_line_return_but_no_newline() {
+    let text = "abcdefghijklmn\nopqrstuvwxyz\r";
+    let lines = &["abcdefghijklmn", "opqrstuvwxyz"];
+    test_no_newline(text, lines);
+}
 
-// // Test that the line splitter handles a final empty line.
-// func TestScanLineEmptyFinalLine(t *testing.T) {
-// 	const text = "abcdefghijklmn\nopqrstuvwxyz\n\n"
-// 	lines := []string{
-// 		"abcdefghijklmn",
-// 		"opqrstuvwxyz",
-// 		"",
-// 	}
-// 	testNoNewline(text, lines, t)
-// }
+/// Test that the line splitter handles a final empty line.
+#[test]
+fn test_scan_line_empty_final_line() {
+    test_no_newline(
+        "abcdefghijklmn\nopqrstuvwxyz\n\n",
+        &["abcdefghijklmn", "opqrstuvwxyz", ""],
+    );
+}
 
-// // Test that the line splitter handles a final empty line with a carriage return but no newline.
-// func TestScanLineEmptyFinalLineWithCR(t *testing.T) {
-// 	const text = "abcdefghijklmn\nopqrstuvwxyz\n\r"
-// 	lines := []string{
-// 		"abcdefghijklmn",
-// 		"opqrstuvwxyz",
-// 		"",
-// 	}
-// 	testNoNewline(text, lines, t)
-// }
+/// Test that the line splitter handles a final empty line with a carriage return but no newline.
+#[test]
+fn test_scan_line_empty_final_line_with_cr() {
+    test_no_newline(
+        "abcdefghijklmn\nopqrstuvwxyz\r\n",
+        &["abcdefghijklmn", "opqrstuvwxyz", ""],
+    );
+}
 
 // var testError = errors.New("testError")
 
 // // Test the correct error is returned when the split function errors out.
-// func TestSplitError(t *testing.T) {
+// #[test]
+// fn TestSplitError() {
 // 	// Create a split function that delivers a little data, then a predictable error.
 // 	numSplits := 0
 // 	const okCount = 7
-// 	errorSplit := func(data [u8], atEOF bool) (advance int, token [u8], err error) {
+// 	errorSplit := fn(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 		if atEOF {
 // 			panic("didn't get enough data")
 // 		}
@@ -324,11 +346,11 @@
 // 	}
 // 	// Read the data.
 // 	const text = "abcdefghijklmnopqrstuvwxyz"
-// 	buf := strings.new_reader(text)
-// 	s := NewScanner(&slowReader{1, buf})
-// 	s.Split(errorSplit)
+// 	buf := strings::Reader::new(text)
+// 	s := Scanner::new(&SlowReader::new(1, buf))
+// 	s.split(errorSplit)
 // 	var i int
-// 	for i = 0; s.Scan(); i += 1 {
+// 	for i = 0; s.scan(); i += 1 {
 // 		if len(s.bytes()) != 1 || text[i] != s.bytes()[0] {
 // 			t.Errorf("#{}: expected %q got %q", i, text[i], s.bytes()[0])
 // 		}
@@ -344,10 +366,11 @@
 // }
 
 // // Test that an EOF is overridden by a user-generated scan error.
-// func TestErrAtEOF(t *testing.T) {
-// 	s := NewScanner(strings.new_reader("1 2 33"))
+// #[test]
+// fn TestErrAtEOF() {
+// 	s := Scanner::new(strings::Reader::new("1 2 33"))
 // 	// This splitter will fail on last entry, after s.err==EOF.
-// 	split := func(data [u8], atEOF bool) (advance int, token [u8], err error) {
+// 	split := fn(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 		advance, token, err = ScanWords(data, atEOF)
 // 		if len(token) > 1 {
 // 			if s.ErrOrEOF() != io.EOF {
@@ -357,58 +380,74 @@
 // 		}
 // 		return
 // 	}
-// 	s.Split(split)
-// 	for s.Scan() {
+// 	s.split(split)
+// 	for s.scan() {
 // 	}
 // 	if s.Err() != testError {
 // 		t.Fatal("wrong error:", s.Err())
 // 	}
 // }
 
-// // Test for issue 5268.
-// type alwaysError struct{}
+/// Test for issue 5268.
+struct AlwaysError {}
 
-// func (alwaysError) Read(p [u8]) (int, error) {
-// 	return 0, std::io::Error::ErrUnexpectedEOF
-// }
+impl std::io::Read for AlwaysError {
+    fn read(&mut self, _buf: &mut [u8]) -> std::io::Result<usize> {
+        Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
+    }
+}
 
-// func TestNonEOFWithEmptyRead(t *testing.T) {
-// 	scanner := NewScanner(alwaysError{})
-// 	for scanner.Scan() {
-// 		t.Fatal("read should fail")
-// 	}
-// 	err := scanner.Err()
-// 	if err != std::io::Error::ErrUnexpectedEOF {
-// 		t.Errorf("unexpected error: {}", err)
-// 	}
-// }
+#[test]
+fn test_non_eofwith_empty_read() {
+    let mut r = AlwaysError {};
+    let mut scanner = Scanner::new(&mut r);
+    assert_eq!(false, scanner.scan(), "read should fail");
+    assert_eq!(false, scanner.scan(), "read should fail");
+    assert_eq!(false, scanner.scan(), "read should fail");
+    assert_eq!(false, scanner.scan(), "read should fail");
+    let err = scanner.err();
+    assert!(err.is_some(), "unexpected error: {:?}", err);
+    let err = err.as_ref().unwrap();
+    if let Error::ErrRead(err) = err {
+        assert_eq!(
+            err.kind(),
+            std::io::ErrorKind::UnexpectedEof,
+            "expecting std::io::ErrorKind::UnexpectedEof, got {:?}",
+            err
+        );
+    } else {
+        assert!(false, "expecting Error::ErrRead, got {:?}", err);
+    }
+}
 
 // // Test that Scan finishes if we have endless empty reads.
 // type endlessZeros struct{}
 
-// func (endlessZeros) Read(p [u8]) (int, error) {
+// fn (endlessZeros) Read(p [u8]) (int, error) {
 // 	return 0, nil
 // }
 
-// func TestBadReader(t *testing.T) {
-// 	scanner := NewScanner(endlessZeros{})
-// 	for scanner.Scan() {
+// #[test]
+// fn TestBadReader() {
+// 	scanner := Scanner::new(endlessZeros{})
+// 	for scanner.scan() {
 // 		t.Fatal("read should fail")
 // 	}
-// 	err := scanner.Err()
+// 	err := scanner.err()
 // 	if err != io.ErrNoProgress {
 // 		t.Errorf("unexpected error: {}", err)
 // 	}
 // }
 
-// func TestScanWordsExcessiveWhiteSpace(t *testing.T) {
+// #[test]
+// fn TestScanWordsExcessiveWhiteSpace() {
 // 	const word = "ipsum"
 // 	s := strings.Repeat(" ", 4*smallMaxTokenSize) + word
-// 	scanner := NewScanner(strings.new_reader(s))
+// 	scanner := Scanner::new(strings::Reader::new(s))
 // 	scanner.MaxTokenSize(smallMaxTokenSize)
-// 	scanner.Split(ScanWords)
-// 	if !scanner.Scan() {
-// 		t.Fatalf("scan failed: {}", scanner.Err())
+// 	scanner.split(ScanWords)
+// 	if !scanner.scan() {
+// 		t.Fatalf("scan failed: {}", scanner.err())
 // 	}
 // 	if token := scanner.Text(); token != word {
 // 		t.Fatalf("unexpected token: {}", token)
@@ -418,7 +457,7 @@
 // // Test that empty tokens, including at end of line or end of file, are found by the scanner.
 // // Issue 8672: Could miss final empty token.
 
-// func commaSplit(data [u8], atEOF bool) (advance int, token [u8], err error) {
+// fn commaSplit(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 	for i := 0; i < len(data); i += 1 {
 // 		if data[i] == ',' {
 // 			return i + 1, data[..i], nil
@@ -427,11 +466,12 @@
 // 	return 0, data, ErrFinalToken
 // }
 
-// func testEmptyTokens(t *testing.T, text string, values []string) {
-// 	s := NewScanner(strings.new_reader(text))
-// 	s.Split(commaSplit)
+// #[test]
+// fn testEmptyTokens(, text string, values []string) {
+// 	s := Scanner::new(strings::Reader::new(text))
+// 	s.split(commaSplit)
 // 	var i int
-// 	for i = 0; s.Scan(); i += 1 {
+// 	for i = 0; s.scan(); i += 1 {
 // 		if i >= len(values) {
 // 			t.Fatalf("got {} fields, expected {}", i+1, len(values))
 // 		}
@@ -447,35 +487,38 @@
 // 	}
 // }
 
-// func TestEmptyTokens(t *testing.T) {
+// #[test]
+// fn TestEmptyTokens() {
 // 	testEmptyTokens(t, "1,2,3,", []string{"1", "2", "3", ""})
 // }
 
-// func TestWithNoEmptyTokens(t *testing.T) {
+// #[test]
+// fn TestWithNoEmptyTokens() {
 // 	testEmptyTokens(t, "1,2,3", []string{"1", "2", "3"})
 // }
 
-// func loopAtEOFSplit(data [u8], atEOF bool) (advance int, token [u8], err error) {
+// fn loopAtEOFSplit(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 	if len(data) > 0 {
 // 		return 1, data[..1], nil
 // 	}
 // 	return 0, data, nil
 // }
 
-// func TestDontLoopForever(t *testing.T) {
-// 	s := NewScanner(strings.new_reader("abc"))
-// 	s.Split(loopAtEOFSplit)
+// #[test]
+// fn TestDontLoopForever() {
+// 	s := Scanner::new(strings::Reader::new("abc"))
+// 	s.split(loopAtEOFSplit)
 // 	// Expect a panic
-// 	defer func() {
+// 	defer fn() {
 // 		err := recover()
 // 		if err == nil {
 // 			t.Fatal("should have panicked")
 // 		}
-// 		if msg, ok := err.(string); !ok || !strings.Contains(msg, "empty tokens") {
+// 		if msg, ok := err.(string); !ok || !strings::contains(msg, "empty tokens") {
 // 			panic(err)
 // 		}
 // 	}()
-// 	for count := 0; s.Scan(); count++ {
+// 	for count := 0; s.scan(); count++ {
 // 		if count > 1000 {
 // 			t.Fatal("looping")
 // 		}
@@ -485,9 +528,10 @@
 // 	}
 // }
 
-// func TestBlankLines(t *testing.T) {
-// 	s := NewScanner(strings.new_reader(strings.Repeat("\n", 1000)))
-// 	for count := 0; s.Scan(); count++ {
+// #[test]
+// fn TestBlankLines() {
+// 	s := Scanner::new(strings::Reader::new(strings.Repeat("\n", 1000)))
+// 	for count := 0; s.scan(); count++ {
 // 		if count > 2000 {
 // 			t.Fatal("looping")
 // 		}
@@ -499,7 +543,7 @@
 
 // type countdown int
 
-// func (c *countdown) split(data [u8], atEOF bool) (advance int, token [u8], err error) {
+// fn (c *countdown) split(data [u8], atEOF bool) (advance int, token [u8], err error) {
 // 	if *c > 0 {
 // 		*c--
 // 		return 1, data[..1], nil
@@ -508,11 +552,12 @@
 // }
 
 // // Check that the looping-at-EOF check doesn't trigger for merely empty tokens.
-// func TestEmptyLinesOK(t *testing.T) {
+// #[test]
+// fn TestEmptyLinesOK() {
 // 	c := countdown(10000)
-// 	s := NewScanner(strings.new_reader(strings.Repeat("\n", 10000)))
-// 	s.Split(c.split)
-// 	for s.Scan() {
+// 	s := Scanner::new(strings::Reader::new(strings.Repeat("\n", 10000)))
+// 	s.split(c.split)
+// 	for s.scan() {
 // 	}
 // 	if s.Err() != nil {
 // 		t.Fatal("after scan:", s.Err())
@@ -523,11 +568,12 @@
 // }
 
 // // Make sure we can read a huge token if a big enough buffer is provided.
-// func TestHugeBuffer(t *testing.T) {
-// 	text := strings.Repeat("x", 2*MaxScanTokenSize)
-// 	s := NewScanner(strings.new_reader(text + "\n"))
-// 	s.Buffer(make([u8], 100), 3*MaxScanTokenSize)
-// 	for s.Scan() {
+// #[test]
+// fn TestHugeBuffer() {
+// 	text := strings.Repeat("x", 2*MAX_SCAN_TOKEN_SIZE)
+// 	s := Scanner::new(strings::Reader::new(text + "\n"))
+// 	s.Buffer(make([u8], 100), 3*MAX_SCAN_TOKEN_SIZE)
+// 	for s.scan() {
 // 		token := s.Text()
 // 		if token != text {
 // 			t.Errorf("scan got incorrect token of length {}", len(token))
@@ -542,7 +588,7 @@
 // // were wrapping the read system call.
 // type negativeEOFReader int
 
-// func (r *negativeEOFReader) Read(p [u8]) (int, error) {
+// fn (r *negativeEOFReader) Read(p [u8]) (int, error) {
 // 	if *r > 0 {
 // 		c := int(*r)
 // 		if c > len(p) {
@@ -560,19 +606,20 @@
 
 // // Test that the scanner doesn't panic and returns ErrBadReadCount
 // // on a reader that returns a negative count of bytes read (issue 38053).
-// func TestNegativeEOFReader(t *testing.T) {
+// #[test]
+// fn TestNegativeEOFReader() {
 // 	r := negativeEOFReader(10)
-// 	scanner := NewScanner(&r)
+// 	scanner := Scanner::new(&r)
 // 	c := 0
-// 	for scanner.Scan() {
+// 	for scanner.scan() {
 // 		c++
 // 		if c > 1 {
 // 			t.Error("read too many lines")
 // 			break
 // 		}
 // 	}
-// 	if got, want := scanner.Err(), ErrBadReadCount; got != want {
-// 		t.Errorf("scanner.Err: got {}, want {}", got, want)
+// 	if got, want := scanner.err(), ErrBadReadCount; got != want {
+// 		t.Errorf("scanner.err: got {}, want {}", got, want)
 // 	}
 // }
 
@@ -580,17 +627,18 @@
 // // of bytes requested.
 // type largeReader struct{}
 
-// func (largeReader) Read(p [u8]) (int, error) {
+// fn (largeReader) Read(p [u8]) (int, error) {
 // 	return len(p) + 1, nil
 // }
 
 // // Test that the scanner doesn't panic and returns ErrBadReadCount
 // // on a reader that returns an impossibly large count of bytes read (issue 38053).
-// func TestLargeReader(t *testing.T) {
-// 	scanner := NewScanner(largeReader{})
-// 	for scanner.Scan() {
+// #[test]
+// fn TestLargeReader() {
+// 	scanner := Scanner::new(largeReader{})
+// 	for scanner.scan() {
 // 	}
-// 	if got, want := scanner.Err(), ErrBadReadCount; got != want {
-// 		t.Errorf("scanner.Err: got {}, want {}", got, want)
+// 	if got, want := scanner.err(), ErrBadReadCount; got != want {
+// 		t.Errorf("scanner.err: got {}, want {}", got, want)
 // 	}
 // }

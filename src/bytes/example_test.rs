@@ -317,8 +317,8 @@
 // }
 
 // func ExampleIndexByte() {
-// 	fmt.Println(bytes.IndexByte([u8]("chicken"), byte('k')))
-// 	fmt.Println(bytes.IndexByte([u8]("chicken"), byte('g')))
+// 	fmt.Println(bytes.index_byte([u8]("chicken"), byte('k')))
+// 	fmt.Println(bytes.index_byte([u8]("chicken"), byte('g')))
 // 	// Output:
 // 	// 4
 // 	// -1

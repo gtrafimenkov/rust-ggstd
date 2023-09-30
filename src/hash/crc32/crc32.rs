@@ -163,9 +163,9 @@ static IEEE_TABLE: Table = [
 // }
 
 // digest represents the partial evaluation of a checksum.
-struct Digest<'a> {
+pub struct Digest {
     crc: u32,
-    tab: &'a Table,
+    tab: &'static Table,
 }
 
 // New creates a new hash::Hash32 computing the CRC-32 checksum using the
@@ -173,7 +173,7 @@ struct Digest<'a> {
 // value out in big-endian byte order. The returned Hash32 also
 // implements encoding.BinaryMarshaler and encoding.BinaryUnmarshaler to
 // marshal and unmarshal the internal state of the hash.
-pub fn new(tab: &Table) -> impl hash::Hash32 + '_ {
+pub fn new(tab: &'static Table) -> Digest {
     // if tab == IEEE_TABLE {
     // 	ieeeOnce.Do(ieeeInit)
     // }
@@ -185,15 +185,11 @@ pub fn new(tab: &Table) -> impl hash::Hash32 + '_ {
 // big-endian byte order. The returned Hash32 also implements
 // encoding.BinaryMarshaler and encoding.BinaryUnmarshaler to marshal
 // and unmarshal the internal state of the hash.
-pub fn new_ieee() -> impl hash::Hash32 {
-    return new(&IEEE_TABLE);
-    // Digest {
-    //     crc: 0,
-    //     tab: &IEEE_TABLE,
-    // }
+pub fn new_ieee() -> Digest {
+    new(&IEEE_TABLE)
 }
 
-impl hash::Hash for Digest<'_> {
+impl hash::Hash for Digest {
     fn reset(&mut self) {
         self.crc = 0;
     }
@@ -214,7 +210,7 @@ impl hash::Hash for Digest<'_> {
     }
 }
 
-impl hash::Hash32 for Digest<'_> {
+impl hash::Hash32 for Digest {
     fn sum32(&self) -> u32 {
         // func (d *digest) Sum32() uint32 { return d.crc }
         self.crc
@@ -287,7 +283,7 @@ pub fn update(crc: u32, tab: &Table, p: &[u8]) -> u32 {
     update_internal(crc, tab, p)
 }
 
-impl std::io::Write for Digest<'_> {
+impl std::io::Write for Digest {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.crc = update(self.crc, self.tab, buf);
         Ok(buf.len())

@@ -46,7 +46,7 @@
 // 	}
 // 	n := 0
 // 	for {
-// 		i := Index(s, substr)
+// 		i := index(s, substr)
 // 		if i == -1 {
 // 			return n
 // 		}
@@ -55,18 +55,19 @@
 // 	}
 // }
 
-// // Contains reports whether substr is within s.
-// fn Contains(s, substr string) bool {
-// 	return Index(s, substr) >= 0
-// }
+/// contains reports whether substr is within s.
+pub fn contains(s: &str, substr: &str) -> bool {
+    // index(s, substr) >= 0
+    s.contains(substr)
+}
 
 // // ContainsAny reports whether any Unicode code points in chars are within s.
-// fn ContainsAny(s, chars string) bool {
+// fn ContainsAny(s, chars string) -> bool {
 // 	return IndexAny(s, chars) >= 0
 // }
 
 // // ContainsRune reports whether the Unicode code point r is within s.
-// fn ContainsRune(s string, r rune) bool {
+// fn ContainsRune(s string, r rune) -> bool {
 // 	return IndexRune(s, r) >= 0
 // }
 
@@ -107,8 +108,8 @@
 // 	return -1
 // }
 
-// // IndexByte returns the index of the first instance of c in s, or -1 if c is not present in s.
-// fn IndexByte(s string, c byte) int {
+// // index_byte returns the index of the first instance of c in s, or -1 if c is not present in s.
+// fn index_byte(s string, c byte) int {
 // 	return bytealg.IndexByteString(s, c)
 // }
 
@@ -119,7 +120,7 @@
 // fn IndexRune(s string, r rune) int {
 // 	switch {
 // 	case 0 <= r && r < utf8::RUNE_SELF:
-// 		return IndexByte(s, byte(r))
+// 		return index_byte(s, byte(r))
 // 	case r == utf8.RUNE_ERROR:
 // 		for i, r := range s {
 // 			if r == utf8.RUNE_ERROR {
@@ -130,7 +131,7 @@
 // 	case !utf8.ValidRune(r):
 // 		return -1
 // 	default:
-// 		return Index(s, string(r))
+// 		return index(s, string(r))
 // 	}
 // }
 
@@ -249,7 +250,7 @@
 // 	n--
 // 	i := 0
 // 	for i < n {
-// 		m := Index(s, sep)
+// 		m := index(s, sep)
 // 		if m < 0 {
 // 			break
 // 		}
@@ -448,14 +449,14 @@
 // }
 
 // // HasPrefix tests whether the string s begins with prefix.
-// fn HasPrefix(s, prefix string) bool {
+// fn HasPrefix(s, prefix string) -> bool {
 // 	return len(s) >= len(prefix) && s[0:len(prefix)] == prefix
 // }
 
-// // HasSuffix tests whether the string s ends with suffix.
-// fn HasSuffix(s, suffix string) bool {
-// 	return len(s) >= len(suffix) && s[len(s)-len(suffix):] == suffix
-// }
+/// has_suffix tests whether the string s ends with suffix.
+pub fn has_suffix(s: &str, suffix: &str) -> bool {
+    s.ends_with(suffix)
+}
 
 // // Map returns a copy of the string s with all its characters modified
 // // according to the mapping function. If mapping returns a negative value, the character is
@@ -736,7 +737,7 @@
 
 // // isSeparator reports whether the rune could mark a word boundary.
 // // TODO: update when package unicode captures more of the properties.
-// fn isSeparator(r rune) bool {
+// fn isSeparator(r rune) -> bool {
 // 	// ASCII alphanumerics and underscore are not separators
 // 	if r <= 0x7F {
 // 		switch {
@@ -872,7 +873,7 @@
 // }
 
 // // contains reports whether c is inside the set.
-// fn (as *asciiSet) contains(c byte) bool {
+// fn (as *asciiSet) contains(c byte) -> bool {
 // 	return (as[c/32] & (1 << (c % 32))) != 0
 // }
 
@@ -1034,8 +1035,8 @@
 
 // // TrimSuffix returns s without the provided trailing suffix string.
 // // If s doesn't end with suffix, s is returned unchanged.
-// fn TrimSuffix(s, suffix string) string {
-// 	if HasSuffix(s, suffix) {
+// fn TrimSuffix(s: &str, suffix: &str) string {
+// 	if has_suffix(s, suffix) {
 // 		return s[:len(s)-len(suffix)]
 // 	}
 // 	return s
@@ -1071,7 +1072,7 @@
 // 				j += wid
 // 			}
 // 		} else {
-// 			j += Index(s[start:], old)
+// 			j += index(s[start:], old)
 // 		}
 // 		b.WriteString(s[start:j])
 // 		b.WriteString(new)
@@ -1093,7 +1094,7 @@ pub fn replace_all(s: &str, old: &str, new: &str) -> String {
 // // EqualFold reports whether s and t, interpreted as UTF-8 strings,
 // // are equal under simple Unicode case-folding, which is a more general
 // // form of case-insensitivity.
-// fn EqualFold(s, t string) bool {
+// fn EqualFold(s, t string) -> bool {
 // 	// ASCII fast path
 // 	i := 0
 // 	for ; i < len(s) && i < len(t); i++ {
@@ -1175,93 +1176,97 @@ pub fn replace_all(s: &str, old: &str, new: &str) -> String {
 // 	return len(t) == 0
 // }
 
-// // Index returns the index of the first instance of substr in s, or -1 if substr is not present in s.
-// fn Index(s, substr string) int {
-// 	n := len(substr)
-// 	switch {
-// 	case n == 0:
-// 		return 0
-// 	case n == 1:
-// 		return IndexByte(s, substr[0])
-// 	case n == len(s):
-// 		if substr == s {
-// 			return 0
-// 		}
-// 		return -1
-// 	case n > len(s):
-// 		return -1
-// 	case n <= bytealg.MaxLen:
-// 		// Use brute force when s and substr both are small
-// 		if len(s) <= bytealg.MaxBruteForce {
-// 			return bytealg.IndexString(s, substr)
-// 		}
-// 		c0 := substr[0]
-// 		c1 := substr[1]
-// 		i := 0
-// 		t := len(s) - n + 1
-// 		fails := 0
-// 		for i < t {
-// 			if s[i] != c0 {
-// 				// IndexByte is faster than bytealg.IndexString, so use it as long as
-// 				// we're not getting lots of false positives.
-// 				o := IndexByte(s[i+1:t], c0)
-// 				if o < 0 {
-// 					return -1
-// 				}
-// 				i += o + 1
-// 			}
-// 			if s[i+1] == c1 && s[i:i+n] == substr {
-// 				return i
-// 			}
-// 			fails++
-// 			i++
-// 			// Switch to bytealg.IndexString when IndexByte produces too many false positives.
-// 			if fails > bytealg.Cutover(i) {
-// 				r := bytealg.IndexString(s[i:], substr)
-// 				if r >= 0 {
-// 					return r + i
-// 				}
-// 				return -1
-// 			}
-// 		}
-// 		return -1
-// 	}
-// 	c0 := substr[0]
-// 	c1 := substr[1]
-// 	i := 0
-// 	t := len(s) - n + 1
-// 	fails := 0
-// 	for i < t {
-// 		if s[i] != c0 {
-// 			o := IndexByte(s[i+1:t], c0)
-// 			if o < 0 {
-// 				return -1
-// 			}
-// 			i += o + 1
-// 		}
-// 		if s[i+1] == c1 && s[i:i+n] == substr {
-// 			return i
-// 		}
-// 		i++
-// 		fails++
-// 		if fails >= 4+i>>4 && i < t {
-// 			// See comment in ../bytes/bytes.go.
-// 			j := bytealg.IndexRabinKarp(s[i:], substr)
-// 			if j < 0 {
-// 				return -1
-// 			}
-// 			return i + j
-// 		}
-// 	}
-// 	return -1
-// }
+/// index returns the index of the first instance of substr in s, or -1 if substr is not present in s.
+pub fn index(s: &str, substr: &str) -> isize {
+    match s.find(substr) {
+        Some(n) => n as isize,
+        None => -1,
+    }
+    // 	n := len(substr)
+    // 	switch {
+    // 	case n == 0:
+    // 		return 0
+    // 	case n == 1:
+    // 		return index_byte(s, substr[0])
+    // 	case n == len(s):
+    // 		if substr == s {
+    // 			return 0
+    // 		}
+    // 		return -1
+    // 	case n > len(s):
+    // 		return -1
+    // 	case n <= bytealg.MaxLen:
+    // 		// Use brute force when s and substr both are small
+    // 		if len(s) <= bytealg.MaxBruteForce {
+    // 			return bytealg.IndexString(s, substr)
+    // 		}
+    // 		c0 := substr[0]
+    // 		c1 := substr[1]
+    // 		i := 0
+    // 		t := len(s) - n + 1
+    // 		fails := 0
+    // 		for i < t {
+    // 			if s[i] != c0 {
+    // 				// index_byte is faster than bytealg.IndexString, so use it as long as
+    // 				// we're not getting lots of false positives.
+    // 				o := index_byte(s[i+1:t], c0)
+    // 				if o < 0 {
+    // 					return -1
+    // 				}
+    // 				i += o + 1
+    // 			}
+    // 			if s[i+1] == c1 && s[i:i+n] == substr {
+    // 				return i
+    // 			}
+    // 			fails++
+    // 			i++
+    // 			// Switch to bytealg.IndexString when index_byte produces too many false positives.
+    // 			if fails > bytealg.Cutover(i) {
+    // 				r := bytealg.IndexString(s[i:], substr)
+    // 				if r >= 0 {
+    // 					return r + i
+    // 				}
+    // 				return -1
+    // 			}
+    // 		}
+    // 		return -1
+    // 	}
+    // 	c0 := substr[0]
+    // 	c1 := substr[1]
+    // 	i := 0
+    // 	t := len(s) - n + 1
+    // 	fails := 0
+    // 	for i < t {
+    // 		if s[i] != c0 {
+    // 			o := index_byte(s[i+1:t], c0)
+    // 			if o < 0 {
+    // 				return -1
+    // 			}
+    // 			i += o + 1
+    // 		}
+    // 		if s[i+1] == c1 && s[i:i+n] == substr {
+    // 			return i
+    // 		}
+    // 		i++
+    // 		fails++
+    // 		if fails >= 4+i>>4 && i < t {
+    // 			// See comment in ../bytes/bytes.go.
+    // 			j := bytealg.IndexRabinKarp(s[i:], substr)
+    // 			if j < 0 {
+    // 				return -1
+    // 			}
+    // 			return i + j
+    // 		}
+    // 	}
+    // 	return -1
+}
 
 // // Cut slices s around the first instance of sep,
 // // returning the text before and after sep.
 // // The found result reports whether sep appears in s.
 // // If sep does not appear in s, cut returns s, "", false.
 // fn Cut(s, sep string) (before, after string, found bool) {
-// 	if i := Index(s, sep); i >= 0 {
+// 	if i := index(s, sep); i >= 0 {
 // 		return s[:i], s[i+len(sep):], true
 // 	}
 // 	return s, "", false
@@ -1282,8 +1287,8 @@ pub fn replace_all(s: &str, old: &str, new: &str) -> String {
 // // and reports whether it found the suffix.
 // // If s doesn't end with suffix, CutSuffix returns s, false.
 // // If suffix is the empty string, CutSuffix returns s, true.
-// fn CutSuffix(s, suffix string) (before string, found bool) {
-// 	if !HasSuffix(s, suffix) {
+// fn CutSuffix(s: &str, suffix: &str) (before string, found bool) {
+// 	if !has_suffix(s, suffix) {
 // 		return s, false
 // 	}
 // 	return s[:len(s)-len(suffix)], true

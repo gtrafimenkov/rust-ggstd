@@ -6,6 +6,8 @@
 //! Package bytes implements functions for the manipulation of byte slices.
 //! It is analogous to the facilities of the strings package.
 
+use crate::internal::bytealg;
+
 // import (
 // 	"internal/bytealg"
 // 	"unicode"
@@ -22,13 +24,13 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // // Compare returns an integer comparing two byte slices lexicographically.
 // // The result will be 0 if a == b, -1 if a < b, and +1 if a > b.
 // // A nil argument is equivalent to an empty slice.
-// fn Compare(a, b: &[u8]) int {
-// 	return bytealg.Compare(a, b)
+// fn Compare(a, b: &[u8]) -> isize {
+// 	return bytealg::Compare(a, b)
 // }
 
 // // explode splits s into a slice of UTF-8 sequences, one per Unicode code point (still slices of bytes),
 // // up to a maximum of n byte slices. Invalid UTF-8 sequences are chopped into individual bytes.
-// fn explode(s [u8], n int) [][u8] {
+// fn explode(s: &[u8], n int) [][u8] {
 // 	if n <= 0 || n > s.len() {
 // 		n = s.len()
 // 	}
@@ -51,13 +53,13 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 
 // // Count counts the number of non-overlapping instances of sep in s.
 // // If sep is an empty slice, Count returns 1 + the number of UTF-8-encoded code points in s.
-// fn Count(s, sep [u8]) int {
+// fn Count(s, sep [u8]) -> isize {
 // 	// special case
 // 	if len(sep) == 0 {
 // 		return utf8.rune_count(s) + 1
 // 	}
 // 	if len(sep) == 1 {
-// 		return bytealg.Count(s, sep[0])
+// 		return bytealg::Count(s, sep[0])
 // 	}
 // 	n := 0
 // 	for {
@@ -85,22 +87,23 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	return IndexRune(b, r) >= 0
 // }
 
-// // IndexByte returns the index of the first instance of c in b, or -1 if c is not present in b.
-// fn IndexByte(b: &[u8], c byte) int {
-// 	return bytealg.IndexByte(b, c)
-// }
+/// index_byte returns the index of the first instance of c in b, or -1 if c is not present in b.
+pub fn index_byte(b: &[u8], c: u8) -> isize {
+    bytealg::index_byte(b, c)
+}
 
-// fn indexBytePortable(s [u8], c byte) int {
-// 	for i, b := range s {
-// 		if b == c {
-// 			return i
-// 		}
-// 	}
-// 	return -1
-// }
+#[cfg(test)]
+pub fn index_byte_portable(s: &[u8], c: u8) -> isize {
+    for (i, b) in s.iter().enumerate() {
+        if *b == c {
+            return i as isize;
+        }
+    }
+    return -1;
+}
 
 // // LastIndex returns the index of the last instance of sep in s, or -1 if sep is not present in s.
-// fn LastIndex(s, sep [u8]) int {
+// fn LastIndex(s, sep [u8]) -> isize {
 // 	n := len(sep)
 // 	switch {
 // 	case n == 0:
@@ -116,17 +119,17 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 		return -1
 // 	}
 // 	// Rabin-Karp search from the end of the string
-// 	hashss, pow := bytealg.HashStrRevBytes(sep)
+// 	hashss, pow := bytealg::HashStrRevBytes(sep)
 // 	last := s.len() - n
 // 	var h uint32
 // 	for i := s.len() - 1; i >= last; i-- {
-// 		h = h*bytealg.PrimeRK + uint32(s[i])
+// 		h = h*bytealg::PrimeRK + uint32(s[i])
 // 	}
 // 	if h == hashss && equal(s[last..], sep) {
 // 		return last
 // 	}
 // 	for i := last - 1; i >= 0; i-- {
-// 		h *= bytealg.PrimeRK
+// 		h *= bytealg::PrimeRK
 // 		h += uint32(s[i])
 // 		h -= pow * uint32(s[i+n])
 // 		if h == hashss && equal(s[i:i+n], sep) {
@@ -137,7 +140,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // }
 
 // // LastIndexByte returns the index of the last instance of c in s, or -1 if c is not present in s.
-// fn LastIndexByte(s [u8], c byte) int {
+// fn LastIndexByte(s: &[u8], c: u8) -> isize {
 // 	for i := s.len() - 1; i >= 0; i-- {
 // 		if s[i] == c {
 // 			return i
@@ -151,10 +154,10 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // // It returns -1 if rune is not present in s.
 // // If r is utf8.RUNE_ERROR, it returns the first instance of any
 // // invalid UTF-8 byte sequence.
-// fn IndexRune(s [u8], r rune) int {
+// fn IndexRune(s: &[u8], r rune) -> isize {
 // 	switch {
 // 	case 0 <= r && r < utf8::RUNE_SELF:
-// 		return IndexByte(s, byte(r))
+// 		return index_byte(s, byte(r))
 // 	case r == utf8.RUNE_ERROR:
 // 		for i := 0; i < s.len(); {
 // 			r1, n := utf8.decode_rune(s[i..])
@@ -177,7 +180,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // // It returns the byte index of the first occurrence in s of any of the Unicode
 // // code points in chars. It returns -1 if chars is empty or if there is no code
 // // point in common.
-// fn IndexAny(s [u8], chars string) int {
+// fn IndexAny(s: &[u8], chars string) -> isize {
 // 	if chars == "" {
 // 		// Avoid scanning all of s.
 // 		return -1
@@ -193,7 +196,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 			}
 // 			return -1
 // 		}
-// 		if bytealg.IndexByteString(chars, s[0]) >= 0 {
+// 		if bytealg::IndexByteString(chars, s[0]) >= 0 {
 // 			return 0
 // 		}
 // 		return -1
@@ -219,7 +222,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	for i := 0; i < s.len(); i += width {
 // 		r := rune(s[i])
 // 		if r < utf8::RUNE_SELF {
-// 			if bytealg.IndexByteString(chars, s[i]) >= 0 {
+// 			if bytealg::IndexByteString(chars, s[i]) >= 0 {
 // 				return i
 // 			}
 // 			width = 1
@@ -234,9 +237,9 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 				}
 // 				continue
 // 			}
-// 			// Use bytealg.IndexString for performance if available.
-// 			if bytealg.MaxLen >= width {
-// 				if bytealg.IndexString(chars, string(r)) >= 0 {
+// 			// Use bytealg::IndexString for performance if available.
+// 			if bytealg::MaxLen >= width {
+// 				if bytealg::IndexString(chars, string(r)) >= 0 {
 // 					return i
 // 				}
 // 				continue
@@ -255,7 +258,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // // points. It returns the byte index of the last occurrence in s of any of
 // // the Unicode code points in chars. It returns -1 if chars is empty or if
 // // there is no code point in common.
-// fn LastIndexAny(s [u8], chars string) int {
+// fn LastIndexAny(s: &[u8], chars string) -> isize {
 // 	if chars == "" {
 // 		// Avoid scanning all of s.
 // 		return -1
@@ -280,7 +283,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 			}
 // 			return -1
 // 		}
-// 		if bytealg.IndexByteString(chars, s[0]) >= 0 {
+// 		if bytealg::IndexByteString(chars, s[0]) >= 0 {
 // 			return 0
 // 		}
 // 		return -1
@@ -302,7 +305,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 	for i := s.len(); i > 0; {
 // 		r := rune(s[i-1])
 // 		if r < utf8::RUNE_SELF {
-// 			if bytealg.IndexByteString(chars, s[i-1]) >= 0 {
+// 			if bytealg::IndexByteString(chars, s[i-1]) >= 0 {
 // 				return i - 1
 // 			}
 // 			i--
@@ -318,9 +321,9 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // 				}
 // 				continue
 // 			}
-// 			// Use bytealg.IndexString for performance if available.
-// 			if bytealg.MaxLen >= size {
-// 				if bytealg.IndexString(chars, string(r)) >= 0 {
+// 			// Use bytealg::IndexString for performance if available.
+// 			if bytealg::MaxLen >= size {
+// 				if bytealg::IndexString(chars, string(r)) >= 0 {
 // 					return i
 // 				}
 // 				continue
@@ -470,7 +473,7 @@ pub fn equal(a: &[u8], b: &[u8]) -> bool {
 // //
 // // FieldsFunc makes no guarantees about the order in which it calls f(c)
 // // and assumes that f always returns the same value for a given c.
-// fn FieldsFunc(s [u8], f fn(rune) bool) [][u8] {
+// fn FieldsFunc(s: &[u8], f fn(rune) bool) [][u8] {
 // 	// A span is used to record a slice of s of the form s[start:end].
 // 	// The start index is inclusive and the end index is exclusive.
 // 	type span struct {
@@ -789,7 +792,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 
 // // TrimLeftFunc treats s as UTF-8-encoded bytes and returns a subslice of s by slicing off
 // // all leading UTF-8-encoded code points c that satisfy f(c).
-// fn TrimLeftFunc(s [u8], f fn(r rune) bool) [u8] {
+// fn TrimLeftFunc(s: &[u8], f fn(r rune) bool) [u8] {
 // 	i := indexFunc(s, f, false)
 // 	if i == -1 {
 // 		return nil
@@ -799,7 +802,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 
 // // TrimRightFunc returns a subslice of s by slicing off all trailing
 // // UTF-8-encoded code points c that satisfy f(c).
-// fn TrimRightFunc(s [u8], f fn(r rune) bool) [u8] {
+// fn TrimRightFunc(s: &[u8], f fn(r rune) bool) [u8] {
 // 	i := lastIndexFunc(s, f, false)
 // 	if i >= 0 && s[i] >= utf8::RUNE_SELF {
 // 		_, wid := utf8.decode_rune(s[i..])
@@ -812,7 +815,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 
 // // TrimFunc returns a subslice of s by slicing off all leading and trailing
 // // UTF-8-encoded code points c that satisfy f(c).
-// fn TrimFunc(s [u8], f fn(r rune) bool) [u8] {
+// fn TrimFunc(s: &[u8], f fn(r rune) bool) [u8] {
 // 	return TrimRightFunc(TrimLeftFunc(s, f), f)
 // }
 
@@ -837,21 +840,21 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // // IndexFunc interprets s as a sequence of UTF-8-encoded code points.
 // // It returns the byte index in s of the first Unicode
 // // code point satisfying f(c), or -1 if none do.
-// fn IndexFunc(s [u8], f fn(r rune) bool) int {
+// fn IndexFunc(s: &[u8], f fn(r rune) bool) -> isize {
 // 	return indexFunc(s, f, true)
 // }
 
 // // LastIndexFunc interprets s as a sequence of UTF-8-encoded code points.
 // // It returns the byte index in s of the last Unicode
 // // code point satisfying f(c), or -1 if none do.
-// fn LastIndexFunc(s [u8], f fn(r rune) bool) int {
+// fn LastIndexFunc(s: &[u8], f fn(r rune) bool) -> isize {
 // 	return lastIndexFunc(s, f, true)
 // }
 
 // // indexFunc is the same as IndexFunc except that if
 // // truth==false, the sense of the predicate function is
 // // inverted.
-// fn indexFunc(s [u8], f fn(r rune) bool, truth bool) int {
+// fn indexFunc(s: &[u8], f fn(r rune) bool, truth bool) -> isize {
 // 	start := 0
 // 	for start < s.len() {
 // 		wid := 1
@@ -870,7 +873,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // // lastIndexFunc is the same as LastIndexFunc except that if
 // // truth==false, the sense of the predicate function is
 // // inverted.
-// fn lastIndexFunc(s [u8], f fn(r rune) bool, truth bool) int {
+// fn lastIndexFunc(s: &[u8], f fn(r rune) bool, truth bool) -> isize {
 // 	for i := s.len(); i > 0; {
 // 		r, size := rune(s[i-1]), 1
 // 		if r >= utf8::RUNE_SELF {
@@ -908,7 +911,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // }
 
 // // contains reports whether c is inside the set.
-// fn (as *asciiSet) contains(c byte) -> bool {
+// fn (as *asciiSet) contains(c: u8) -> bool {
 // 	return (as[c/32] & (1 << (c % 32))) != 0
 // }
 
@@ -926,7 +929,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 
 // // Trim returns a subslice of s by slicing off all leading and
 // // trailing UTF-8-encoded code points contained in cutset.
-// fn Trim(s [u8], cutset string) [u8] {
+// fn Trim(s: &[u8], cutset string) [u8] {
 // 	if s.len() == 0 {
 // 		// This is what we've historically done.
 // 		return nil
@@ -945,7 +948,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 
 // // TrimLeft returns a subslice of s by slicing off all leading
 // // UTF-8-encoded code points contained in cutset.
-// fn TrimLeft(s [u8], cutset string) [u8] {
+// fn TrimLeft(s: &[u8], cutset string) [u8] {
 // 	if s.len() == 0 {
 // 		// This is what we've historically done.
 // 		return nil
@@ -962,7 +965,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	return trimLeftUnicode(s, cutset)
 // }
 
-// fn trimLeftByte(s [u8], c byte) [u8] {
+// fn trimLeftByte(s: &[u8], c: u8) [u8] {
 // 	for s.len() > 0 && s[0] == c {
 // 		s = s[1..]
 // 	}
@@ -973,7 +976,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	return s
 // }
 
-// fn trimLeftASCII(s [u8], as *asciiSet) [u8] {
+// fn trimLeftASCII(s: &[u8], as *asciiSet) [u8] {
 // 	for s.len() > 0 {
 // 		if !as.contains(s[0]) {
 // 			break
@@ -987,7 +990,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	return s
 // }
 
-// fn trimLeftUnicode(s [u8], cutset string) [u8] {
+// fn trimLeftUnicode(s: &[u8], cutset string) [u8] {
 // 	for s.len() > 0 {
 // 		r, n := rune(s[0]), 1
 // 		if r >= utf8::RUNE_SELF {
@@ -1007,7 +1010,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 
 // // TrimRight returns a subslice of s by slicing off all trailing
 // // UTF-8-encoded code points that are contained in cutset.
-// fn TrimRight(s [u8], cutset string) [u8] {
+// fn TrimRight(s: &[u8], cutset string) [u8] {
 // 	if s.len() == 0 || cutset == "" {
 // 		return s
 // 	}
@@ -1020,14 +1023,14 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	return trimRightUnicode(s, cutset)
 // }
 
-// fn trimRightByte(s [u8], c byte) [u8] {
+// fn trimRightByte(s: &[u8], c: u8) [u8] {
 // 	for s.len() > 0 && s[s.len()-1] == c {
 // 		s = s[..s.len()-1]
 // 	}
 // 	return s
 // }
 
-// fn trimRightASCII(s [u8], as *asciiSet) [u8] {
+// fn trimRightASCII(s: &[u8], as *asciiSet) [u8] {
 // 	for s.len() > 0 {
 // 		if !as.contains(s[s.len()-1]) {
 // 			break
@@ -1037,7 +1040,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	return s
 // }
 
-// fn trimRightUnicode(s [u8], cutset string) [u8] {
+// fn trimRightUnicode(s: &[u8], cutset string) [u8] {
 // 	for s.len() > 0 {
 // 		r, n := rune(s[s.len()-1]), 1
 // 		if r >= utf8::RUNE_SELF {
@@ -1243,13 +1246,13 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // }
 
 // // Index returns the index of the first instance of sep in s, or -1 if sep is not present in s.
-// fn Index(s, sep [u8]) int {
+// fn Index(s, sep [u8]) -> isize {
 // 	n := len(sep)
 // 	switch {
 // 	case n == 0:
 // 		return 0
 // 	case n == 1:
-// 		return IndexByte(s, sep[0])
+// 		return index_byte(s, sep[0])
 // 	case n == s.len():
 // 		if equal(sep, s) {
 // 			return 0
@@ -1257,10 +1260,10 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 		return -1
 // 	case n > s.len():
 // 		return -1
-// 	case n <= bytealg.MaxLen:
+// 	case n <= bytealg::MaxLen:
 // 		// Use brute force when s and sep both are small
-// 		if s.len() <= bytealg.MaxBruteForce {
-// 			return bytealg.Index(s, sep)
+// 		if s.len() <= bytealg::MaxBruteForce {
+// 			return bytealg::Index(s, sep)
 // 		}
 // 		c0 := sep[0]
 // 		c1 := sep[1]
@@ -1269,9 +1272,9 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 		fails := 0
 // 		for i < t {
 // 			if s[i] != c0 {
-// 				// IndexByte is faster than bytealg.Index, so use it as long as
+// 				// index_byte is faster than bytealg::Index, so use it as long as
 // 				// we're not getting lots of false positives.
-// 				o := IndexByte(s[i+1:t], c0)
+// 				o := index_byte(s[i+1:t], c0)
 // 				if o < 0 {
 // 					return -1
 // 				}
@@ -1282,9 +1285,9 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 			}
 // 			fails++
 // 			i += 1
-// 			// Switch to bytealg.Index when IndexByte produces too many false positives.
-// 			if fails > bytealg.Cutover(i) {
-// 				r := bytealg.Index(s[i..], sep)
+// 			// Switch to bytealg::Index when index_byte produces too many false positives.
+// 			if fails > bytealg::Cutover(i) {
+// 				r := bytealg::Index(s[i..], sep)
 // 				if r >= 0 {
 // 					return r + i
 // 				}
@@ -1300,7 +1303,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	t := s.len() - n + 1
 // 	for i < t {
 // 		if s[i] != c0 {
-// 			o := IndexByte(s[i+1:t], c0)
+// 			o := index_byte(s[i+1:t], c0)
 // 			if o < 0 {
 // 				break
 // 			}
@@ -1312,7 +1315,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 		i += 1
 // 		fails++
 // 		if fails >= 4+i>>4 && i < t {
-// 			// Give up on IndexByte, it isn't skipping ahead
+// 			// Give up on index_byte, it isn't skipping ahead
 // 			// far enough to be better than Rabin-Karp.
 // 			// Experiments (using IndexPeriodic) suggest
 // 			// the cutover is about 16 byte skips.
@@ -1320,7 +1323,7 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 			// we should cutover at even larger average skips,
 // 			// because equal becomes that much more expensive.
 // 			// This code does not take that effect into account.
-// 			j := bytealg.IndexRabinKarpBytes(s[i..], sep)
+// 			j := bytealg::IndexRabinKarpBytes(s[i..], sep)
 // 			if j < 0 {
 // 				return -1
 // 			}

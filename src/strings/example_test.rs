@@ -32,10 +32,10 @@
 // }
 
 // func ExampleContains() {
-// 	fmt.Println(strings.Contains("seafood", "foo"))
-// 	fmt.Println(strings.Contains("seafood", "bar"))
-// 	fmt.Println(strings.Contains("seafood", ""))
-// 	fmt.Println(strings.Contains("", ""))
+// 	fmt.Println(strings::contains("seafood", "foo"))
+// 	fmt.Println(strings::contains("seafood", "bar"))
+// 	fmt.Println(strings::contains("seafood", ""))
+// 	fmt.Println(strings::contains("", ""))
 // 	// Output:
 // 	// true
 // 	// false
@@ -127,10 +127,10 @@
 // }
 
 // func ExampleHasSuffix() {
-// 	fmt.Println(strings.HasSuffix("Amigo", "go"))
-// 	fmt.Println(strings.HasSuffix("Amigo", "O"))
-// 	fmt.Println(strings.HasSuffix("Amigo", "Ami"))
-// 	fmt.Println(strings.HasSuffix("Amigo", ""))
+// 	fmt.Println(strings::has_suffix("Amigo", "go"))
+// 	fmt.Println(strings::has_suffix("Amigo", "O"))
+// 	fmt.Println(strings::has_suffix("Amigo", "Ami"))
+// 	fmt.Println(strings::has_suffix("Amigo", ""))
 // 	// Output:
 // 	// true
 // 	// false
@@ -166,9 +166,9 @@
 // }
 
 // func ExampleIndexByte() {
-// 	fmt.Println(strings.IndexByte("golang", 'g'))
-// 	fmt.Println(strings.IndexByte("gophers", 'h'))
-// 	fmt.Println(strings.IndexByte("golang", 'x'))
+// 	fmt.Println(strings.index_byte("golang", 'g'))
+// 	fmt.Println(strings.index_byte("gophers", 'h'))
+// 	fmt.Println(strings.index_byte("golang", 'x'))
 // 	// Output:
 // 	// 0
 // 	// 3

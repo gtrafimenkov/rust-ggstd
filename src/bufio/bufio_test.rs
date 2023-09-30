@@ -69,12 +69,12 @@ use crate::io as ggio;
 
 // fn TestReaderSimple() {
 // 	data := "hello world"
-// 	b := new_reader(strings.new_reader(data))
+// 	b := new_reader(strings::Reader::new(data))
 // 	if s := readBytes(b); s != "hello world" {
 // 		t.Errorf("simple hello world test failed: got %q", s)
 // 	}
 
-// 	b = new_reader(newRot13Reader(strings.new_reader(data)))
+// 	b = new_reader(newRot13Reader(strings::Reader::new(data)))
 // 	if s := readBytes(b); s != "uryyb jbeyq" {
 // 		t.Errorf("rot13 hello world test failed: got %q", s)
 // 	}
@@ -163,7 +163,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // 					readmaker := readMakers[i]
 // 					bufreader := bufreaders[j]
 // 					bufsize := BUFSIZES[k]
-// 					read := readmaker.fn(strings.new_reader(text))
+// 					read := readmaker.fn(strings::Reader::new(text))
 // 					buf := new_reader_size(read, bufsize)
 // 					s := bufreader.fn(buf)
 // 					if s != text {
@@ -290,7 +290,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // }
 
 // fn TestNoUnreadRuneAfterPeek() {
-// 	br := new_reader(strings.new_reader("example"))
+// 	br := new_reader(strings::Reader::new("example"))
 // 	br.ReadRune()
 // 	br.Peek(1)
 // 	if err := br.UnreadRune(); err == nil {
@@ -299,7 +299,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // }
 
 // fn TestNoUnreadByteAfterPeek() {
-// 	br := new_reader(strings.new_reader("example"))
+// 	br := new_reader(strings::Reader::new("example"))
 // 	br.ReadByte()
 // 	br.Peek(1)
 // 	if err := br.UnreadByte(); err == nil {
@@ -308,7 +308,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // }
 
 // fn TestNoUnreadRuneAfterDiscard() {
-// 	br := new_reader(strings.new_reader("example"))
+// 	br := new_reader(strings::Reader::new("example"))
 // 	br.ReadRune()
 // 	br.Discard(1)
 // 	if err := br.UnreadRune(); err == nil {
@@ -317,7 +317,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // }
 
 // fn TestNoUnreadByteAfterDiscard() {
-// 	br := new_reader(strings.new_reader("example"))
+// 	br := new_reader(strings::Reader::new("example"))
 // 	br.ReadByte()
 // 	br.Discard(1)
 // 	if err := br.UnreadByte(); err == nil {
@@ -326,7 +326,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // }
 
 // fn TestNoUnreadRuneAfterWriteTo() {
-// 	br := new_reader(strings.new_reader("example"))
+// 	br := new_reader(strings::Reader::new("example"))
 // 	br.WriteTo(ggio::Discard::new())
 // 	if err := br.UnreadRune(); err == nil {
 // 		t.Error("UnreadRune didn't fail after WriteTo")
@@ -334,7 +334,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // }
 
 // fn TestNoUnreadByteAfterWriteTo() {
-// 	br := new_reader(strings.new_reader("example"))
+// 	br := new_reader(strings::Reader::new("example"))
 // 	br.WriteTo(ggio::Discard::new())
 // 	if err := br.UnreadByte(); err == nil {
 // 		t.Error("UnreadByte didn't fail after WriteTo")
@@ -532,7 +532,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 
 // fn TestUnreadRuneAtEOF() {
 // 	// UnreadRune/ReadRune should error at EOF (was a bug; used to panic)
-// 	r := new_reader(strings.new_reader("x"))
+// 	r := new_reader(strings::Reader::new("x"))
 // 	r.ReadRune()
 // 	r.ReadRune()
 // 	r.UnreadRune()
@@ -588,7 +588,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // }
 
 // fn TestReadStringAllocs() {
-// 	r := strings.new_reader("       foo       foo        42        42        42        42        42        42        42        42       4.2       4.2       4.2       4.2\n")
+// 	r := strings::Reader::new("       foo       foo        42        42        42        42        42        42        42        42       4.2       4.2       4.2       4.2\n")
 // 	buf := new_reader(r)
 // 	allocs := testing.AllocsPerRun(100, fn() {
 // 		r.Seek(0, ggio::Seek::Start)
@@ -778,7 +778,7 @@ fn test_short_write() {
 
 // fn Testnew_reader_sizeIdempotent() {
 // 	const BufSize = 1000
-// 	b := new_reader_size(strings.new_reader("hello world"), BufSize)
+// 	b := new_reader_size(strings::Reader::new("hello world"), BufSize)
 // 	// Does it recognize itself?
 // 	b1 := new_reader_size(b, BufSize)
 // 	if b1 != b {
@@ -888,7 +888,7 @@ fn test_write_string() {
 
 // fn TestBufferFull() {
 // 	const longString = "And now, hello, world! It is the time for all good men to come to the aid of their party"
-// 	buf := new_reader_size(strings.new_reader(longString), MIN_READ_BUFFER_SIZE)
+// 	buf := new_reader_size(strings::Reader::new(longString), MIN_READ_BUFFER_SIZE)
 // 	line, err := buf.ReadSlice('!')
 // 	if string(line) != "And now, hello, " || err != ErrBufferFull {
 // 		t.Errorf("first ReadSlice(,) = %q, {}", line, err)
@@ -902,7 +902,7 @@ fn test_write_string() {
 // fn TestPeek() {
 // 	p := make([u8], 10)
 // 	// string is 16 (MIN_READ_BUFFER_SIZE) long.
-// 	buf := new_reader_size(strings.new_reader("abcdefghijklmnop"), MIN_READ_BUFFER_SIZE)
+// 	buf := new_reader_size(strings::Reader::new("abcdefghijklmnop"), MIN_READ_BUFFER_SIZE)
 // 	if s, err := buf.Peek(1); string(s) != "a" || err != nil {
 // 		t.Fatalf("want %q got %q, err={}", "a", string(s), err)
 // 	}
@@ -964,7 +964,7 @@ fn test_write_string() {
 
 // fn TestPeekThenUnreadRune() {
 // 	// This sequence used to cause a crash.
-// 	r := new_reader(strings.new_reader("x"))
+// 	r := new_reader(strings::Reader::new("x"))
 // 	r.ReadRune()
 // 	r.Peek(1)
 // 	r.UnreadRune()
@@ -1103,7 +1103,7 @@ fn test_write_string() {
 // }
 
 // fn TestReadLineNonNilLineOrError() {
-// 	r := new_reader(strings.new_reader("line 1\n"))
+// 	r := new_reader(strings::Reader::new("line 1\n"))
 // 	for i := 0; i < 2; i += 1 {
 // 		l, _, err := r.ReadLine()
 // 		if l != nil && err != nil {
@@ -1145,7 +1145,7 @@ fn test_write_string() {
 // }
 
 // fn testReadLineNewlines(, input string, expect []readLineResult) {
-// 	b := new_reader_size(strings.new_reader(input), MIN_READ_BUFFER_SIZE)
+// 	b := new_reader_size(strings::Reader::new(input), MIN_READ_BUFFER_SIZE)
 // 	for i, e := range expect {
 // 		line, isPrefix, err := b.ReadLine()
 // 		if !bytes::equal(line, e.line) {
@@ -1300,11 +1300,11 @@ fn test_write_string() {
 // 	if w0 != 0 {
 // 		t.Fatalf("write 1200 'x's: got {} writes, want 0", w0)
 // 	}
-// 	io.Copy(b0, onlyReader{strings.new_reader(strings.Repeat("x", 30))})
+// 	io.Copy(b0, onlyReader{strings::Reader::new(strings.Repeat("x", 30))})
 // 	if w0 != 0 {
 // 		t.Fatalf("write 1230 'x's: got {} writes, want 0", w0)
 // 	}
-// 	io.Copy(b0, onlyReader{strings.new_reader(strings.Repeat("x", 9))})
+// 	io.Copy(b0, onlyReader{strings::Reader::new(strings.Repeat("x", 9))})
 // 	if w0 != 1 {
 // 		t.Fatalf("write 1239 'x's: got {} writes, want 1", w0)
 // 	}
@@ -1320,11 +1320,11 @@ fn test_write_string() {
 // 	if w1 != 1 {
 // 		t.Fatalf("write 1200 + 89 'x's: got {} writes, want 1", w1)
 // 	}
-// 	io.Copy(b1, onlyReader{strings.new_reader(strings.Repeat("x", 700))})
+// 	io.Copy(b1, onlyReader{strings::Reader::new(strings.Repeat("x", 700))})
 // 	if w1 != 1 {
 // 		t.Fatalf("write 1200 + 789 'x's: got {} writes, want 1", w1)
 // 	}
-// 	io.Copy(b1, onlyReader{strings.new_reader(strings.Repeat("x", 600))})
+// 	io.Copy(b1, onlyReader{strings::Reader::new(strings.Repeat("x", 600))})
 // 	if w1 != 2 {
 // 		t.Fatalf("write 1200 + 1389 'x's: got {} writes, want 2", w1)
 // 	}
@@ -1356,7 +1356,7 @@ fn test_write_string() {
 // 		case nil:
 // 			t.Fatal("read did not panic")
 // 		case error:
-// 			if !strings.Contains(err.Error(), "reader returned negative count from Read") {
+// 			if !strings::contains(err.Error(), "reader returned negative count from Read") {
 // 				t.Fatalf("wrong panic: {}", err)
 // 			}
 // 		default:
@@ -1415,7 +1415,7 @@ fn test_write_string() {
 // 	}
 
 // 	// Use ReadFrom to read in some data.
-// 	n2, err := w.ReadFrom(strings.new_reader("abcdef"))
+// 	n2, err := w.ReadFrom(strings::Reader::new("abcdef"))
 // 	if n2 != 6 || err != nil {
 // 		t.Fatalf("ReadFrom returned ({}, {}), want (6, nil)", n2, err)
 // 	}
@@ -1446,7 +1446,7 @@ fn test_write_string() {
 // 	}
 
 // 	// Use ReadFrom to read in some data.
-// 	r := &emptyThenNonEmptyReader{r: strings.new_reader("abcd"), n: 3}
+// 	r := &emptyThenNonEmptyReader{r: strings::Reader::new("abcd"), n: 3}
 // 	n2, err := w.ReadFrom(r)
 // 	if n2 != 4 || err != nil {
 // 		t.Fatalf("ReadFrom returned ({}, {}), want (4, nil)", n2, err)
@@ -1468,7 +1468,7 @@ fn test_write_string() {
 // 	}
 
 // 	// Use ReadFrom to read in some data.
-// 	r := &emptyThenNonEmptyReader{r: strings.new_reader("abcd"), n: 100}
+// 	r := &emptyThenNonEmptyReader{r: strings::Reader::new("abcd"), n: 100}
 // 	n2, err := w.ReadFrom(r)
 // 	if n2 != 0 || err != io.ErrNoProgress {
 // 		t.Fatalf("buf.bytes() returned ({}, {}), want (0, io.ErrNoProgress)", n2, err)
@@ -1526,7 +1526,7 @@ fn test_write_string() {
 // fn TestReadZero() {
 // 	for _, size := range []isize{100, 2} {
 // 		t.Run(fmt.Sprintf("bufsize={}", size), fn() {
-// 			r := io.MultiReader(strings.new_reader("abc"), &emptyThenNonEmptyReader{r: strings.new_reader("def"), n: 1})
+// 			r := io.MultiReader(strings::Reader::new("abc"), &emptyThenNonEmptyReader{r: strings::Reader::new("def"), n: 1})
 // 			br := new_reader_size(r, size)
 // 			want := fn(s string, wantErr error) {
 // 				p := make([u8], 50)
@@ -1556,25 +1556,25 @@ fn test_write_string() {
 // 		}
 // 	}
 
-// 	r := new_reader(strings.new_reader("foo foo"))
+// 	r := new_reader(strings::Reader::new("foo foo"))
 // 	buf := make([u8], 3)
 // 	r.Read(buf)
 // 	if string(buf) != "foo" {
 // 		t.Errorf("buf = %q; want foo", buf)
 // 	}
 
-// 	r.Reset(strings.new_reader("bar bar"))
+// 	r.Reset(strings::Reader::new("bar bar"))
 // 	checkAll(r, "bar bar")
 
 // 	*r = Reader{} // zero out the Reader
-// 	r.Reset(strings.new_reader("bar bar"))
+// 	r.Reset(strings::Reader::new("bar bar"))
 // 	checkAll(r, "bar bar")
 
 // 	// Wrap a reader and then Reset to that reader.
-// 	r.Reset(strings.new_reader("recur"))
+// 	r.Reset(strings::Reader::new("recur"))
 // 	r2 := new_reader(r)
 // 	checkAll(r2, "recur")
-// 	r.Reset(strings.new_reader("recur2"))
+// 	r.Reset(strings::Reader::new("recur2"))
 // 	r2.Reset(r)
 // 	checkAll(r2, "recur2")
 // }
@@ -1637,7 +1637,7 @@ fn test_writer_reset() {
 // 	}{
 // 		{
 // 			name:         "normal case",
-// 			r:            strings.new_reader("abcdefghijklmnopqrstuvwxyz"),
+// 			r:            strings::Reader::new("abcdefghijklmnopqrstuvwxyz"),
 // 			peekSize:     16,
 // 			n:            6,
 // 			want:         6,
@@ -1645,21 +1645,21 @@ fn test_writer_reset() {
 // 		},
 // 		{
 // 			name:         "discard causing read",
-// 			r:            strings.new_reader("abcdefghijklmnopqrstuvwxyz"),
+// 			r:            strings::Reader::new("abcdefghijklmnopqrstuvwxyz"),
 // 			n:            6,
 // 			want:         6,
 // 			wantBuffered: 10,
 // 		},
 // 		{
 // 			name:         "discard all without peek",
-// 			r:            strings.new_reader("abcdefghijklmnopqrstuvwxyz"),
+// 			r:            strings::Reader::new("abcdefghijklmnopqrstuvwxyz"),
 // 			n:            26,
 // 			want:         26,
 // 			wantBuffered: 0,
 // 		},
 // 		{
 // 			name:         "discard more than end",
-// 			r:            strings.new_reader("abcdefghijklmnopqrstuvwxyz"),
+// 			r:            strings::Reader::new("abcdefghijklmnopqrstuvwxyz"),
 // 			n:            27,
 // 			want:         26,
 // 			wantErr:      io.EOF,
@@ -1751,11 +1751,11 @@ fn test_writer_reset() {
 // }
 
 // fn TestReaderSize() {
-// 	if got, want := new_reader(nil).Size(), DefaultBufSize; got != want {
-// 		t.Errorf("new_reader's Reader.Size = {}; want {}", got, want)
+// 	if got, want := new_reader(nil).size(), DefaultBufSize; got != want {
+// 		t.Errorf("new_reader's Reader.size = {}; want {}", got, want)
 // 	}
-// 	if got, want := new_reader_size(nil, 1234).Size(), 1234; got != want {
-// 		t.Errorf("new_reader_size's Reader.Size = {}; want {}", got, want)
+// 	if got, want := new_reader_size(nil, 1234).size(), 1234; got != want {
+// 		t.Errorf("new_reader_size's Reader.size = {}; want {}", got, want)
 // 	}
 // }
 
@@ -1863,7 +1863,7 @@ fn test_writer_size() {
 
 // fn TestWriterReadFromMustSetUnderlyingError() {
 // 	var wr = new_writer(writerWithReadFromError{})
-// 	if _, err := wr.ReadFrom(strings.new_reader("test2")); err == nil {
+// 	if _, err := wr.ReadFrom(strings::Reader::new("test2")); err == nil {
 // 		t.Fatal("expected ReadFrom returns error, got nil")
 // 	}
 // 	if _, err := wr.Write([u8]("123")); err == nil {
@@ -1889,7 +1889,7 @@ fn test_writer_size() {
 // 	if err := wr.flush(); err == nil {
 // 		t.Error("expected flush error, got nil")
 // 	}
-// 	if _, err := wr.ReadFrom(strings.new_reader("test2")); err == nil {
+// 	if _, err := wr.ReadFrom(strings::Reader::new("test2")); err == nil {
 // 		t.Fatal("expected error, got nil")
 // 	}
 // 	if buffered := wr.Buffered(); buffered != wantBuffered {
@@ -1961,7 +1961,7 @@ fn test_writer_size() {
 // }
 
 // fn BenchmarkReaderReadString(b *testing.B) {
-// 	r := strings.new_reader("       foo       foo        42        42        42        42        42        42        42        42       4.2       4.2       4.2       4.2\n")
+// 	r := strings::Reader::new("       foo       foo        42        42        42        42        42        42        42        42       4.2       4.2       4.2       4.2\n")
 // 	buf := new_reader(r)
 // 	b.ReportAllocs()
 // 	for i := 0; i < b.N; i += 1 {
@@ -2020,7 +2020,7 @@ fn test_writer_size() {
 // 	b.ReportAllocs()
 // 	str := strings.Repeat("x", 16<<10)
 // 	for i := 0; i < b.N; i += 1 {
-// 		br := new_reader(strings.new_reader(str))
+// 		br := new_reader(strings::Reader::new(str))
 // 		n, err := io.Copy(ggio::Discard::new(), br)
 // 		if err != nil {
 // 			b.Fatal(err)

@@ -20,7 +20,7 @@
 // 	if n < len(s.buf) {
 // 		s.buf = make([u8], n)
 // 	}
-// 	s.maxTokenSize = n
+// 	s.max_token_size = n
 // }
 
 // // ErrOrEOF is like Err, but returns EOF. Used to test a corner case.

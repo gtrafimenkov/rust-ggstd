@@ -143,7 +143,7 @@ fn test_golden() {
 // 		data[i] = byte(i)
 // 	}
 // 	h := New()
-// 	let in = make([u8], 0, h.Size())
+// 	let in = make([u8], 0, h.size())
 
 // 	b.ResetTimer()
 // 	for i := 0; i < b.N; i += 1 {

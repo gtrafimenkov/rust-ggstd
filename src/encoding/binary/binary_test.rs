@@ -127,7 +127,7 @@ use super::binary::ByteOrder;
 
 // fn testRead(t *testing.T, order ByteOrder, b []byte, s1 any) {
 // 	var s2 Struct
-// 	err := Read(bytes.NewReader(b), order, &s2)
+// 	err := Read(bytes::Reader::new(b), order, &s2)
 // 	checkResult(t, "Read", order, err, s2, s1)
 // }
 
@@ -147,7 +147,7 @@ use super::binary::ByteOrder;
 
 // fn TestReadSlice(t *testing.T) {
 // 	slice := make([]int32, 2)
-// 	err := Read(bytes.NewReader(src), BigEndian, slice)
+// 	err := Read(bytes::Reader::new(src), BigEndian, slice)
 // 	checkResult(t, "ReadSlice", BigEndian, err, slice, res)
 // }
 
@@ -160,19 +160,19 @@ use super::binary::ByteOrder;
 // fn TestReadBool(t *testing.T) {
 // 	var res bool
 // 	var err error
-// 	err = Read(bytes.NewReader([]byte{0}), BigEndian, &res)
+// 	err = Read(bytes::Reader::new([]byte{0}), BigEndian, &res)
 // 	checkResult(t, "ReadBool", BigEndian, err, res, false)
 // 	res = false
-// 	err = Read(bytes.NewReader([]byte{1}), BigEndian, &res)
+// 	err = Read(bytes::Reader::new([]byte{1}), BigEndian, &res)
 // 	checkResult(t, "ReadBool", BigEndian, err, res, true)
 // 	res = false
-// 	err = Read(bytes.NewReader([]byte{2}), BigEndian, &res)
+// 	err = Read(bytes::Reader::new([]byte{2}), BigEndian, &res)
 // 	checkResult(t, "ReadBool", BigEndian, err, res, true)
 // }
 
 // fn TestReadBoolSlice(t *testing.T) {
 // 	slice := make([]bool, 4)
-// 	err := Read(bytes.NewReader([]byte{0, 1, 2, 255}), BigEndian, slice)
+// 	err := Read(bytes::Reader::new([]byte{0, 1, 2, 255}), BigEndian, slice)
 // 	checkResult(t, "ReadBoolSlice", BigEndian, err, slice, []bool{false, true, true, true})
 // }
 
@@ -237,7 +237,7 @@ use super::binary::ByteOrder;
 // 		}
 // 		if err := Write(buf, BigEndian, tv.Field(i).Interface()); err == nil {
 // 			t.Errorf("WriteT.{}: have err == nil, want non-nil", tv.Field(i).Type())
-// 		} else if !strings.Contains(err.Error(), typ) {
+// 		} else if !strings::contains(err.Error(), typ) {
 // 			t.Errorf("WriteT: have err == %q, want it to mention %s", err, typ)
 // 		}
 // 	}
@@ -537,7 +537,7 @@ fn test_byte_order() {
 // 	}
 
 // 	for _, dst := range destinations {
-// 		err := Read(bytes.NewReader([]byte{1, 2, 3, 4, 5, 6, 7, 8}), order, dst)
+// 		err := Read(bytes::Reader::new([]byte{1, 2, 3, 4, 5, 6, 7, 8}), order, dst)
 // 		want := fmt.Sprintf("binary.Read: invalid type %T", dst)
 // 		if err == nil || err.Error() != want {
 // 			t.Fatalf("for type %T: got %q; want %q", dst, err, want)

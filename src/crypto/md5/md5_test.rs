@@ -344,7 +344,7 @@ fn test_golden() {
 
 // var bench = New()
 // var buf = make([]byte, 1024*1024*8+1)
-// var sum = make([]byte, bench.Size())
+// var sum = make([]byte, bench.size())
 
 // fn benchmarkSize(b *testing.B, size int, unaligned bool) {
 // 	b.SetBytes(int64(size))

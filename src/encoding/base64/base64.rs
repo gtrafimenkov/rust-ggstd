@@ -526,6 +526,19 @@ impl Encoding {
         (dbuf, err)
     }
 
+    /// decode_to_vec decodes src to Vec<u8>.
+    /// New line characters (\r and \n) are ignored.
+    pub fn decode_to_vec(&self, src: &[u8]) -> Result<Vec<u8>, Error> {
+        let len = self.decoded_len(src.len());
+        let mut dst = vec![0; len];
+        let (n, err) = self.decode(&mut dst, src);
+        dst.truncate(n);
+        match err {
+            Some(err) => Err(err),
+            None => Ok(dst),
+        }
+    }
+
     /// decode decodes src using the encoding enc. It writes at most
     /// decoded_len(src.len()) bytes to dst and returns the number of bytes
     /// written. If src contains invalid base64 data, it will return the

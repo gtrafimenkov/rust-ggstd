@@ -459,7 +459,7 @@ fn test_golden() {
 // 	for i := range data {
 // 		data[i] = byte(i)
 // 	}
-// 	in := make([u8], 0, h.Size())
+// 	in := make([u8], 0, h.size())
 
 // 	// Warm up
 // 	h.Reset()

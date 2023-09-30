@@ -1,8 +1,9 @@
-// // Copyright 2009 The Go Authors. All rights reserved.
-// // Use of this source code is governed by a BSD-style
-// // license that can be found input the LICENSE file.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2009 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found input the LICENSE file.
 
-// package strings_test
+use crate::strings::{contains, index};
 
 // import (
 // 	"bytes"
@@ -36,106 +37,112 @@
 // var commas = "1,2,3,4"
 // var dots = "1....2....3....4"
 
-// type IndexTest struct {
-// 	s   string
-// 	sep string
-// 	out int
-// }
+struct IndexTest {
+    s: &'static str,
+    sep: &'static str,
+    out: isize,
+}
 
-// var indexTests = []IndexTest{
-// 	{"", "", 0},
-// 	{"", "a", -1},
-// 	{"", "foo", -1},
-// 	{"fo", "foo", -1},
-// 	{"foo", "foo", 0},
-// 	{"oofofoofooo", "f", 2},
-// 	{"oofofoofooo", "foo", 4},
-// 	{"barfoobarfoo", "foo", 3},
-// 	{"foo", "", 0},
-// 	{"foo", "o", 1},
-// 	{"abcABCabc", "A", 3},
-// 	{"jrzm6jjhorimglljrea4w3rlgosts0w2gia17hno2td4qd1jz", "jz", 47},
-// 	{"ekkuk5oft4eq0ocpacknhwouic1uua46unx12l37nioq9wbpnocqks6", "ks6", 52},
-// 	{"999f2xmimunbuyew5vrkla9cpwhmxan8o98ec", "98ec", 33},
-// 	{"9lpt9r98i04k8bz6c6dsrthb96bhi", "96bhi", 24},
-// 	{"55u558eqfaod2r2gu42xxsu631xf0zobs5840vl", "5840vl", 33},
-// 	// cases with one byte strings - test special case input Index()
-// 	{"", "a", -1},
-// 	{"x", "a", -1},
-// 	{"x", "x", 0},
-// 	{"abc", "a", 0},
-// 	{"abc", "b", 1},
-// 	{"abc", "c", 2},
-// 	{"abc", "x", -1},
-// 	// test special cases input Index() for short strings
-// 	{"", "ab", -1},
-// 	{"bc", "ab", -1},
-// 	{"ab", "ab", 0},
-// 	{"xab", "ab", 1},
-// 	{"xab"[:2], "ab", -1},
-// 	{"", "abc", -1},
-// 	{"xbc", "abc", -1},
-// 	{"abc", "abc", 0},
-// 	{"xabc", "abc", 1},
-// 	{"xabc"[:3], "abc", -1},
-// 	{"xabxc", "abc", -1},
-// 	{"", "abcd", -1},
-// 	{"xbcd", "abcd", -1},
-// 	{"abcd", "abcd", 0},
-// 	{"xabcd", "abcd", 1},
-// 	{"xyabcd"[:5], "abcd", -1},
-// 	{"xbcqq", "abcqq", -1},
-// 	{"abcqq", "abcqq", 0},
-// 	{"xabcqq", "abcqq", 1},
-// 	{"xyabcqq"[:6], "abcqq", -1},
-// 	{"xabxcqq", "abcqq", -1},
-// 	{"xabcqxq", "abcqq", -1},
-// 	{"", "01234567", -1},
-// 	{"32145678", "01234567", -1},
-// 	{"01234567", "01234567", 0},
-// 	{"x01234567", "01234567", 1},
-// 	{"x0123456x01234567", "01234567", 9},
-// 	{"xx01234567"[:9], "01234567", -1},
-// 	{"", "0123456789", -1},
-// 	{"3214567844", "0123456789", -1},
-// 	{"0123456789", "0123456789", 0},
-// 	{"x0123456789", "0123456789", 1},
-// 	{"x012345678x0123456789", "0123456789", 11},
-// 	{"xyz0123456789"[:12], "0123456789", -1},
-// 	{"x01234567x89", "0123456789", -1},
-// 	{"", "0123456789012345", -1},
-// 	{"3214567889012345", "0123456789012345", -1},
-// 	{"0123456789012345", "0123456789012345", 0},
-// 	{"x0123456789012345", "0123456789012345", 1},
-// 	{"x012345678901234x0123456789012345", "0123456789012345", 17},
-// 	{"", "01234567890123456789", -1},
-// 	{"32145678890123456789", "01234567890123456789", -1},
-// 	{"01234567890123456789", "01234567890123456789", 0},
-// 	{"x01234567890123456789", "01234567890123456789", 1},
-// 	{"x0123456789012345678x01234567890123456789", "01234567890123456789", 21},
-// 	{"xyz01234567890123456789"[:22], "01234567890123456789", -1},
-// 	{"", "0123456789012345678901234567890", -1},
-// 	{"321456788901234567890123456789012345678911", "0123456789012345678901234567890", -1},
-// 	{"0123456789012345678901234567890", "0123456789012345678901234567890", 0},
-// 	{"x0123456789012345678901234567890", "0123456789012345678901234567890", 1},
-// 	{"x012345678901234567890123456789x0123456789012345678901234567890", "0123456789012345678901234567890", 32},
-// 	{"xyz0123456789012345678901234567890"[:33], "0123456789012345678901234567890", -1},
-// 	{"", "01234567890123456789012345678901", -1},
-// 	{"32145678890123456789012345678901234567890211", "01234567890123456789012345678901", -1},
-// 	{"01234567890123456789012345678901", "01234567890123456789012345678901", 0},
-// 	{"x01234567890123456789012345678901", "01234567890123456789012345678901", 1},
-// 	{"x0123456789012345678901234567890x01234567890123456789012345678901", "01234567890123456789012345678901", 33},
-// 	{"xyz01234567890123456789012345678901"[:34], "01234567890123456789012345678901", -1},
-// 	{"xxxxxx012345678901234567890123456789012345678901234567890123456789012", "012345678901234567890123456789012345678901234567890123456789012", 6},
-// 	{"", "0123456789012345678901234567890123456789", -1},
-// 	{"xx012345678901234567890123456789012345678901234567890123456789012", "0123456789012345678901234567890123456789", 2},
-// 	{"xx012345678901234567890123456789012345678901234567890123456789012"[:41], "0123456789012345678901234567890123456789", -1},
-// 	{"xx012345678901234567890123456789012345678901234567890123456789012", "0123456789012345678901234567890123456xxx", -1},
-// 	{"xx0123456789012345678901234567890123456789012345678901234567890120123456789012345678901234567890123456xxx", "0123456789012345678901234567890123456xxx", 65},
-// 	// test fallback to Rabin-Karp.
-// 	{"oxoxoxoxoxoxoxoxoxoxoxoy", "oy", 22},
-// 	{"oxoxoxoxoxoxoxoxoxoxoxox", "oy", -1},
-// }
+impl IndexTest {
+    const fn new(s: &'static str, sep: &'static str, out: isize) -> Self {
+        Self { s, sep, out }
+    }
+}
+
+const INDEX_TESTS: &[IndexTest] = &[
+    IndexTest::new("", "", 0),
+    IndexTest::new("", "a", -1),
+    IndexTest::new("", "foo", -1),
+    IndexTest::new("fo", "foo", -1),
+    IndexTest::new("foo", "foo", 0),
+    IndexTest::new("oofofoofooo", "f", 2),
+    IndexTest::new("oofofoofooo", "foo", 4),
+    IndexTest::new("barfoobarfoo", "foo", 3),
+    IndexTest::new("foo", "", 0),
+    IndexTest::new("foo", "o", 1),
+    IndexTest::new("abcABCabc", "A", 3),
+    IndexTest::new("jrzm6jjhorimglljrea4w3rlgosts0w2gia17hno2td4qd1jz", "jz", 47),
+    IndexTest::new("ekkuk5oft4eq0ocpacknhwouic1uua46unx12l37nioq9wbpnocqks6", "ks6", 52),
+    IndexTest::new("999f2xmimunbuyew5vrkla9cpwhmxan8o98ec", "98ec", 33),
+    IndexTest::new("9lpt9r98i04k8bz6c6dsrthb96bhi", "96bhi", 24),
+    IndexTest::new("55u558eqfaod2r2gu42xxsu631xf0zobs5840vl", "5840vl", 33),
+    // cases with one byte strings - test special case input Index()
+    IndexTest::new("", "a", -1),
+    IndexTest::new("x", "a", -1),
+    IndexTest::new("x", "x", 0),
+    IndexTest::new("abc", "a", 0),
+    IndexTest::new("abc", "b", 1),
+    IndexTest::new("abc", "c", 2),
+    IndexTest::new("abc", "x", -1),
+    // test special cases input Index() for short strings
+    IndexTest::new("", "ab", -1),
+    IndexTest::new("bc", "ab", -1),
+    IndexTest::new("ab", "ab", 0),
+    IndexTest::new("xab", "ab", 1),
+    // IndexTest::new("xab"[..2], "ab", -1),
+    IndexTest::new("", "abc", -1),
+    IndexTest::new("xbc", "abc", -1),
+    IndexTest::new("abc", "abc", 0),
+    IndexTest::new("xabc", "abc", 1),
+    // IndexTest::new("xabc"[..3], "abc", -1),
+    IndexTest::new("xabxc", "abc", -1),
+    IndexTest::new("", "abcd", -1),
+    IndexTest::new("xbcd", "abcd", -1),
+    IndexTest::new("abcd", "abcd", 0),
+    IndexTest::new("xabcd", "abcd", 1),
+    // IndexTest::new("xyabcd"[..5], "abcd", -1),
+    IndexTest::new("xbcqq", "abcqq", -1),
+    IndexTest::new("abcqq", "abcqq", 0),
+    IndexTest::new("xabcqq", "abcqq", 1),
+    // IndexTest::new("xyabcqq"[..6], "abcqq", -1),
+    IndexTest::new("xabxcqq", "abcqq", -1),
+    IndexTest::new("xabcqxq", "abcqq", -1),
+    IndexTest::new("", "01234567", -1),
+    IndexTest::new("32145678", "01234567", -1),
+    IndexTest::new("01234567", "01234567", 0),
+    IndexTest::new("x01234567", "01234567", 1),
+    IndexTest::new("x0123456x01234567", "01234567", 9),
+    // IndexTest::new("xx01234567"[..9], "01234567", -1),
+    IndexTest::new("", "0123456789", -1),
+    IndexTest::new("3214567844", "0123456789", -1),
+    IndexTest::new("0123456789", "0123456789", 0),
+    IndexTest::new("x0123456789", "0123456789", 1),
+    IndexTest::new("x012345678x0123456789", "0123456789", 11),
+    // IndexTest::new("xyz0123456789"[..12], "0123456789", -1),
+    IndexTest::new("x01234567x89", "0123456789", -1),
+    IndexTest::new("", "0123456789012345", -1),
+    IndexTest::new("3214567889012345", "0123456789012345", -1),
+    IndexTest::new("0123456789012345", "0123456789012345", 0),
+    IndexTest::new("x0123456789012345", "0123456789012345", 1),
+    IndexTest::new("x012345678901234x0123456789012345", "0123456789012345", 17),
+    IndexTest::new("", "01234567890123456789", -1),
+    IndexTest::new("32145678890123456789", "01234567890123456789", -1),
+    IndexTest::new("01234567890123456789", "01234567890123456789", 0),
+    IndexTest::new("x01234567890123456789", "01234567890123456789", 1),
+    IndexTest::new("x0123456789012345678x01234567890123456789", "01234567890123456789", 21),
+    // IndexTest::new("xyz01234567890123456789"[..22], "01234567890123456789", -1),
+    IndexTest::new("", "0123456789012345678901234567890", -1),
+    IndexTest::new("321456788901234567890123456789012345678911", "0123456789012345678901234567890", -1),
+    IndexTest::new("0123456789012345678901234567890", "0123456789012345678901234567890", 0),
+    IndexTest::new("x0123456789012345678901234567890", "0123456789012345678901234567890", 1),
+    IndexTest::new("x012345678901234567890123456789x0123456789012345678901234567890", "0123456789012345678901234567890", 32),
+    // IndexTest::new("xyz0123456789012345678901234567890"[..33], "0123456789012345678901234567890", -1),
+    IndexTest::new("", "01234567890123456789012345678901", -1),
+    IndexTest::new("32145678890123456789012345678901234567890211", "01234567890123456789012345678901", -1),
+    IndexTest::new("01234567890123456789012345678901", "01234567890123456789012345678901", 0),
+    IndexTest::new("x01234567890123456789012345678901", "01234567890123456789012345678901", 1),
+    IndexTest::new("x0123456789012345678901234567890x01234567890123456789012345678901", "01234567890123456789012345678901", 33),
+    // IndexTest::new("xyz01234567890123456789012345678901"[..34], "01234567890123456789012345678901", -1),
+    IndexTest::new("xxxxxx012345678901234567890123456789012345678901234567890123456789012", "012345678901234567890123456789012345678901234567890123456789012", 6),
+    IndexTest::new("", "0123456789012345678901234567890123456789", -1),
+    IndexTest::new("xx012345678901234567890123456789012345678901234567890123456789012", "0123456789012345678901234567890123456789", 2),
+    // IndexTest::new("xx012345678901234567890123456789012345678901234567890123456789012"[..41], "0123456789012345678901234567890123456789", -1),
+    IndexTest::new("xx012345678901234567890123456789012345678901234567890123456789012", "0123456789012345678901234567890123456xxx", -1),
+    IndexTest::new("xx0123456789012345678901234567890123456789012345678901234567890120123456789012345678901234567890123456xxx", "0123456789012345678901234567890123456xxx", 65),
+    // test fallback to Rabin-Karp.
+    IndexTest::new("oxoxoxoxoxoxoxoxoxoxoxoy", "oy", 22),
+    IndexTest::new("oxoxoxoxoxoxoxoxoxoxoxox", "oy", -1),
+];
 
 // var lastIndexTests = []IndexTest{
 // 	{"", "", 0},
@@ -193,38 +200,45 @@
 // 	{"0123456\xcf\x80abc", "\xcfb\x80", 10},
 // }
 
-// // Execute f on each test case.  funcName should be the name of f; it's used
-// // input failure reports.
-// #[test]
-// fn runIndexTests(, f fn(s, sep string) int, funcName string, testCases []IndexTest) {
-// 	for _, test := range testCases {
-// 		actual := f(test.s, test.sep)
-// 		if actual != test.out {
-// 			t.Errorf("%s({:?},{:?}) = %v; want %v", funcName, test.s, test.sep, actual, test.out)
-// 		}
-// 	}
-// }
+/// Execute f on each test case.  funcName should be the name of f; it's used
+/// input failure reports.
+fn run_index_tests(
+    f: fn(s: &str, sep: &str) -> isize,
+    func_name: &str,
+    test_cases: &'static [IndexTest],
+) {
+    for test in test_cases {
+        let actual = (f)(test.s, test.sep);
+        assert_eq!(
+            actual, test.out,
+            "{}({:?},{:?}) = {}; want {}",
+            func_name, test.s, test.sep, actual, test.out
+        )
+    }
+}
 
+#[test]
+fn test_index() {
+    run_index_tests(index, "index", INDEX_TESTS)
+}
 // #[test]
-// fn TestIndex()     { runIndexTests(t, Index, "Index", indexTests) }
+// fn TestLastIndex() { run_index_tests(t, LastIndex, "LastIndex", lastIndexTests) }
 // #[test]
-// fn TestLastIndex() { runIndexTests(t, LastIndex, "LastIndex", lastIndexTests) }
-// #[test]
-// fn TestIndexAny()  { runIndexTests(t, IndexAny, "IndexAny", indexAnyTests) }
+// fn TestIndexAny()  { run_index_tests(t, IndexAny, "IndexAny", indexAnyTests) }
 // #[test]
 // fn TestLastIndexAny() {
-// 	runIndexTests(t, LastIndexAny, "LastIndexAny", lastIndexAnyTests)
+// 	run_index_tests(t, LastIndexAny, "LastIndexAny", lastIndexAnyTests)
 // }
 
 // #[test]
 // fn TestIndexByte() {
-// 	for _, tt := range indexTests {
+// 	for _, tt := range INDEX_TESTS {
 // 		if len(tt.sep) != 1 {
 // 			continue
 // 		}
-// 		pos := IndexByte(tt.s, tt.sep[0])
+// 		pos := index_byte(tt.s, tt.sep[0])
 // 		if pos != tt.out {
-// 			t.Errorf(`IndexByte({:?}, {:?}) = %v; want %v`, tt.s, tt.sep[0], pos, tt.out)
+// 			t.Errorf(`index_byte({:?}, {:?}) = {}; want {}`, tt.s, tt.sep[0], pos, tt.out)
 // 		}
 // 	}
 // }
@@ -239,15 +253,15 @@
 // 		{"zabcdefabcdef", "z", 0},                 // first byte
 // 		{"a☺b☻c☹d", "b", len("a☺")},               // non-ascii
 // 	}
-// 	for _, test := range testCases {
+// 	for test in testCases {
 // 		actual := LastIndexByte(test.s, test.sep[0])
 // 		if actual != test.out {
-// 			t.Errorf("LastIndexByte({:?},%c) = %v; want %v", test.s, test.sep[0], actual, test.out)
+// 			t.Errorf("LastIndexByte({:?},%c) = {}; want {}", test.s, test.sep[0], actual, test.out)
 // 		}
 // 	}
 // }
 
-// fn simpleIndex(s, sep string) int {
+// fn simpleIndex(s, sep string) isize {
 // 	n := len(sep)
 // 	for i := n; i <= len(s); i++ {
 // 		if s[i-n:i] == sep {
@@ -278,7 +292,7 @@
 // 				want := simpleIndex(s, sep)
 // 				res := Index(s, sep)
 // 				if res != want {
-// 					t.Errorf("Index(%s,%s) = %d; want %d", s, sep, res, want)
+// 					t.Errorf("Index({},{}) = %d; want %d", s, sep, res, want)
 // 				}
 // 			}
 // 		}
@@ -290,7 +304,7 @@
 // 	tests := []struct {
 // 		input   string
 // 		rune rune
-// 		want int
+// 		want isize
 // 	}{
 // 		{"", 'a', -1},
 // 		{"", '☺', -1},
@@ -318,7 +332,7 @@
 // 	}
 // 	for _, tt := range tests {
 // 		if got := IndexRune(tt.input, tt.rune); got != tt.want {
-// 			t.Errorf("IndexRune({:?}, %d) = %v; want %v", tt.input, tt.rune, got, tt.want)
+// 			t.Errorf("IndexRune({:?}, %d) = {}; want {}", tt.input, tt.rune, got, tt.want)
 // 		}
 // 	}
 
@@ -386,18 +400,18 @@
 // }
 
 // fn BenchmarkIndexByte(b *testing.B) {
-// 	if got := IndexByte(benchmarkString, 'v'); got != 17 {
+// 	if got := index_byte(benchmarkString, 'v'); got != 17 {
 // 		b.Fatalf("wrong index: expected 17, got=%d", got)
 // 	}
 // 	for i := 0; i < b.N; i++ {
-// 		IndexByte(benchmarkString, 'v')
+// 		index_byte(benchmarkString, 'v')
 // 	}
 // }
 
 // type SplitTest struct {
 // 	s   string
 // 	sep string
-// 	n   int
+// 	n   isize
 // 	a   []string
 // }
 
@@ -429,7 +443,7 @@
 // 	for _, tt := range splittests {
 // 		a := SplitN(tt.s, tt.sep, tt.n)
 // 		if !eq(a, tt.a) {
-// 			t.Errorf("Split({:?}, {:?}, %d) = %v; want %v", tt.s, tt.sep, tt.n, a, tt.a)
+// 			t.Errorf("Split({:?}, {:?}, %d) = {}; want {}", tt.s, tt.sep, tt.n, a, tt.a)
 // 			continue
 // 		}
 // 		if tt.n == 0 {
@@ -442,7 +456,7 @@
 // 		if tt.n < 0 {
 // 			b := Split(tt.s, tt.sep)
 // 			if !reflect.DeepEqual(a, b) {
-// 				t.Errorf("Split disagrees with SplitN({:?}, {:?}, %d) = %v; want %v", tt.s, tt.sep, tt.n, b, a)
+// 				t.Errorf("Split disagrees with SplitN({:?}, {:?}, %d) = {}; want {}", tt.s, tt.sep, tt.n, b, a)
 // 			}
 // 		}
 // 	}
@@ -469,7 +483,7 @@
 // 	for _, tt := range splitaftertests {
 // 		a := SplitAfterN(tt.s, tt.sep, tt.n)
 // 		if !eq(a, tt.a) {
-// 			t.Errorf(`Split({:?}, {:?}, %d) = %v; want %v`, tt.s, tt.sep, tt.n, a, tt.a)
+// 			t.Errorf(`Split({:?}, {:?}, %d) = {}; want {}`, tt.s, tt.sep, tt.n, a, tt.a)
 // 			continue
 // 		}
 // 		s := Join(a, "")
@@ -479,7 +493,7 @@
 // 		if tt.n < 0 {
 // 			b := SplitAfter(tt.s, tt.sep)
 // 			if !reflect.DeepEqual(a, b) {
-// 				t.Errorf("SplitAfter disagrees with SplitAfterN({:?}, {:?}, %d) = %v; want %v", tt.s, tt.sep, tt.n, b, a)
+// 				t.Errorf("SplitAfter disagrees with SplitAfterN({:?}, {:?}, %d) = {}; want {}", tt.s, tt.sep, tt.n, b, a)
 // 			}
 // 		}
 // 	}
@@ -513,7 +527,7 @@
 // 	for _, tt := range fieldstests {
 // 		a := Fields(tt.s)
 // 		if !eq(a, tt.a) {
-// 			t.Errorf("Fields({:?}) = %v; want %v", tt.s, a, tt.a)
+// 			t.Errorf("Fields({:?}) = {}; want {}", tt.s, a, tt.a)
 // 			continue
 // 		}
 // 	}
@@ -531,7 +545,7 @@
 // 	for _, tt := range fieldstests {
 // 		a := FieldsFunc(tt.s, unicode.IsSpace)
 // 		if !eq(a, tt.a) {
-// 			t.Errorf("FieldsFunc({:?}, unicode.IsSpace) = %v; want %v", tt.s, a, tt.a)
+// 			t.Errorf("FieldsFunc({:?}, unicode.IsSpace) = {}; want {}", tt.s, a, tt.a)
 // 			continue
 // 		}
 // 	}
@@ -539,7 +553,7 @@
 // 	for _, tt := range FieldsFuncTests {
 // 		a := FieldsFunc(tt.s, pred)
 // 		if !eq(a, tt.a) {
-// 			t.Errorf("FieldsFunc({:?}) = %v, want %v", tt.s, a, tt.a)
+// 			t.Errorf("FieldsFunc({:?}) = {}, want {}", tt.s, a, tt.a)
 // 		}
 // 	}
 // }
@@ -556,7 +570,7 @@
 // 	for _, tc := range testCases {
 // 		actual := f(tc.input)
 // 		if actual != tc.out {
-// 			t.Errorf("%s({:?}) = {:?}; want {:?}", funcName, tc.input, actual, tc.out)
+// 			t.Errorf("{}({:?}) = {:?}; want {:?}", funcName, tc.input, actual, tc.out)
 // 		}
 // 	}
 // }
@@ -810,19 +824,19 @@
 // 	upper := "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ"
 // 	u := ToUpperSpecial(unicode.TurkishCase, upper)
 // 	if u != upper {
-// 		t.Errorf("Upper(upper) is %s not %s", u, upper)
+// 		t.Errorf("Upper(upper) is {} not {}", u, upper)
 // 	}
 // 	u = ToUpperSpecial(unicode.TurkishCase, lower)
 // 	if u != upper {
-// 		t.Errorf("Upper(lower) is %s not %s", u, upper)
+// 		t.Errorf("Upper(lower) is {} not {}", u, upper)
 // 	}
 // 	l := ToLowerSpecial(unicode.TurkishCase, lower)
 // 	if l != lower {
-// 		t.Errorf("Lower(lower) is %s not %s", l, lower)
+// 		t.Errorf("Lower(lower) is {} not {}", l, lower)
 // 	}
 // 	l = ToLowerSpecial(unicode.TurkishCase, upper)
 // 	if l != lower {
-// 		t.Errorf("Lower(upper) is %s not %s", l, lower)
+// 		t.Errorf("Lower(upper) is {} not {}", l, lower)
 // 	}
 // }
 
@@ -882,11 +896,11 @@
 // 		case "TrimSuffix":
 // 			f = TrimSuffix
 // 		default:
-// 			t.Errorf("Undefined trim function %s", name)
+// 			t.Errorf("Undefined trim function {}", name)
 // 		}
 // 		actual := f(tc.input, tc.arg)
 // 		if actual != tc.out {
-// 			t.Errorf("%s({:?}, {:?}) = {:?}; want {:?}", name, tc.input, tc.arg, actual, tc.out)
+// 			t.Errorf("{}({:?}, {:?}) = {:?}; want {:?}", name, tc.input, tc.arg, actual, tc.out)
 // 		}
 // 	}
 // }
@@ -910,11 +924,11 @@
 // 			case "TrimSuffix":
 // 				f = TrimSuffix
 // 			default:
-// 				b.Errorf("Undefined trim function %s", name)
+// 				b.Errorf("Undefined trim function {}", name)
 // 			}
 // 			actual := f(tc.input, tc.arg)
 // 			if actual != tc.out {
-// 				b.Errorf("%s({:?}, {:?}) = {:?}; want {:?}", name, tc.input, tc.arg, actual, tc.out)
+// 				b.Errorf("{}({:?}, {:?}) = {:?}; want {:?}", name, tc.input, tc.arg, actual, tc.out)
 // 			}
 // 		}
 // 	}
@@ -931,7 +945,7 @@
 // 	}
 // 	replacement := "\uFFFD"
 // 	b.ResetTimer()
-// 	for _, test := range tests {
+// 	for test in tests {
 // 		b.Run(test.name, fn(b *testing.B) {
 // 			for i := 0; i < b.N; i++ {
 // 				ToValidUTF8(test.input, replacement)
@@ -1024,7 +1038,7 @@
 // 		for _, trimmer := range trimmers {
 // 			actual := trimmer.trim(tc.input, tc.f.f)
 // 			if actual != trimmer.out {
-// 				t.Errorf("%s({:?}, {:?}) = {:?}; want {:?}", trimmer.name, tc.input, tc.f.name, actual, trimmer.out)
+// 				t.Errorf("{}({:?}, {:?}) = {:?}; want {:?}", trimmer.name, tc.input, tc.f.name, actual, trimmer.out)
 // 			}
 // 		}
 // 	}
@@ -1033,7 +1047,7 @@
 // var indexFuncTests = []struct {
 // 	input          string
 // 	f           predicate
-// 	first, last int
+// 	first, last isize
 // }{
 // 	{"", isValidRune, -1, -1},
 // 	{"abc", isDigit, -1, -1},
@@ -1061,11 +1075,11 @@
 // 	for _, tc := range indexFuncTests {
 // 		first := IndexFunc(tc.input, tc.f.f)
 // 		if first != tc.first {
-// 			t.Errorf("IndexFunc({:?}, %s) = %d; want %d", tc.input, tc.f.name, first, tc.first)
+// 			t.Errorf("IndexFunc({:?}, {}) = %d; want %d", tc.input, tc.f.name, first, tc.first)
 // 		}
 // 		last := LastIndexFunc(tc.input, tc.f.f)
 // 		if last != tc.last {
-// 			t.Errorf("LastIndexFunc({:?}, %s) = %d; want %d", tc.input, tc.f.name, last, tc.last)
+// 			t.Errorf("LastIndexFunc({:?}, {}) = %d; want %d", tc.input, tc.f.name, last, tc.last)
 // 		}
 // 	}
 // }
@@ -1084,7 +1098,7 @@
 // 		r1, _ := utf8.decode_rune_in_string(c1)
 // 		r2, _ := utf8.decode_rune_in_string(e2[i])
 // 		if r1 != r2 {
-// 			t.Errorf("%s diff at %d: U+%04X U+%04X", m, i, r1, r2)
+// 			t.Errorf("{} diff at %d: U+%04X U+%04X", m, i, r1, r2)
 // 		}
 // 	}
 // 	return false
@@ -1093,7 +1107,7 @@
 // #[test]
 // fn TestCaseConsistency() {
 // 	// Make a string of all the runes.
-// 	numRunes := int(unicode.MAX_RUNE + 1)
+// 	numRunes := isize(unicode.MAX_RUNE + 1)
 // 	if testing.Short() {
 // 		numRunes = 1000
 // 	}
@@ -1139,7 +1153,7 @@
 
 // var RepeatTests = []struct {
 // 	input, out string
-// 	count   int
+// 	count   isize
 // }{
 // 	{"", "", 0},
 // 	{"", "", 1},
@@ -1158,20 +1172,20 @@
 // 	for _, tt := range RepeatTests {
 // 		a := Repeat(tt.input, tt.count)
 // 		if !equal("Repeat(s)", a, tt.out, t) {
-// 			t.Errorf("Repeat(%v, %d) = %v; want %v", tt.input, tt.count, a, tt.out)
+// 			t.Errorf("Repeat({}, %d) = {}; want {}", tt.input, tt.count, a, tt.out)
 // 			continue
 // 		}
 // 	}
 // }
 
-// fn repeat(s string, count int) (err error) {
+// fn repeat(s string, count isize) (err error) {
 // 	defer fn() {
 // 		if r := recover(); r != nil {
 // 			switch v := r.(type) {
 // 			case error:
 // 				err = v
 // 			default:
-// 				err = fmt.Errorf("%s", v)
+// 				err = fmt.Errorf("{}", v)
 // 			}
 // 		}
 // 	}()
@@ -1186,28 +1200,28 @@
 // fn TestRepeatCatchesOverflow() {
 // 	tests := [...]struct {
 // 		s      string
-// 		count  int
+// 		count  isize
 // 		errStr string
 // 	}{
 // 		0: {"--", -2147483647, "negative"},
-// 		1: {"", int(^uint(0) >> 1), ""},
+// 		1: {"", isize(^uint(0) >> 1), ""},
 // 		2: {"-", 10, ""},
 // 		3: {"gopher", 0, ""},
 // 		4: {"-", -1, "negative"},
 // 		5: {"--", -102, "negative"},
-// 		6: {string(make([]byte, 255)), int((^uint(0))/255 + 1), "overflow"},
+// 		6: {string(make([]byte, 255)), isize((^uint(0))/255 + 1), "overflow"},
 // 	}
 
 // 	for i, tt := range tests {
 // 		err := repeat(tt.s, tt.count)
 // 		if tt.errStr == "" {
 // 			if err != nil {
-// 				t.Errorf("#%d panicked %v", i, err)
+// 				t.Errorf("#%d panicked {}", i, err)
 // 			}
 // 			continue
 // 		}
 
-// 		if err == nil || !Contains(err.Error(), tt.errStr) {
+// 		if err == nil || !contains(err.Error(), tt.errStr) {
 // 			t.Errorf("#%d expected {:?} got {:?}", i, tt.errStr, err)
 // 		}
 // 	}
@@ -1244,7 +1258,7 @@
 // 	for _, tt := range RunesTests {
 // 		a := []rune(tt.input)
 // 		if !runesEqual(a, tt.out) {
-// 			t.Errorf("[]rune({:?}) = %v; want %v", tt.input, a, tt.out)
+// 			t.Errorf("[]rune({:?}) = {}; want {}", tt.input, a, tt.out)
 // 			continue
 // 		}
 // 		if !tt.lossy {
@@ -1272,19 +1286,19 @@
 // 				break
 // 			}
 // 			if e != nil {
-// 				t.Errorf("Reading {:?}: %s", s, e)
+// 				t.Errorf("Reading {:?}: {}", s, e)
 // 				break
 // 			}
 // 			res.WriteByte(b)
 // 			// unread and read again
 // 			e = reader.UnreadByte()
 // 			if e != nil {
-// 				t.Errorf("Unreading {:?}: %s", s, e)
+// 				t.Errorf("Unreading {:?}: {}", s, e)
 // 				break
 // 			}
 // 			b1, e := reader.ReadByte()
 // 			if e != nil {
-// 				t.Errorf("Reading {:?} after unreading: %s", s, e)
+// 				t.Errorf("Reading {:?} after unreading: {}", s, e)
 // 				break
 // 			}
 // 			if b1 != b {
@@ -1313,19 +1327,19 @@
 // 				break
 // 			}
 // 			if e != nil {
-// 				t.Errorf("Reading {:?}: %s", s, e)
+// 				t.Errorf("Reading {:?}: {}", s, e)
 // 				break
 // 			}
 // 			res += string(r)
 // 			// unread and read again
 // 			e = reader.UnreadRune()
 // 			if e != nil {
-// 				t.Errorf("Unreading {:?}: %s", s, e)
+// 				t.Errorf("Unreading {:?}: {}", s, e)
 // 				break
 // 			}
 // 			r1, z1, e := reader.ReadRune()
 // 			if e != nil {
-// 				t.Errorf("Reading {:?} after unreading: %s", s, e)
+// 				t.Errorf("Reading {:?} after unreading: {}", s, e)
 // 				break
 // 			}
 // 			if r1 != r {
@@ -1365,7 +1379,7 @@
 // 		tt.f(reader)
 // 		err := reader.UnreadRune()
 // 		if err == nil {
-// 			t.Errorf("Unreading after %s: expected error", tt.name)
+// 			t.Errorf("Unreading after {}: expected error", tt.name)
 // 		}
 // 	}
 // }
@@ -1560,89 +1574,106 @@ fn test_replace() {
 // 	}
 // }
 
-// var ContainsTests = []struct {
-// 	str, substr string
-// 	expected    bool
-// }{
-// 	{"abc", "bc", true},
-// 	{"abc", "bcd", false},
-// 	{"abc", "", true},
-// 	{"", "a", false},
+struct ContainsTest {
+    s: &'static str,
+    substr: &'static str,
+    expected: bool,
+}
 
-// 	// cases to cover code input runtime/asm_amd64.s:indexShortStr
-// 	// 2-byte needle
-// 	{"xxxxxx", "01", false},
-// 	{"01xxxx", "01", true},
-// 	{"xx01xx", "01", true},
-// 	{"xxxx01", "01", true},
-// 	{"01xxxxx"[1:], "01", false},
-// 	{"xxxxx01"[:6], "01", false},
-// 	// 3-byte needle
-// 	{"xxxxxxx", "012", false},
-// 	{"012xxxx", "012", true},
-// 	{"xx012xx", "012", true},
-// 	{"xxxx012", "012", true},
-// 	{"012xxxxx"[1:], "012", false},
-// 	{"xxxxx012"[:7], "012", false},
-// 	// 4-byte needle
-// 	{"xxxxxxxx", "0123", false},
-// 	{"0123xxxx", "0123", true},
-// 	{"xx0123xx", "0123", true},
-// 	{"xxxx0123", "0123", true},
-// 	{"0123xxxxx"[1:], "0123", false},
-// 	{"xxxxx0123"[:8], "0123", false},
-// 	// 5-7-byte needle
-// 	{"xxxxxxxxx", "01234", false},
-// 	{"01234xxxx", "01234", true},
-// 	{"xx01234xx", "01234", true},
-// 	{"xxxx01234", "01234", true},
-// 	{"01234xxxxx"[1:], "01234", false},
-// 	{"xxxxx01234"[:9], "01234", false},
-// 	// 8-byte needle
-// 	{"xxxxxxxxxxxx", "01234567", false},
-// 	{"01234567xxxx", "01234567", true},
-// 	{"xx01234567xx", "01234567", true},
-// 	{"xxxx01234567", "01234567", true},
-// 	{"01234567xxxxx"[1:], "01234567", false},
-// 	{"xxxxx01234567"[:12], "01234567", false},
-// 	// 9-15-byte needle
-// 	{"xxxxxxxxxxxxx", "012345678", false},
-// 	{"012345678xxxx", "012345678", true},
-// 	{"xx012345678xx", "012345678", true},
-// 	{"xxxx012345678", "012345678", true},
-// 	{"012345678xxxxx"[1:], "012345678", false},
-// 	{"xxxxx012345678"[:13], "012345678", false},
-// 	// 16-byte needle
-// 	{"xxxxxxxxxxxxxxxxxxxx", "0123456789ABCDEF", false},
-// 	{"0123456789ABCDEFxxxx", "0123456789ABCDEF", true},
-// 	{"xx0123456789ABCDEFxx", "0123456789ABCDEF", true},
-// 	{"xxxx0123456789ABCDEF", "0123456789ABCDEF", true},
-// 	{"0123456789ABCDEFxxxxx"[1:], "0123456789ABCDEF", false},
-// 	{"xxxxx0123456789ABCDEF"[:20], "0123456789ABCDEF", false},
-// 	// 17-31-byte needle
-// 	{"xxxxxxxxxxxxxxxxxxxxx", "0123456789ABCDEFG", false},
-// 	{"0123456789ABCDEFGxxxx", "0123456789ABCDEFG", true},
-// 	{"xx0123456789ABCDEFGxx", "0123456789ABCDEFG", true},
-// 	{"xxxx0123456789ABCDEFG", "0123456789ABCDEFG", true},
-// 	{"0123456789ABCDEFGxxxxx"[1:], "0123456789ABCDEFG", false},
-// 	{"xxxxx0123456789ABCDEFG"[:21], "0123456789ABCDEFG", false},
+impl ContainsTest {
+    const fn new(s: &'static str, substr: &'static str, expected: bool) -> Self {
+        Self {
+            s,
+            substr,
+            expected,
+        }
+    }
+}
 
-// 	// partial match cases
-// 	{"xx01x", "012", false},                             // 3
-// 	{"xx0123x", "01234", false},                         // 5-7
-// 	{"xx01234567x", "012345678", false},                 // 9-15
-// 	{"xx0123456789ABCDEFx", "0123456789ABCDEFG", false}, // 17-31, issue 15679
-// }
+const CONTAINS_TESTS: &[ContainsTest] = &[
+    ContainsTest::new("abc", "bc", true),
+    ContainsTest::new("abc", "bcd", false),
+    ContainsTest::new("abc", "", true),
+    ContainsTest::new("", "a", false),
+    // cases to cover code input runtime/asm_amd64.s:indexShortStr
+    // 2-byte needle
+    ContainsTest::new("xxxxxx", "01", false),
+    ContainsTest::new("01xxxx", "01", true),
+    ContainsTest::new("xx01xx", "01", true),
+    ContainsTest::new("xxxx01", "01", true),
+    // ContainsTest::new("01xxxxx"[1:], "01", false),
+    // ContainsTest::new("xxxxx01"[:6], "01", false),
+    // 3-byte needle
+    ContainsTest::new("xxxxxxx", "012", false),
+    ContainsTest::new("012xxxx", "012", true),
+    ContainsTest::new("xx012xx", "012", true),
+    ContainsTest::new("xxxx012", "012", true),
+    // ContainsTest::new("012xxxxx"[1:], "012", false),
+    // ContainsTest::new("xxxxx012"[:7], "012", false),
+    // 4-byte needle
+    ContainsTest::new("xxxxxxxx", "0123", false),
+    ContainsTest::new("0123xxxx", "0123", true),
+    ContainsTest::new("xx0123xx", "0123", true),
+    ContainsTest::new("xxxx0123", "0123", true),
+    // ContainsTest::new("0123xxxxx"[1:], "0123", false),
+    // ContainsTest::new("xxxxx0123"[:8], "0123", false),
+    // 5-7-byte needle
+    ContainsTest::new("xxxxxxxxx", "01234", false),
+    ContainsTest::new("01234xxxx", "01234", true),
+    ContainsTest::new("xx01234xx", "01234", true),
+    ContainsTest::new("xxxx01234", "01234", true),
+    // ContainsTest::new("01234xxxxx"[1:], "01234", false),
+    // ContainsTest::new("xxxxx01234"[:9], "01234", false),
+    // 8-byte needle
+    ContainsTest::new("xxxxxxxxxxxx", "01234567", false),
+    ContainsTest::new("01234567xxxx", "01234567", true),
+    ContainsTest::new("xx01234567xx", "01234567", true),
+    ContainsTest::new("xxxx01234567", "01234567", true),
+    // ContainsTest::new("01234567xxxxx"[1:], "01234567", false),
+    // ContainsTest::new("xxxxx01234567"[:12], "01234567", false),
+    // 9-15-byte needle
+    ContainsTest::new("xxxxxxxxxxxxx", "012345678", false),
+    ContainsTest::new("012345678xxxx", "012345678", true),
+    ContainsTest::new("xx012345678xx", "012345678", true),
+    ContainsTest::new("xxxx012345678", "012345678", true),
+    // ContainsTest::new("012345678xxxxx"[1:], "012345678", false),
+    // ContainsTest::new("xxxxx012345678"[:13], "012345678", false),
+    // 16-byte needle
+    ContainsTest::new("xxxxxxxxxxxxxxxxxxxx", "0123456789ABCDEF", false),
+    ContainsTest::new("0123456789ABCDEFxxxx", "0123456789ABCDEF", true),
+    ContainsTest::new("xx0123456789ABCDEFxx", "0123456789ABCDEF", true),
+    ContainsTest::new("xxxx0123456789ABCDEF", "0123456789ABCDEF", true),
+    // ContainsTest::new("0123456789ABCDEFxxxxx"[1:], "0123456789ABCDEF", false),
+    // ContainsTest::new("xxxxx0123456789ABCDEF"[:20], "0123456789ABCDEF", false),
+    // 17-31-byte needle
+    ContainsTest::new("xxxxxxxxxxxxxxxxxxxxx", "0123456789ABCDEFG", false),
+    ContainsTest::new("0123456789ABCDEFGxxxx", "0123456789ABCDEFG", true),
+    ContainsTest::new("xx0123456789ABCDEFGxx", "0123456789ABCDEFG", true),
+    ContainsTest::new("xxxx0123456789ABCDEFG", "0123456789ABCDEFG", true),
+    // ContainsTest::new("0123456789ABCDEFGxxxxx"[1:], "0123456789ABCDEFG", false),
+    // ContainsTest::new("xxxxx0123456789ABCDEFG"[:21], "0123456789ABCDEFG", false),
 
-// #[test]
-// fn TestContains() {
-// 	for _, ct := range ContainsTests {
-// 		if Contains(ct.str, ct.substr) != ct.expected {
-// 			t.Errorf("Contains(%s, %s) = %v, want %v",
-// 				ct.str, ct.substr, !ct.expected, ct.expected)
-// 		}
-// 	}
-// }
+    // partial match cases
+    ContainsTest::new("xx01x", "012", false),     // 3
+    ContainsTest::new("xx0123x", "01234", false), // 5-7
+    ContainsTest::new("xx01234567x", "012345678", false), // 9-15
+    ContainsTest::new("xx0123456789ABCDEFx", "0123456789ABCDEFG", false), // 17-31, issue 15679
+];
+
+#[test]
+fn test_contains() {
+    for ct in CONTAINS_TESTS {
+        assert_eq!(
+            contains(ct.s, ct.substr),
+            ct.expected,
+            "contains({}, {}) = {}, want {}",
+            ct.s,
+            ct.substr,
+            !ct.expected,
+            ct.expected,
+        );
+    }
+}
 
 // var ContainsAnyTests = []struct {
 // 	str, substr string
@@ -1665,7 +1696,7 @@ fn test_replace() {
 // fn TestContainsAny() {
 // 	for _, ct := range ContainsAnyTests {
 // 		if ContainsAny(ct.str, ct.substr) != ct.expected {
-// 			t.Errorf("ContainsAny(%s, %s) = %v, want %v",
+// 			t.Errorf("ContainsAny({}, {}) = {}, want {}",
 // 				ct.str, ct.substr, !ct.expected, ct.expected)
 // 		}
 // 	}
@@ -1690,7 +1721,7 @@ fn test_replace() {
 // fn TestContainsRune() {
 // 	for _, ct := range ContainsRuneTests {
 // 		if ContainsRune(ct.str, ct.r) != ct.expected {
-// 			t.Errorf("ContainsRune({:?}, {:?}) = %v, want %v",
+// 			t.Errorf("ContainsRune({:?}, {:?}) = {}, want {}",
 // 				ct.str, ct.r, !ct.expected, ct.expected)
 // 		}
 // 	}
@@ -1719,10 +1750,10 @@ fn test_replace() {
 // fn TestEqualFold() {
 // 	for _, tt := range EqualFoldTests {
 // 		if out := EqualFold(tt.s, tt.t); out != tt.out {
-// 			t.Errorf("EqualFold(%#q, %#q) = %v, want %v", tt.s, tt.t, out, tt.out)
+// 			t.Errorf("EqualFold(%#q, %#q) = {}, want {}", tt.s, tt.t, out, tt.out)
 // 		}
 // 		if out := EqualFold(tt.t, tt.s); out != tt.out {
-// 			t.Errorf("EqualFold(%#q, %#q) = %v, want %v", tt.t, tt.s, out, tt.out)
+// 			t.Errorf("EqualFold(%#q, %#q) = {}, want {}", tt.t, tt.s, out, tt.out)
 // 		}
 // 	}
 // }
@@ -1762,7 +1793,7 @@ fn test_replace() {
 
 // var CountTests = []struct {
 // 	s, sep string
-// 	num    int
+// 	num    isize
 // }{
 // 	{"", "", 1},
 // 	{"", "notempty", 0},
@@ -1804,7 +1835,7 @@ fn test_replace() {
 // fn TestCut() {
 // 	for _, tt := range cutTests {
 // 		if before, after, found := Cut(tt.s, tt.sep); before != tt.before || after != tt.after || found != tt.found {
-// 			t.Errorf("Cut({:?}, {:?}) = {:?}, {:?}, %v, want {:?}, {:?}, %v", tt.s, tt.sep, before, after, found, tt.before, tt.after, tt.found)
+// 			t.Errorf("Cut({:?}, {:?}) = {:?}, {:?}, {}, want {:?}, {:?}, {}", tt.s, tt.sep, before, after, found, tt.before, tt.after, tt.found)
 // 		}
 // 	}
 // }
@@ -1826,7 +1857,7 @@ fn test_replace() {
 // fn TestCutPrefix() {
 // 	for _, tt := range cutPrefixTests {
 // 		if after, found := CutPrefix(tt.s, tt.sep); after != tt.after || found != tt.found {
-// 			t.Errorf("CutPrefix({:?}, {:?}) = {:?}, %v, want {:?}, %v", tt.s, tt.sep, after, found, tt.after, tt.found)
+// 			t.Errorf("CutPrefix({:?}, {:?}) = {:?}, {}, want {:?}, {}", tt.s, tt.sep, after, found, tt.after, tt.found)
 // 		}
 // 	}
 // }
@@ -1848,7 +1879,7 @@ fn test_replace() {
 // fn TestCutSuffix() {
 // 	for _, tt := range cutSuffixTests {
 // 		if after, found := CutSuffix(tt.s, tt.sep); after != tt.after || found != tt.found {
-// 			t.Errorf("CutSuffix({:?}, {:?}) = {:?}, %v, want {:?}, %v", tt.s, tt.sep, after, found, tt.after, tt.found)
+// 			t.Errorf("CutSuffix({:?}, {:?}) = {:?}, {}, want {:?}, {}", tt.s, tt.sep, after, found, tt.after, tt.found)
 // 		}
 // 	}
 // }
@@ -1929,7 +1960,7 @@ fn test_replace() {
 // }
 
 // fn BenchmarkCountByte(b *testing.B) {
-// 	indexSizes := []int{10, 32, 4 << 10, 4 << 20, 64 << 20}
+// 	indexSizes := []isize{10, 32, 4 << 10, 4 << 20, 64 << 20}
 // 	benchStr := Repeat(benchmarkString,
 // 		(indexSizes[len(indexSizes)-1]+len(benchmarkString)-1)/len(benchmarkString))
 // 	benchFunc := fn(b *testing.B, benchStr string) {
@@ -2050,8 +2081,8 @@ fn test_replace() {
 
 // fn BenchmarkRepeat(b *testing.B) {
 // 	s := "0123456789"
-// 	for _, n := range []int{5, 10} {
-// 		for _, c := range []int{0, 1, 2, 6} {
+// 	for _, n := range []isize{5, 10} {
+// 		for _, c := range []isize{0, 1, 2, 6} {
 // 			b.Run(fmt.Sprintf("%dx%d", n, c), fn(b *testing.B) {
 // 				for i := 0; i < b.N; i++ {
 // 					Repeat(s[:n], c)
@@ -2064,7 +2095,7 @@ fn test_replace() {
 // fn BenchmarkRepeatLarge(b *testing.B) {
 // 	s := Repeat("@", 8*1024)
 // 	for j := 8; j <= 30; j++ {
-// 		for _, k := range []int{1, 16, 4097} {
+// 		for _, k := range []isize{1, 16, 4097} {
 // 			s := s[:k]
 // 			n := (1 << j) / k
 // 			if n == 0 {
@@ -2159,7 +2190,7 @@ fn test_replace() {
 
 // fn BenchmarkIndexPeriodic(b *testing.B) {
 // 	key := "aa"
-// 	for _, skip := range [...]int{2, 4, 8, 16, 32, 64} {
+// 	for _, skip := range [...]isize{2, 4, 8, 16, 32, 64} {
 // 		b.Run(fmt.Sprintf("IndexPeriodic%d", skip), fn(b *testing.B) {
 // 			s := Repeat("a"+Repeat(" ", skip-1), 1<<16/skip)
 // 			for i := 0; i < b.N; i++ {
@@ -2189,7 +2220,7 @@ fn test_replace() {
 // 		{"SomeNonASCII", "    \u2000\t\r\n x\t\t\r\r\ny\n \u3000    "},
 // 		{"JustNonASCII", "\u2000\u2000\u2000☺☺☺☺\u3000\u3000\u3000"},
 // 	}
-// 	for _, test := range tests {
+// 	for test in tests {
 // 		b.Run(test.name, fn(b *testing.B) {
 // 			for i := 0; i < b.N; i++ {
 // 				TrimSpace(test.input)

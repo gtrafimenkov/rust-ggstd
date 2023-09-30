@@ -28,8 +28,18 @@ pub enum Seek {
 // }
 
 // ErrNoProgress
-pub static ERR_NO_PROGRESS: errors::ErrorStaticString =
-    errors::new_static("multiple read calls return no data or error");
+// pub static ERR_NO_PROGRESS: errors::ErrorStaticString =
+//     errors::new_static("multiple read calls return no data or error");
+// pub static ERR_NO_PROGRESS: std::io::Error = std::io::Error::new(
+//     std::io::ErrorKind::Other,
+//     "multiple read calls return no data or error",
+// );
+pub fn err_no_progress() -> std::io::Error {
+    std::io::Error::new(
+        std::io::ErrorKind::Other,
+        "multiple read calls return no data or error",
+    )
+}
 
 // Instead of using Reader, use std::io::Read.  That will make the
 // code more idiomatic and make it easier to interoperate with the
@@ -336,7 +346,6 @@ pub fn read_at_least(
 /// The difference from Rust's std::io::Read::read_exact, it that read_full returns both
 /// number of bytes read and a possible error, when std::io::Read::read_exact returns one or another.
 pub fn read_full(r: &mut dyn std::io::Read, buf: &mut [u8]) -> (usize, Option<std::io::Error>) {
-    // r.read_exact(buf)
     read_at_least(r, buf, buf.len())
 }
 
@@ -370,10 +379,10 @@ pub fn copy_n(
 /// copy copies from src to dst until either EOF is reached
 /// on src or an error occurs. It returns the number of bytes
 /// copied and the first error encountered while copying, if any.
-///
-/// A successful copy returns err == nil, not err == EOF.
-/// Because copy is defined to read from src until EOF, it does
-/// not treat an EOF from read as an error to be reported.
+//
+// A successful copy returns err == nil, not err == EOF.
+// Because copy is defined to read from src until EOF, it does
+// not treat an EOF from read as an error to be reported.
 //
 // not implemented:
 // If src implements the WriterTo interface,
@@ -385,6 +394,17 @@ pub fn copy(
     src: &mut dyn std::io::Read,
 ) -> (u64, Option<std::io::Error>) {
     copy_buffer_int(dst, src, None)
+}
+
+/// copy copies from src to dst until either EOF is reached
+/// on src or an error occurs. It returns the first error
+/// encountered while copying, if any.
+pub fn copy_(dst: &mut dyn std::io::Write, src: &mut dyn std::io::Read) -> std::io::Result<()> {
+    let (_n, err) = copy_buffer_int(dst, src, None);
+    match err {
+        Some(err) => Err(err),
+        None => Ok(()),
+    }
 }
 
 /// copy_buffer is identical to copy except that it stages through the

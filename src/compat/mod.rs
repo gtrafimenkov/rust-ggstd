@@ -16,7 +16,6 @@ pub fn copy(dest: &mut [u8], src: &[u8]) -> usize {
 }
 
 /// Copy data from one place of the buffer to another similar to what Go copy function can do.
-// pub fn copy_within<R: std::ops::RangeBounds<usize>>(buf: &mut [u8], src: R, dest: usize) -> usize {
 pub fn copy_within(buf: &mut [u8], src: std::ops::Range<usize>, dest: usize) -> usize {
     let buf_len = buf.len();
     let dest_size = buf_len - dest;
