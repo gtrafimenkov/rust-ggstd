@@ -62,7 +62,7 @@ fn test_rectangle() {
     for r in rects {
         for s in rects {
             let a = r.intersect(s);
-            let res = in_fn(&a, &r);
+            let res = in_fn(&a, r);
             assert!(
                 res.is_ok(),
                 "intersect: r={:?}, s={:?}, a={:?}, a not in r: {:?}",
@@ -71,7 +71,7 @@ fn test_rectangle() {
                 a,
                 res
             );
-            let res = in_fn(&a, &s);
+            let res = in_fn(&a, s);
             assert!(
                 res.is_ok(),
                 "intersect: r={:?}, s={:?}, a={:?}, a not in s: {:?}",
@@ -81,7 +81,7 @@ fn test_rectangle() {
                 res
             );
             let is_zero = a == ZR;
-            let overlaps = r.overlaps(&s);
+            let overlaps = r.overlaps(s);
             assert!(
                 is_zero != overlaps,
                 "intersect: r={:?}, s={:?}, a={:?}: isZero={} same as overlaps={}",
@@ -117,7 +117,7 @@ fn test_rectangle() {
     for r in rects {
         for s in rects {
             let a = r.union(s);
-            let res = in_fn(&r, &a);
+            let res = in_fn(r, &a);
             assert!(
                 res.is_ok(),
                 "Union: r={:?}, s={:?}, a={:?}, r not in a: {:?}",
@@ -127,7 +127,7 @@ fn test_rectangle() {
                 res
             );
             // 			}
-            let res = in_fn(&s, &a);
+            let res = in_fn(s, &a);
             assert!(
                 res.is_ok(),
                 "Union: r={:?}, s={:?}, a={:?}, s not in a: {:?}",
@@ -146,7 +146,7 @@ fn test_rectangle() {
             smaller_than_a[2].max.x -= 1;
             smaller_than_a[3].max.y -= 1;
             for (i, b) in smaller_than_a.iter().enumerate() {
-                if in_fn(&r, &b).is_ok() && in_fn(&s, &b).is_ok() {
+                if in_fn(r, b).is_ok() && in_fn(s, b).is_ok() {
                     assert!(
                         false,
                         "Union: r={:?}, s={:?}, a={:?}, b={:?}, i={}: union could be smaller",

@@ -366,7 +366,7 @@ fn sng(w: &mut dyn std::io::Write, filename: &str, png: &Img) -> std::io::Result
                     }
                     if c != 0 {
                         while c != 8 / bitdepth {
-                            b = b << bitdepth;
+                            b <<= bitdepth;
                             c += 1;
                         }
                         ggio::write_string(w, &format!("{:02x}", b))?;
@@ -496,7 +496,7 @@ fn test_paletted_decode_config() {
         match cfg.color_model {
             image::color::Model::Paletted(pal) => {
                 assert!(
-                    pal.colors.len() > 0,
+                    !pal.colors.is_empty(),
                     "{}: palette not initialized",
                     filename
                 )
@@ -811,7 +811,7 @@ fn test_dimension_overflow() {
     ];
 
     for (i, tc) in TEST_CASES.iter().enumerate() {
-        let cfg = decode_config(&mut bytes::Reader::new(&tc.src));
+        let cfg = decode_config(&mut bytes::Reader::new(tc.src));
         if tc.unsupported_config {
             match cfg {
                 Ok(_) => {
@@ -864,7 +864,7 @@ fn test_dimension_overflow() {
         // 		}
 
         // Even if we don't panic, these aren't valid PNG images.
-        let res = decode(&mut bytes::Reader::new(&tc.src));
+        let res = decode(&mut bytes::Reader::new(tc.src));
         assert!(res.is_err(), "i={}: decode: got nil error, want non-nil", i);
     }
 }

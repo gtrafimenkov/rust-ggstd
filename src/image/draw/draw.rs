@@ -86,7 +86,7 @@ fn clip(
     mp: &mut image::Point,
 ) {
     let orig = r.min;
-    *r = r.intersect(&dst.bounds());
+    *r = r.intersect(dst.bounds());
     *r = r.intersect(&src.bounds().add(&orig.sub(sp)));
     if let Some(mask) = mask {
         *r = r.intersect(&mask.bounds().add(&orig.sub(mp)));
@@ -206,6 +206,7 @@ pub fn draw_mask(
                             // Img::Gray16(_) => todo!(),
                             Img::NRGBA(src) => {
                                 draw_nrgba_src(dst, &r, src, &sp);
+                                #[allow(clippy::needless_return)]
                                 return;
                             }
                             // Img::NRGBA64(_) => todo!(),
@@ -278,6 +279,7 @@ pub fn draw_mask(
                         &sp,
                         4 * r.dx(),
                     );
+                    #[allow(clippy::needless_return)]
                     return;
                 }
             }
@@ -611,7 +613,7 @@ fn draw_nrgba_src(dst: &mut image::RGBA, r: &Rectangle, src: &image::NRGBA, sp: 
     let mut sy = (sp.y - src.rect.min.y) as usize;
     while y != y_max {
         let dpix = &mut dst.pix[y * dst.stride..];
-        let spix = &src.pix[(sy * src.stride) as usize..];
+        let spix = &src.pix[sy * src.stride..];
         let (mut i, mut si) = (i0, si0);
         while i < i1 {
             // Convert from non-premultiplied color to pre-multiplied color.

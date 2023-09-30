@@ -73,7 +73,7 @@ fn abs8(d: u8) -> isize {
     if d < 128 {
         return d as isize;
     }
-    return 256 - d as isize;
+    256 - d as isize
 }
 
 fn write_chunk(w: &mut dyn std::io::Write, b: &[u8], name: &str) -> std::io::Result<()> {
@@ -191,7 +191,7 @@ impl<'a> EncoderBuffer<'a> {
         pal: &color::Palette,
     ) -> Result<(), Error> {
         let colors = pal.colors.len();
-        if colors < 1 || colors > 256 {
+        if !(1..=256).contains(&colors) {
             return Err(Error::FormatError(format!(
                 "bad palette length: {}",
                 colors
@@ -202,7 +202,7 @@ impl<'a> EncoderBuffer<'a> {
         for i in 0..colors {
             let c = pal.colors[i];
             let c1 = c.to_nrgba();
-            tmp[3 * i + 0] = c1.r;
+            tmp[3 * i] = c1.r;
             tmp[3 * i + 1] = c1.g;
             tmp[3 * i + 2] = c1.b;
             if c1.a != 0xff {
@@ -261,6 +261,7 @@ impl<'a> EncoderBuffer<'a> {
 
         // The none filter.
         let mut sum = 0;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..n {
             sum += abs8(cdat0[i]);
             if sum >= best {
@@ -308,7 +309,7 @@ impl<'a> EncoderBuffer<'a> {
             filter = FilterType::Average;
         }
 
-        return filter;
+        filter
     }
 
     fn write_image(
@@ -389,7 +390,7 @@ impl<'a> EncoderBuffer<'a> {
                         let j1 = j0 + b.dx() * 4;
                         let mut j = j0;
                         while j < j1 {
-                            self.cr0[i + 0] = pix[j + 0];
+                            self.cr0[i] = pix[j];
                             self.cr0[i + 1] = pix[j + 1];
                             self.cr0[i + 2] = pix[j + 2];
                             i += 3;
@@ -434,7 +435,7 @@ impl<'a> EncoderBuffer<'a> {
                         }
                         if c != 0 {
                             while c != pixels_per_byte {
-                                a = a << bits_per_pixel;
+                                a <<= bits_per_pixel;
                                 c += 1;
                             }
                             self.cr0[i] = a;
@@ -496,7 +497,7 @@ impl<'a> EncoderBuffer<'a> {
                 CB::G16 => {
                     for x in b.min.x..b.max.x {
                         let c = m.at(x, y).to_gray16();
-                        self.cr0[i + 0] = (c.y >> 8) as u8;
+                        self.cr0[i] = (c.y >> 8) as u8;
                         self.cr0[i + 1] = (c.y) as u8;
                         i += 2;
                     }
@@ -505,7 +506,7 @@ impl<'a> EncoderBuffer<'a> {
                     // We have previously verified that the alpha value is fully opaque.
                     for x in b.min.x..b.max.x {
                         let (r, g, b, _) = m.at(x, y).rgba();
-                        self.cr0[i + 0] = (r >> 8) as u8;
+                        self.cr0[i] = (r >> 8) as u8;
                         self.cr0[i + 1] = (r) as u8;
                         self.cr0[i + 2] = (g >> 8) as u8;
                         self.cr0[i + 3] = (g) as u8;
@@ -518,7 +519,7 @@ impl<'a> EncoderBuffer<'a> {
                     // Convert from image.Image (which is alpha-premultiplied) to PNG's non-alpha-premultiplied.
                     for x in b.min.x..b.max.x {
                         let c = m.at(x, y).to_nrgba64();
-                        self.cr0[i + 0] = (c.r >> 8) as u8;
+                        self.cr0[i] = (c.r >> 8) as u8;
                         self.cr0[i + 1] = (c.r) as u8;
                         self.cr0[i + 2] = (c.g >> 8) as u8;
                         self.cr0[i + 3] = (c.g) as u8;
@@ -588,7 +589,7 @@ impl<'a> EncoderBuffer<'a> {
         let mut bw = bufio::new_writer_size(&mut w, 1 << 15);
         self.write_image(
             &mut bw,
-            &self.m,
+            self.m,
             self.cb,
             level_to_zlib(self.enc.compression_level),
         )?;

@@ -59,21 +59,11 @@ pub(super) enum CB {
 
 impl CB {
     pub(super) fn paletted(self) -> bool {
-        match self {
-            CB::P1 => true,
-            CB::P2 => true,
-            CB::P4 => true,
-            CB::P8 => true,
-            _ => false,
-        }
+        matches!(self, CB::P1 | CB::P2 | CB::P4 | CB::P8)
     }
 
     pub(super) fn true_color(&self) -> bool {
-        match self {
-            CB::TC8 => true,
-            CB::TC16 => true,
-            _ => false,
-        }
+        matches!(self, CB::TC8 | CB::TC16)
     }
 }
 
@@ -261,10 +251,10 @@ fn decode_cb(depth: u8, color_type: u8) -> std::io::Result<CB> {
         },
         _ => {}
     }
-    return Err(new_unsupported_error(&format!(
+    Err(new_unsupported_error(&format!(
         "bit depth {}, color type {}",
         depth, color_type
-    )));
+    )))
 }
 
 impl Decoder {
@@ -274,7 +264,7 @@ impl Decoder {
         }
         let mut tmp = [0; 13];
         r.read_exact(&mut tmp)?;
-        self.crc.write(&tmp[..13])?;
+        self.crc.write_all(&tmp[..13])?;
         if tmp[10] != 0 {
             return Err(new_unsupported_error("compression method"));
         }
@@ -326,7 +316,7 @@ impl Decoder {
                 self.palette_vec.reserve(256 - self.palette_vec.capacity());
                 for i in 0..np {
                     let c = Color::new_rgba(
-                        tmp_buf[3 * i + 0],
+                        tmp_buf[3 * i],
                         tmp_buf[3 * i + 1],
                         tmp_buf[3 * i + 2],
                         0xff,
@@ -354,7 +344,7 @@ impl Decoder {
                 }
                 let mut tmp = [0; 2];
                 r.read_exact(&mut tmp[0..length])?;
-                self.crc.write(&tmp[..length])?;
+                self.crc.write_all(&tmp[..length])?;
 
                 compat::copy(&mut self.transparent, &tmp[..length]);
                 match self.cb {
@@ -371,7 +361,7 @@ impl Decoder {
                 }
                 let mut tmp = [0; 6];
                 r.read_exact(&mut tmp[0..length])?;
-                self.crc.write(&tmp[..length])?;
+                self.crc.write_all(&tmp[..length])?;
 
                 compat::copy(&mut self.transparent, &tmp[..length]);
                 self.use_transparent = true;
@@ -382,7 +372,7 @@ impl Decoder {
                 }
                 let mut tmp = [0; 256];
                 r.read_exact(&mut tmp[0..length])?;
-                self.crc.write(&tmp[..length])?;
+                self.crc.write_all(&tmp[..length])?;
                 if self.palette_vec.len() < length {
                     // Initialize the rest of the palette to opaque black. The spec (section
                     // 11.2.3) says that "any out-of-range pixel value found in the image data
@@ -391,6 +381,7 @@ impl Decoder {
                     // ImageMagick 6.5.7 returns an error.
                     self.palette_vec.resize(length, color::OPAQUE_BLACK);
                 }
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..length {
                     let c = RGBA::new_from(&self.palette_vec[i]);
                     self.palette_vec[i] = Color::new_nrgba(c.r, c.g, c.b, tmp[i]);
@@ -474,7 +465,7 @@ impl Decoder {
         r.read_exact(&mut tmp)?;
         let length = binary::BIG_ENDIAN.uint32(&tmp[..4]);
         self.crc.reset();
-        self.crc.write(&tmp[4..8])?;
+        self.crc.write_all(&tmp[4..8])?;
 
         // Read the chunk data.
         let chunk_type = &tmp[4..8];
@@ -554,7 +545,7 @@ impl Decoder {
         while length > 0 {
             let size = length.min(ignored.len());
             r.read_exact(&mut ignored[..size])?;
-            self.crc.write(&ignored[..size])?;
+            self.crc.write_all(&ignored[..size])?;
             length -= size;
         }
         verify_checksum(r, &self.crc)
@@ -641,10 +632,8 @@ pub fn decode_config(r: &mut dyn std::io::Read) -> std::io::Result<image::Config
             if d.stage >= DecodingStage::SeentRNS {
                 break;
             }
-        } else {
-            if d.stage >= DecodingStage::SeenIHDR {
-                break;
-            }
+        } else if d.stage >= DecodingStage::SeenIHDR {
+            break;
         }
     }
 
@@ -673,7 +662,7 @@ pub fn decode_config(r: &mut dyn std::io::Read) -> std::io::Result<image::Config
 /// IdatReader presents one or more IDAT chunks as one continuous stream (minus the
 /// intermediate chunk headers and footers). If the PNG data looked like:
 ///
-///	... len0 IDAT xxx crc0 len1 IDAT yy crc1 len2 IEND crc2
+/// ... len0 IDAT xxx crc0 len1 IDAT yy crc1 len2 IEND crc2
 ///
 /// then this reader presents xxxyy. For well-formed PNG data, the decoder state
 /// immediately before the first Read call is that d.r is positioned between the
@@ -687,7 +676,7 @@ struct IdatReader<'a> {
 
 impl std::io::Read for IdatReader<'_> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if buf.len() == 0 {
+        if buf.is_empty() {
             return Ok(0);
         }
         let mut tmp = [0_u8; 8];
@@ -711,7 +700,7 @@ impl std::io::Read for IdatReader<'_> {
         let n = self.r.read(&mut buf[0..bytes_to_read])?;
         self.crc.write_all(&buf[..n])?;
         self.idat_length -= n as u32;
-        return Ok(n);
+        Ok(n)
     }
 }
 
@@ -725,12 +714,12 @@ struct DecodeParams {
     transparent: [u8; 6],
 }
 
-fn convert_palette(palette: &Vec<Color>) -> Palette {
+fn convert_palette(palette: &[Color]) -> Palette {
     Palette {
-        colors: palette.clone(),
+        colors: palette.to_owned(),
     }
 }
-fn allocate_image<'a>(dp: &'a DecodeParams, palette: &Palette) -> Img {
+fn allocate_image(dp: &DecodeParams, palette: &Palette) -> Img {
     let r = image::rect(0, 0, dp.width as isize, dp.height as isize);
 
     match dp.cb {
@@ -773,13 +762,12 @@ fn allocate_image<'a>(dp: &'a DecodeParams, palette: &Palette) -> Img {
 }
 
 /// read_image_pass reads a single image pass, sized according to the pass number.
-fn read_image_pass<'a>(
-    dp: &'a DecodeParams,
+fn read_image_pass(
+    dp: &DecodeParams,
     r: &mut dyn std::io::Read,
     pass: usize,
     img: &mut Img,
 ) -> std::io::Result<bool> {
-    let bits_per_pixel: usize;
     let mut pix_offset = 0;
     let mut width = dp.width;
     let mut height = dp.height;
@@ -798,7 +786,7 @@ fn read_image_pass<'a>(
     }
 
     // let mut img/* : Box<dyn image::Image>*/ =
-    bits_per_pixel = match dp.cb {
+    let bits_per_pixel: usize = match dp.cb {
         CB::G1 | CB::G2 | CB::G4 | CB::G8 => dp.depth as usize,
         CB::GA8 => 16,
         CB::TC8 => 24,
@@ -1016,6 +1004,7 @@ fn read_image_pass<'a>(
                     CB::G8 => {
                         if dp.use_transparent {
                             let ty = dp.transparent[1];
+                            #[allow(clippy::needless_range_loop)]
                             for x in 0..width {
                                 let ycol = cdat[x];
                                 let mut acol = 0xff_u8;
@@ -1036,7 +1025,7 @@ fn read_image_pass<'a>(
                     }
                     CB::GA8 => {
                         for x in 0..width {
-                            let ycol = cdat[2 * x + 0];
+                            let ycol = cdat[2 * x];
                             img.set(
                                 x as isize,
                                 y as isize,
@@ -1051,14 +1040,14 @@ fn read_image_pass<'a>(
                             let (tr, tg, tb) =
                                 (dp.transparent[1], dp.transparent[3], dp.transparent[5]);
                             for _x in 0..width {
-                                let r = cdat[j + 0];
+                                let r = cdat[j];
                                 let g = cdat[j + 1];
                                 let b = cdat[j + 2];
                                 let mut a = 0xff_u8;
                                 if r == tr && g == tg && b == tb {
                                     a = 0x00;
                                 }
-                                pix_mutable[i + 0] = r;
+                                pix_mutable[i] = r;
                                 pix_mutable[i + 1] = g;
                                 pix_mutable[i + 2] = b;
                                 pix_mutable[i + 3] = a;
@@ -1070,7 +1059,7 @@ fn read_image_pass<'a>(
                             let pix_mutable = img.get_pix_mutable();
                             let (mut i, mut j) = (pix_offset, 0);
                             for _x in 0..width {
-                                pix_mutable[i + 0] = cdat[j + 0];
+                                pix_mutable[i] = cdat[j];
                                 pix_mutable[i + 1] = cdat[j + 1];
                                 pix_mutable[i + 2] = cdat[j + 2];
                                 pix_mutable[i + 3] = 0xff;
@@ -1089,8 +1078,7 @@ fn read_image_pass<'a>(
                         if dp.use_transparent {
                             let ty = ((dp.transparent[0] as u16) << 8) | (dp.transparent[1] as u16);
                             for x in 0..width {
-                                let ycol =
-                                    ((cdat[2 * x + 0] as u16) << 8) | (cdat[2 * x + 1] as u16);
+                                let ycol = ((cdat[2 * x] as u16) << 8) | (cdat[2 * x + 1] as u16);
                                 let acol = if ycol == ty { 0x0000 } else { 0xffff };
                                 img.set(
                                     x as isize,
@@ -1100,15 +1088,14 @@ fn read_image_pass<'a>(
                             }
                         } else {
                             for x in 0..width {
-                                let ycol =
-                                    ((cdat[2 * x + 0] as u16) << 8) | (cdat[2 * x + 1] as u16);
+                                let ycol = ((cdat[2 * x] as u16) << 8) | (cdat[2 * x + 1] as u16);
                                 img.set(x as isize, y as isize, &Color::Gray16(Gray16::new(ycol)));
                             }
                         }
                     }
                     CB::GA16 => {
                         for x in 0..width {
-                            let ycol = ((cdat[4 * x + 0] as u16) << 8) | (cdat[4 * x + 1] as u16);
+                            let ycol = ((cdat[4 * x] as u16) << 8) | (cdat[4 * x + 1] as u16);
                             let acol = ((cdat[4 * x + 2] as u16) << 8) | (cdat[4 * x + 3] as u16);
                             img.set(
                                 x as isize,
@@ -1123,7 +1110,7 @@ fn read_image_pass<'a>(
                             let tg = ((dp.transparent[2] as u16) << 8) | (dp.transparent[3] as u16);
                             let tb = ((dp.transparent[4] as u16) << 8) | (dp.transparent[5] as u16);
                             for x in 0..width {
-                                let r = ((cdat[6 * x + 0] as u16) << 8) | (cdat[6 * x + 1] as u16);
+                                let r = ((cdat[6 * x] as u16) << 8) | (cdat[6 * x + 1] as u16);
                                 let g = ((cdat[6 * x + 2] as u16) << 8) | (cdat[6 * x + 3] as u16);
                                 let b = ((cdat[6 * x + 4] as u16) << 8) | (cdat[6 * x + 5] as u16);
                                 let a = if r == tr && g == tg && b == tb {
@@ -1135,7 +1122,7 @@ fn read_image_pass<'a>(
                             }
                         } else {
                             for x in 0..width {
-                                let r = ((cdat[6 * x + 0] as u16) << 8) | (cdat[6 * x + 1] as u16);
+                                let r = ((cdat[6 * x] as u16) << 8) | (cdat[6 * x + 1] as u16);
                                 let g = ((cdat[6 * x + 2] as u16) << 8) | (cdat[6 * x + 3] as u16);
                                 let b = ((cdat[6 * x + 4] as u16) << 8) | (cdat[6 * x + 5] as u16);
                                 img.set(
@@ -1148,7 +1135,7 @@ fn read_image_pass<'a>(
                     }
                     CB::TCA16 => {
                         for x in 0..width {
-                            let r = ((cdat[8 * x + 0] as u16) << 8) | (cdat[8 * x + 1] as u16);
+                            let r = ((cdat[8 * x] as u16) << 8) | (cdat[8 * x + 1] as u16);
                             let g = ((cdat[8 * x + 2] as u16) << 8) | (cdat[8 * x + 3] as u16);
                             let b = ((cdat[8 * x + 4] as u16) << 8) | (cdat[8 * x + 5] as u16);
                             let a = ((cdat[8 * x + 6] as u16) << 8) | (cdat[8 * x + 7] as u16);
@@ -1222,6 +1209,7 @@ fn read_line_to_paletted_image(
         }
         CB::P8 => {
             if img.palette.colors.len() != 256 {
+                #[allow(clippy::needless_range_loop)]
                 for x in 0..width {
                     if img.palette.colors.len() <= cdat[x] as usize {
                         img.palette
@@ -1230,7 +1218,7 @@ fn read_line_to_paletted_image(
                     }
                 }
             }
-            compat::copy(&mut img.get_pix_mutable()[*pix_offset..], &cdat);
+            compat::copy(&mut img.get_pix_mutable()[*pix_offset..], cdat);
             *pix_offset += img.stride();
         }
         _ => panic!("unreachable"),

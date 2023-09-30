@@ -14,7 +14,7 @@ use crate::io as ggio;
 fn diff(filename: &str, m0: &image::Img, m1: &image::Img) {
     let (b0, b1) = (m0.bounds(), m1.bounds());
     assert!(
-        b0.eq(&b1),
+        b0.eq(b1),
         "{}: dimensions differ: {:?} vs {:?}",
         filename,
         b0,
@@ -52,8 +52,8 @@ fn encode_decode(m: &Img) -> Result<Box<Img>, png::Error> {
 
 fn convert_to_nrgba(m: &Img) -> image::Img {
     let b = m.bounds();
-    let mut ret = Img::new_nrgba(&b);
-    draw::draw(&mut ret, &b, m, &b.min, draw::Op::Src);
+    let mut ret = Img::new_nrgba(b);
+    draw::draw(&mut ret, b, m, &b.min, draw::Op::Src);
     ret
 }
 

@@ -32,6 +32,6 @@ fn example_decode() {
             }
             print!("{}", levels[level as usize]);
         }
-        println!("");
+        println!();
     }
 }

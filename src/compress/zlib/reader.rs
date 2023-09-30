@@ -39,7 +39,7 @@ impl PartialEq for Error {
 impl Error {
     pub fn to_stdio_error(&self) -> std::io::Error {
         match self {
-            Error::StdIo(e) => errors::copy_stdio_error(&e),
+            Error::StdIo(e) => errors::copy_stdio_error(e),
             _ => std::io::Error::new(std::io::ErrorKind::Other, self.to_string()),
         }
     }

@@ -99,7 +99,7 @@ pub fn index_byte_portable(s: &[u8], c: u8) -> isize {
             return i as isize;
         }
     }
-    return -1;
+    -1
 }
 
 // // LastIndex returns the index of the last instance of sep in s, or -1 if sep is not present in s.

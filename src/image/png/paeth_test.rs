@@ -11,7 +11,7 @@ fn slow_abs(x: isize) -> isize {
     if x < 0 {
         return -x;
     }
-    return x;
+    x
 }
 
 /// slow_paeth is a slow but simple implementation of the Paeth function.
@@ -26,7 +26,7 @@ fn slow_paeth(a: u8, b: u8, c: u8) -> u8 {
     } else if pb <= pc {
         return b;
     }
-    return c;
+    c
 }
 
 /// slow_filter_paeth is a slow but simple implementation of fn filter_paeth.

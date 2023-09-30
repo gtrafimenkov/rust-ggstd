@@ -118,15 +118,15 @@ impl RGBA {
     }
     pub fn new_from(c: &Color) -> Self {
         if let Color::RGBA(c) = c {
-            return *c;
+            *c
         } else {
             let (r, g, b, a) = c.rgba();
-            return RGBA::new(
+            RGBA::new(
                 (r >> 8) as u8,
                 (g >> 8) as u8,
                 (b >> 8) as u8,
                 (a >> 8) as u8,
-            );
+            )
         }
     }
 }
@@ -141,7 +141,7 @@ impl ColorTrait for RGBA {
         b |= b << 8;
         let mut a = self.a as u32;
         a |= a << 8;
-        return (r, g, b, a);
+        (r, g, b, a)
     }
 }
 
@@ -164,7 +164,7 @@ impl RGBA64 {
     }
     pub fn new_from(c: &Color) -> Self {
         match c {
-            Color::RGBA64(c) => return Self::new(c.r, c.g, c.b, c.a),
+            Color::RGBA64(c) => Self::new(c.r, c.g, c.b, c.a),
             _ => {
                 let (r, g, b, a) = c.rgba();
                 RGBA64::new(r as u16, g as u16, b as u16, a as u16)
@@ -194,7 +194,7 @@ impl NRGBA {
     }
     pub fn new_from(c: &Color) -> Self {
         match c {
-            Color::NRGBA(c) => return Self::new(c.r, c.g, c.b, c.a),
+            Color::NRGBA(c) => Self::new(c.r, c.g, c.b, c.a),
             _ => {
                 let (r, g, b, a) = c.rgba();
                 if a == 0xffff {
@@ -207,12 +207,12 @@ impl NRGBA {
                 let r = (r * 0xffff) / a;
                 let g = (g * 0xffff) / a;
                 let b = (b * 0xffff) / a;
-                return Self::new(
+                Self::new(
                     (r >> 8) as u8,
                     (g >> 8) as u8,
                     (b >> 8) as u8,
                     (a >> 8) as u8,
-                );
+                )
             }
         }
     }
@@ -234,7 +234,7 @@ impl ColorTrait for NRGBA {
         b /= 0xff;
         let mut a = self.a as u32;
         a |= a << 8;
-        return (r, g, b, a);
+        (r, g, b, a)
     }
 }
 
@@ -254,7 +254,7 @@ impl NRGBA64 {
     }
     pub fn new_from(c: &Color) -> Self {
         match c {
-            Color::NRGBA64(c) => return Self::new(c.r, c.g, c.b, c.a),
+            Color::NRGBA64(c) => Self::new(c.r, c.g, c.b, c.a),
             _ => {
                 let (r, g, b, a) = c.rgba();
                 if a == 0xffff {
@@ -301,10 +301,10 @@ impl Alpha {
     }
     pub fn new_from(c: &Color) -> Self {
         match c {
-            Color::Alpha(c) => return Self::new(c.a),
+            Color::Alpha(c) => Self::new(c.a),
             _ => {
                 let (_, _, _, a) = c.rgba();
-                return Alpha::new((a >> 8) as u8);
+                Alpha::new((a >> 8) as u8)
             }
         }
     }
@@ -314,7 +314,7 @@ impl ColorTrait for Alpha {
     fn rgba(&self) -> (u32, u32, u32, u32) {
         let mut a = self.a as u32;
         a |= a << 8;
-        return (a, a, a, a);
+        (a, a, a, a)
     }
 }
 
@@ -330,10 +330,10 @@ impl Alpha16 {
     }
     pub fn new_from(c: &Color) -> Self {
         match c {
-            Color::Alpha16(c) => return Self::new(c.a),
+            Color::Alpha16(c) => Self::new(c.a),
             _ => {
                 let (_, _, _, a) = c.rgba();
-                return Alpha16::new(a as u16);
+                Alpha16::new(a as u16)
             }
         }
     }
@@ -342,7 +342,7 @@ impl Alpha16 {
 impl ColorTrait for Alpha16 {
     fn rgba(&self) -> (u32, u32, u32, u32) {
         let a = self.a as u32;
-        return (a, a, a, a);
+        (a, a, a, a)
     }
 }
 
@@ -358,7 +358,7 @@ impl Gray {
     }
     pub fn new_from(c: &Color) -> Self {
         match c {
-            Color::Gray(c) => return Self::new(c.y),
+            Color::Gray(c) => Self::new(c.y),
             _ => {
                 let (r, g, b, _) = c.rgba();
 
@@ -372,7 +372,7 @@ impl Gray {
                 // because the return value is 8 bit color, not 16 bit color.
                 let y = (19595 * r + 38470 * g + 7471 * b + (1 << 15)) >> 24;
 
-                return Gray::new(y as u8);
+                Gray::new(y as u8)
             }
         }
     }
@@ -382,7 +382,7 @@ impl ColorTrait for Gray {
     fn rgba(&self) -> (u32, u32, u32, u32) {
         let mut y = self.y as u32;
         y |= y << 8;
-        return (y, y, y, 0xffff);
+        (y, y, y, 0xffff)
     }
 }
 
@@ -398,7 +398,7 @@ impl Gray16 {
     }
     pub fn new_from(c: &Color) -> Self {
         match c {
-            Color::Gray16(c) => return Self::new(c.y),
+            Color::Gray16(c) => Self::new(c.y),
             _ => {
                 let (r, g, b, _) = c.rgba();
                 // These coefficients (the fractions 0.299, 0.587 and 0.114) are the same
@@ -407,7 +407,7 @@ impl Gray16 {
                 //
                 // Note that 19595 + 38470 + 7471 equals 65536.
                 let y = (19595 * r + 38470 * g + 7471 * b + (1 << 15)) >> 16;
-                return Gray16::new(y as u16);
+                Gray16::new(y as u16)
             }
         }
     }
@@ -416,7 +416,7 @@ impl Gray16 {
 impl ColorTrait for Gray16 {
     fn rgba(&self) -> (u32, u32, u32, u32) {
         let y = self.y as u32;
-        return (y, y, y, 0xffff);
+        (y, y, y, 0xffff)
     }
 }
 
@@ -512,10 +512,10 @@ impl Palette {
 
     /// Convert returns the palette color closest to c in Euclidean R,G,B space.
     pub fn convert(&self, c: &Color) -> Color {
-        if self.colors.len() == 0 {
+        if self.colors.is_empty() {
             return Color::new_gray(0);
         }
-        return self.colors[self.index(c)];
+        self.colors[self.index(c)]
     }
 
     /// index returns the index of the palette color closest to c in Euclidean
@@ -534,7 +534,7 @@ impl Palette {
                 (ret, best_sum) = (i, sum);
             }
         }
-        return ret;
+        ret
     }
 }
 

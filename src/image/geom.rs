@@ -85,13 +85,20 @@ impl Point {
 /// A Rectangle is also an Image whose bounds are the rectangle itself. At
 /// returns color.Opaque for points in the rectangle and color.Transparent
 /// otherwise.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub struct Rectangle {
     pub min: Point,
     pub max: Point,
 }
 
-#[allow(non_snake_case)]
+impl PartialEq for Rectangle {
+    /// eq reports whether r and s contain the same set of points. All empty
+    /// rectangles are considered equal.
+    fn eq(&self, other: &Rectangle) -> bool {
+        (self.min == other.min && self.max == other.max) || self.empty() && other.empty()
+    }
+}
+
 impl Rectangle {
     pub const fn new(min: Point, max: Point) -> Self {
         Self { min, max }
@@ -104,12 +111,12 @@ impl Rectangle {
 
     // Dx returns r's width.
     pub fn dx(&self) -> usize {
-        return (self.max.x - self.min.x).try_into().unwrap();
+        (self.max.x - self.min.x).try_into().unwrap()
     }
 
     // Dy returns r's height.
     pub fn dy(&self) -> usize {
-        return (self.max.y - self.min.y).try_into().unwrap();
+        (self.max.y - self.min.y).try_into().unwrap()
     }
 
     /// size returns r's width and height.
@@ -169,7 +176,7 @@ impl Rectangle {
         //
         // if max(r0.min.x, s0.min.x) >= min(r0.max.x, s0.max.x) || likewiseForY { etc }
         if r.empty() {
-            return ZR;
+            ZR
         } else {
             r
         }
@@ -178,27 +185,20 @@ impl Rectangle {
     /// union returns the smallest rectangle that contains both r and s.
     pub fn union(&self, s: &Rectangle) -> Rectangle {
         if self.empty() {
-            return s.clone();
+            return *s;
         }
         if s.empty() {
-            return self.clone();
+            return *self;
         }
-        let r = Rectangle::new(
+        Rectangle::new(
             Point::new(self.min.x.min(s.min.x), self.min.y.min(s.min.y)),
             Point::new(self.max.x.max(s.max.x), self.max.y.max(s.max.y)),
-        );
-        return r;
+        )
     }
 
     /// empty reports whether the rectangle contains no points.
     pub fn empty(&self) -> bool {
-        return self.min.x >= self.max.x || self.min.y >= self.max.y;
-    }
-
-    /// eq reports whether r and s contain the same set of points. All empty
-    /// rectangles are considered equal.
-    pub fn eq(&self, s: &Rectangle) -> bool {
-        return *self == *s || self.empty() && s.empty();
+        self.min.x >= self.max.x || self.min.y >= self.max.y
     }
 
     /// Overlaps reports whether r and s have a non-empty intersection.
@@ -282,10 +282,10 @@ pub fn rect(x0: isize, y0: isize, x1: isize, y1: isize) -> Rectangle {
     if y0 > y1 {
         (y0, y1) = (y1, y0);
     }
-    return Rectangle {
+    Rectangle {
         min: Point { x: x0, y: y0 },
         max: Point { x: x1, y: y1 },
-    };
+    }
 }
 
 // // mul3NonNeg returns (x * y * z), unless at least one argument is negative or

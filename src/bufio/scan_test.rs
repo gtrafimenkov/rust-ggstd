@@ -45,7 +45,7 @@ const SCAN_TESTS: &[&[u8]] = &[
 #[test]
 fn test_scan_byte() {
     for (n, test) in SCAN_TESTS.iter().enumerate() {
-        let mut buf = bytes::Reader::new(*test);
+        let mut buf = bytes::Reader::new(test);
         let mut s = Scanner::new(&mut buf);
         s.split(scan_bytes);
         let mut i = 0;
@@ -401,10 +401,10 @@ impl std::io::Read for AlwaysError {
 fn test_non_eofwith_empty_read() {
     let mut r = AlwaysError {};
     let mut scanner = Scanner::new(&mut r);
-    assert_eq!(false, scanner.scan(), "read should fail");
-    assert_eq!(false, scanner.scan(), "read should fail");
-    assert_eq!(false, scanner.scan(), "read should fail");
-    assert_eq!(false, scanner.scan(), "read should fail");
+    assert!(!scanner.scan(), "read should fail");
+    assert!(!scanner.scan(), "read should fail");
+    assert!(!scanner.scan(), "read should fail");
+    assert!(!scanner.scan(), "read should fail");
     let err = scanner.err();
     assert!(err.is_some(), "unexpected error: {:?}", err);
     let err = err.as_ref().unwrap();

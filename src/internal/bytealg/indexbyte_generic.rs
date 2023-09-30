@@ -11,7 +11,7 @@ pub fn index_byte(b: &[u8], c: u8) -> isize {
             return i as isize;
         }
     }
-    return -1;
+    -1
 }
 
 // fn IndexByteString(s string, c u8) -> isize {

@@ -76,19 +76,15 @@ pub trait Image {
 // }
 
 /// pixel_buffer_length returns the length of the [u8] typed pix slice field
-/// for the NewXxx functions. Conceptually, this is just (bpp * width * height),
-/// but this function panics if at least one of those is negative or if the
-/// computation would overflow the isize type.
-///
-/// This panics instead of returning an error because of backwards
-/// compatibility. The NewXxx functions do not return an error.
+/// for the NewXxx functions.
+// Conceptually, this is just (bpp * width * height),
+// but this function panics if at least one of those is negative or if the
+// computation would overflow the isize type.
+//
+// This panics instead of returning an error because of backwards
+// compatibility. The NewXxx functions do not return an error.
 fn pixel_buffer_length(bytes_per_pixel: usize, r: &Rectangle, _image_type_name: &str) -> usize {
-    // 	totalLength := mul3NonNeg(bytesPerPixel, r.dx(), r.Dy())
-    let total_length = bytes_per_pixel * r.dx() * r.dy();
-    // 	if totalLength < 0 {
-    // 		panic("image: New" + imageTypeName + " Rectangle has huge or negative dimensions")
-    // 	}
-    return total_length;
+    bytes_per_pixel * r.dx() * r.dy()
 }
 
 /// RGBA is an in-memory image whose At method returns color::RGBA values.
@@ -129,7 +125,7 @@ impl Image for RGBA {
             i0 += self.stride;
             i1 += self.stride;
         }
-        return true;
+        true
     }
 
     fn stride(&self) -> usize {
@@ -195,7 +191,7 @@ impl RGBA {
         }
         let i = self.pix_offset(x, y);
         let s = &self.pix[i..i + 4];
-        return color::RGBA::new(s[0], s[1], s[2], s[3]);
+        color::RGBA::new(s[0], s[1], s[2], s[3])
     }
 
     // fn (p *RGBA) SetRGBA64(x: isize, y: isize, c color::RGBA64) {
@@ -243,7 +239,7 @@ impl RGBA {
     /// pix_offset returns the index of the first element of pix that corresponds to
     /// the pixel at (x, y).
     pub fn pix_offset(&self, x: isize, y: isize) -> usize {
-        return (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize * 4;
+        (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize * 4
     }
 }
 
@@ -289,7 +285,7 @@ impl Image for RGBA64 {
         for _y in self.rect.min.y..self.rect.max.y {
             let mut i = i0;
             while i < i1 {
-                if self.pix[i + 0] != 0xff || self.pix[i + 1] != 0xff {
+                if self.pix[i] != 0xff || self.pix[i + 1] != 0xff {
                     return false;
                 }
                 i += 8;
@@ -297,7 +293,7 @@ impl Image for RGBA64 {
             i0 += self.stride;
             i1 += self.stride;
         }
-        return true;
+        true
     }
 
     fn stride(&self) -> usize {
@@ -421,7 +417,7 @@ impl Image for NRGBA {
             i0 += self.stride;
             i1 += self.stride;
         }
-        return true;
+        true
     }
 
     fn stride(&self) -> usize {
@@ -488,7 +484,7 @@ impl NRGBA {
             return;
         }
         let i = self.pix_offset(x, y);
-        self.pix[i + 0] = c.r;
+        self.pix[i] = c.r;
         self.pix[i + 1] = c.g;
         self.pix[i + 2] = c.b;
         self.pix[i + 3] = c.a;
@@ -572,7 +568,7 @@ impl Image for NRGBA64 {
     //     for _y in self.rect.min.y..self.rect.max.y {
     //         let mut i = i0;
     //         while i < i1 {
-    //             if self.pix[i + 0] != 0xff || self.pix[i + 1] != 0xff {
+    //             if self.pix[i ] != 0xff || self.pix[i + 1] != 0xff {
     //                 return false;
     //             }
     //             i += 8;
@@ -607,7 +603,7 @@ impl Image for NRGBA64 {
         for _y in self.rect.min.y..self.rect.max.y {
             let mut i = i0;
             while i < i1 {
-                if self.pix[i + 0] != 0xff || self.pix[i + 1] != 0xff {
+                if self.pix[i] != 0xff || self.pix[i + 1] != 0xff {
                     return false;
                 }
                 i += 8;
@@ -615,7 +611,7 @@ impl Image for NRGBA64 {
             i0 += self.stride;
             i1 += self.stride;
         }
-        return true;
+        true
     }
 
     fn bytes_per_pixel(&self) -> usize {
@@ -762,7 +758,7 @@ impl Image for Alpha {
             i0 += self.stride;
             i1 += self.stride;
         }
-        return true;
+        true
     }
 
     fn stride(&self) -> usize {
@@ -787,7 +783,7 @@ impl Alpha {
     pub fn new(r: &Rectangle) -> Self {
         Self {
             pix: vec![0; pixel_buffer_length(1, r, "Alpha")],
-            stride: 1 * r.dx(),
+            stride: r.dx(),
             rect: *r,
         }
     }
@@ -803,7 +799,7 @@ impl Alpha {
     /// pix_offset returns the index of the first element of pix that corresponds to
     /// the pixel at (x, y).
     pub fn pix_offset(&self, x: isize, y: isize) -> usize {
-        (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize * 1
+        (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize
     }
 
     // fn RGBA64At(&self, x: isize, y: isize) color::RGBA64 {
@@ -888,7 +884,7 @@ impl Image for Alpha16 {
         for _y in self.rect.min.y..self.rect.max.y {
             let mut i = i0;
             while i < i1 {
-                if self.pix[i + 0] != 0xff || self.pix[i + 1] != 0xff {
+                if self.pix[i] != 0xff || self.pix[i + 1] != 0xff {
                     return false;
                 }
                 i += 2;
@@ -896,7 +892,7 @@ impl Image for Alpha16 {
             i0 += self.stride;
             i1 += self.stride;
         }
-        return true;
+        true
     }
 
     fn stride(&self) -> usize {
@@ -931,7 +927,7 @@ impl Alpha16 {
             return color::Alpha16::new(0);
         }
         let i = self.pix_offset(x, y);
-        color::Alpha16::new((self.pix[i + 0] as u16) << 8 | (self.pix[i + 1] as u16))
+        color::Alpha16::new((self.pix[i] as u16) << 8 | (self.pix[i + 1] as u16))
     }
 
     /// pix_offset returns the index of the first element of pix that corresponds to
@@ -959,7 +955,7 @@ impl Alpha16 {
             return;
         }
         let i = self.pix_offset(x, y);
-        self.pix[i + 0] = (c.a >> 8) as u8;
+        self.pix[i] = (c.a >> 8) as u8;
         self.pix[i + 1] = (c.a) as u8;
     }
 
@@ -1042,7 +1038,7 @@ impl Gray {
     pub fn new(r: &Rectangle) -> Self {
         Self {
             pix: vec![0; pixel_buffer_length(1, r, "Gray")],
-            stride: 1 * r.dx(),
+            stride: r.dx(),
             rect: *r,
         }
     }
@@ -1064,7 +1060,7 @@ impl Gray {
     // pix_offset returns the index of the first element of pix that corresponds to
     // the pixel at (x, y).
     pub fn pix_offset(&self, x: isize, y: isize) -> usize {
-        return (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize * 1;
+        (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize
     }
 
     fn set_gray(&mut self, x: isize, y: isize, c: &color::Gray) {
@@ -1174,13 +1170,13 @@ impl Gray16 {
             return color::Gray16::new(0);
         }
         let i = self.pix_offset(x, y);
-        color::Gray16::new(((self.pix[i + 0] as u16) << 8) | (self.pix[i + 1] as u16))
+        color::Gray16::new(((self.pix[i] as u16) << 8) | (self.pix[i + 1] as u16))
     }
 
     // pix_offset returns the index of the first element of pix that corresponds to
     // the pixel at (x, y).
     pub fn pix_offset(&self, x: isize, y: isize) -> usize {
-        return (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize * 2;
+        (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize * 2
     }
 
     fn set_gray16(&mut self, x: isize, y: isize, c: &color::Gray16) {
@@ -1188,7 +1184,7 @@ impl Gray16 {
             return;
         }
         let i = self.pix_offset(x, y);
-        self.pix[i + 0] = (c.y >> 8) as u8;
+        self.pix[i] = (c.y >> 8) as u8;
         self.pix[i + 1] = (c.y) as u8;
     }
 
@@ -1388,14 +1384,14 @@ impl Image for Paletted {
     }
 
     fn at(&self, x: isize, y: isize) -> color::Color {
-        if self.palette.colors.len() == 0 {
+        if self.palette.colors.is_empty() {
             return color::Color::new_rgba(0, 0, 0, 0);
         }
         if !(Point::new(x, y).inside(&self.rect)) {
             return self.palette.colors[0];
         }
         let i = self.pix_offset(x, y);
-        return self.palette.colors[self.pix[i] as usize];
+        self.palette.colors[self.pix[i] as usize]
     }
 
     fn set(&mut self, x: isize, y: isize, c: &color::Color) {
@@ -1426,7 +1422,7 @@ impl Image for Paletted {
                 return false;
             }
         }
-        return true;
+        true
     }
 
     fn stride(&self) -> usize {
@@ -1452,7 +1448,7 @@ impl Paletted {
     pub fn new(r: &Rectangle, p: color::Palette) -> Self {
         Self {
             pix: vec![0; pixel_buffer_length(1, r, "Paletted")],
-            stride: 1 * r.dx(),
+            stride: r.dx(),
             rect: *r,
             palette: p,
         }
@@ -1481,7 +1477,7 @@ impl Paletted {
     /// pix_offset returns the index of the first element of pix that corresponds to
     /// the pixel at (x, y).
     pub fn pix_offset(&self, x: isize, y: isize) -> usize {
-        return (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize * 1;
+        (y - self.rect.min.y) as usize * self.stride + (x - self.rect.min.x) as usize
     }
 
     // fn SetRGBA64(&self, x: isize, y: isize, c color::RGBA64) {
@@ -1497,7 +1493,7 @@ impl Paletted {
             return 0;
         }
         let i = self.pix_offset(x, y);
-        return self.pix[i];
+        self.pix[i]
     }
 
     pub fn set_color_index(&mut self, x: isize, y: isize, index: u8) {

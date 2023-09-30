@@ -14,7 +14,7 @@ pub(super) fn abs(x: isize) -> isize {
     // by flipping all the bits and add 1. This is faster than
     // code with a branch.
     // See Hacker's Delight, section 2-4.
-    return (x ^ m) - m;
+    (x ^ m) - m
 }
 
 /// paeth implements the Paeth filter function, as per the PNG specification.
@@ -37,7 +37,7 @@ pub(super) fn paeth(a: u8, b: u8, c: u8) -> u8 {
     } else if pb <= pc {
         return b;
     }
-    return c;
+    c
 }
 
 /// filter_paeth applies the Paeth filter to the cdat slice.

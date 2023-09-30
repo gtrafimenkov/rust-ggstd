@@ -32,35 +32,35 @@ struct TestCase {
 const TEST_IMAGES: &[TestCase] = &[
     TestCase {
         name: "rgba",
-        image: || return Box::new(super::RGBA::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::RGBA::new(&rect(0, 0, 10, 10))),
     },
     TestCase {
         name: "rgba64",
-        image: || return Box::new(super::RGBA64::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::RGBA64::new(&rect(0, 0, 10, 10))),
     },
     TestCase {
         name: "nrgba",
-        image: || return Box::new(super::NRGBA::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::NRGBA::new(&rect(0, 0, 10, 10))),
     },
     TestCase {
         name: "nrgba64",
-        image: || return Box::new(super::NRGBA64::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::NRGBA64::new(&rect(0, 0, 10, 10))),
     },
     TestCase {
         name: "alpha",
-        image: || return Box::new(super::Alpha::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::Alpha::new(&rect(0, 0, 10, 10))),
     },
     TestCase {
         name: "alpha16",
-        image: || return Box::new(super::Alpha16::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::Alpha16::new(&rect(0, 0, 10, 10))),
     },
     TestCase {
         name: "gray",
-        image: || return Box::new(super::Gray::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::Gray::new(&rect(0, 0, 10, 10))),
     },
     TestCase {
         name: "gray16",
-        image: || return Box::new(super::Gray16::new(&rect(0, 0, 10, 10))),
+        image: || Box::new(super::Gray16::new(&rect(0, 0, 10, 10))),
     },
     // TestCase	{name:"paletted", image:|| return
     // 		return NewPaletted(rect(0, 0, 10, 10), color::Palette{
@@ -75,7 +75,7 @@ fn test_image() {
     for tc in TEST_IMAGES {
         let mut m = (tc.image)();
         assert!(
-            rect(0, 0, 10, 10).eq(&m.bounds()),
+            rect(0, 0, 10, 10).eq(m.bounds()),
             "{:?}: want bounds {:?}, got {:?}",
             tc.name,
             rect(0, 0, 10, 10),
