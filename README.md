@@ -1,7 +1,18 @@
 # Partial implementation of Go standard library in Rust
 
-Go language has a very good [standard library](https://pkg.go.dev/std): simple,
-extensive and well tested.  It would be great to have something like that in Rust.
+This is a humble attempt to port some of the Go standard library to Rust.
+
+Why:
+- it can make easier for Go programmers to transition to Rust
+- while Rust ecosistem has a lot of libraries covering every need (see https://crates.io/),
+  it takes time to choose what libary to use from many possible options.
+  It would be great to have something like the Go standard library - simple, extensive
+  and well tested.
+
+If you are considering using this library, take following into account:
+- the quality of the code is lower that in Go library
+- the code is less tested
+- some optimizations are missing, so the performance may be lower than expected
 
 ## Usage examples
 
