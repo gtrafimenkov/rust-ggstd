@@ -846,14 +846,22 @@ fn test_dimension_overflow() {
             i, cfg.height, tc.height
         );
 
-        // 		if nPixels := int64(cfg.width) * int64(cfg.Height); nPixels > 0x7f000000 {
-        // 			// In theory, calling decode would succeed, given several gigabytes
-        // 			// of memory. In practice, trying to make a []uint8 big enough to
-        // 			// hold all of the pixels can often result in OOM (out of memory).
-        // 			// OOM is unrecoverable; we can't write a test that passes when OOM
-        // 			// happens. Instead we skip the decode call (and its tests).
-        // 			continue
-        // 		} else if testing.Short() {
+        #[cfg(windows)]
+        {
+            // skip tests that fail on Windows in GitHub Actions
+
+            let n_pixels = (cfg.width as u64) * (cfg.height as u64);
+            if n_pixels > 0x7f000000 {
+                // In theory, calling decode would succeed, given several gigabytes
+                // of memory. In practice, trying to make a []uint8 big enough to
+                // hold all of the pixels can often result in OOM (out of memory).
+                // OOM is unrecoverable; we can't write a test that passes when OOM
+                // happens. Instead we skip the decode call (and its tests).
+                continue;
+            }
+        }
+
+        // 		if testing.Short() {
         // 			// Even for smaller image dimensions, calling decode might allocate
         // 			// 1 GiB or more of memory. This is usually feasible, and we want
         // 			// to check that calling decode doesn't panic if there's enough

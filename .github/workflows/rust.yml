@@ -10,17 +10,33 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  test-on-linux:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
-    - name: cargo build
-      run: cargo build --verbose
-    - name: cargo test
-      run: cargo test --verbose
-    - name: cargo test --release
-      run: cargo test --verbose --release
-    - name: cargo clippy
-      run: cargo clippy
+    - { name: "cargo build",          run: "cargo build --verbose" }
+    - { name: "cargo test",           run: "cargo test --verbose" }
+    - { name: "cargo test --release", run: "cargo test --verbose --release" }
+    - { name: "cargo clippy",         run: "cargo clippy" }
+    - { name: "example user",         run: "cargo run --example user" }
+
+  crosscompile:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - { name: "add x86_64-pc-windows-gnu target", run: "rustup target add x86_64-pc-windows-gnu" }
+    - { name: "add i686-pc-windows-gnu target",   run: "rustup target add i686-pc-windows-gnu" }
+    - { name: "cross-compile for win-x86_64",     run: "cargo build --target x86_64-pc-windows-gnu" }
+    - { name: "cross-compile for win-i686",       run: "cargo build --target i686-pc-windows-gnu" }
+
+  test-on-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Install latest rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - uses: actions/checkout@v3
+    - { name: "cargo build",          run: "cargo build --verbose" }
+    - { name: "cargo test",           run: "cargo test --verbose" }
+    - { name: "cargo test --release", run: "cargo test --verbose --release" }
+    - { name: "cargo clippy",         run: "cargo clippy" }
+    - { name: "example user",         run: "cargo run --example user" }

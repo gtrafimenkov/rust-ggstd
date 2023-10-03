@@ -3,6 +3,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+use crate::errors;
+
 // // These may be set to false in init() for a particular platform and/or
 // // build flags to let the tests know to skip tests of some features.
 // var (
@@ -10,8 +12,6 @@
 // 	groupImplemented     = true
 // 	groupListImplemented = true
 // )
-
-use crate::errors;
 
 /// User represents a user account.
 #[derive(Debug)]

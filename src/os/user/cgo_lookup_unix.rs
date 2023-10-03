@@ -10,8 +10,6 @@ use libc;
 
 // //go:build (cgo || darwin) && !osusergo && unix && !android
 
-// package user
-
 // import (
 // 	"fmt"
 // 	"runtime"

@@ -16,23 +16,25 @@
 //! This can be overridden by using osusergo build tag, which enforces
 //! the pure Go implementation.
 
+#[cfg(not(windows))]
 mod cgo_lookup_unix;
 mod lookup;
 mod user;
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 mod lookup_windows;
 
 pub use lookup::current;
 pub use user::{unknown_user_id_error, Group, User};
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
 use cgo_lookup_unix::current_internal;
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 use lookup_windows::current_internal;
 
 #[cfg(test)]
 mod user_test;
 
 #[cfg(test)]
+#[cfg(not(windows))]
 mod cgo_unix_test;
