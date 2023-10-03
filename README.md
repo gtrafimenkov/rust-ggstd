@@ -12,6 +12,9 @@ You can run these using following commands:
 ```
 cargo run --example flate
 go run goexamples/flate/main.go
+
+cargo run --example user
+go run goexamples/user/main.go
 ```
 
 See all Rust examples in [examples](./examples) folder and
@@ -47,8 +50,10 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - math
 - math::bits
 - os
+- os::user
 - strconv
 - strings
+- syscall
 - time
   - limitations:
     - no time zone support

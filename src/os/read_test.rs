@@ -64,7 +64,7 @@
 // }
 
 // func TestReadOnlyWriteFile(t *testing.T) {
-// 	if Getuid() == 0 {
+// 	if get_uid() == 0 {
 // 		t.Skipf("Root can write to read-only files anyway, so skip the read-only test.")
 // 	}
 

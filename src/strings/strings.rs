@@ -1261,16 +1261,19 @@ pub fn index(s: &str, substr: &str) -> isize {
     // 	return -1
 }
 
-// // Cut slices s around the first instance of sep,
-// // returning the text before and after sep.
-// // The found result reports whether sep appears in s.
-// // If sep does not appear in s, cut returns s, "", false.
-// fn Cut(s, sep string) (before, after string, found bool) {
-// 	if i := index(s, sep); i >= 0 {
-// 		return s[:i], s[i+len(sep):], true
-// 	}
-// 	return s, "", false
-// }
+/// Cut slices s around the first instance of sep,
+/// returning the text before and after sep.
+/// The found result reports whether sep appears in s.
+/// If sep does not appear in s, cut returns s, "", false.
+pub fn cut<'a>(s: &'a str, sep: &'_ str) -> (&'a str, &'a str, bool) {
+    if let Some(index) = s.find(sep) {
+        let before = &s[..index];
+        let after = &s[index + sep.len()..];
+        (before, after, true)
+    } else {
+        (s, "", false)
+    }
+}
 
 // // CutPrefix returns s without the provided leading prefix string
 // // and reports whether it found the prefix.

@@ -1816,29 +1816,54 @@ fn test_contains() {
 // 	}
 // }
 
-// var cutTests = []struct {
-// 	s, sep        string
-// 	before, after string
-// 	found         bool
-// }{
-// 	{"abc", "b", "a", "c", true},
-// 	{"abc", "a", "", "bc", true},
-// 	{"abc", "c", "ab", "", true},
-// 	{"abc", "abc", "", "", true},
-// 	{"abc", "", "", "abc", true},
-// 	{"abc", "d", "abc", "", false},
-// 	{"", "d", "", "", false},
-// 	{"", "", "", "", true},
-// }
+struct CutTest {
+    s: &'static str,
+    sep: &'static str,
+    before: &'static str,
+    after: &'static str,
+    found: bool,
+}
 
-// #[test]
-// fn TestCut() {
-// 	for _, tt := range cutTests {
-// 		if before, after, found := Cut(tt.s, tt.sep); before != tt.before || after != tt.after || found != tt.found {
-// 			t.Errorf("Cut({:?}, {:?}) = {:?}, {:?}, {}, want {:?}, {:?}, {}", tt.s, tt.sep, before, after, found, tt.before, tt.after, tt.found)
-// 		}
-// 	}
-// }
+impl CutTest {
+    const fn new(
+        s: &'static str,
+        sep: &'static str,
+        before: &'static str,
+        after: &'static str,
+        found: bool,
+    ) -> Self {
+        Self {
+            s,
+            sep,
+            before,
+            after,
+            found,
+        }
+    }
+}
+
+const CUT_TESTS: &[CutTest] = &[
+    CutTest::new("abc", "b", "a", "c", true),
+    CutTest::new("abc", "a", "", "bc", true),
+    CutTest::new("abc", "c", "ab", "", true),
+    CutTest::new("abc", "abc", "", "", true),
+    CutTest::new("abc", "", "", "abc", true),
+    CutTest::new("abc", "d", "abc", "", false),
+    CutTest::new("", "d", "", "", false),
+    CutTest::new("", "", "", "", true),
+    CutTest::new("привет,мир", ",", "привет", "мир", true),
+    CutTest::new("привет🙂мир", "🙂", "привет", "мир", true),
+];
+
+#[test]
+fn test_cut() {
+    for tt in CUT_TESTS {
+        let (before, after, found) = super::cut(tt.s, tt.sep);
+        assert_eq!(before.to_string(), tt.before);
+        assert_eq!(after.to_string(), tt.after);
+        assert_eq!(found, tt.found);
+    }
+}
 
 // var cutPrefixTests = []struct {
 // 	s, sep string

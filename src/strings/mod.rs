@@ -4,7 +4,7 @@ mod strings;
 
 pub use builder::Builder;
 pub use reader::Reader;
-pub use strings::{contains, has_suffix, index, replace_all};
+pub use strings::{contains, cut, has_suffix, index, replace_all};
 
 #[cfg(test)]
 mod strings_test;

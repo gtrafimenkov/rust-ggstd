@@ -10,3 +10,9 @@ repository = "https://github.com/gtrafimenkov/rust-ggstd"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["everything"] }
+
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+libc = "0.2"

@@ -16,5 +16,6 @@ pub mod math;
 pub mod os;
 pub mod strconv;
 pub mod strings;
+pub mod syscall;
 pub mod time;
 pub mod unicode;
