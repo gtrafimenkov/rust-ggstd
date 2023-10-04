@@ -1,0 +1,8 @@
+# Treat all files in the repository as binary, with no git magic updating
+# line endings. This produces predictable results in different environments.
+#
+# See:
+#   - https://github.com/golang/go/issues/9281
+#   - https://github.com/gtrafimenkov/rust-ggstd/issues/1
+
+* -text
