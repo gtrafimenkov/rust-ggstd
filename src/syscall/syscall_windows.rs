@@ -73,6 +73,7 @@ pub fn utf16_to_string(s: &[u16]) -> String {
 
 /// utf16_ptr_to_string is like utf16_to_string, but takes *u16
 /// as a parameter instead of []u16.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn utf16_ptr_to_string(p: *const u16) -> String {
     if p.is_null() {
         return "".to_string();

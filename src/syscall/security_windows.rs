@@ -67,7 +67,7 @@ pub fn translate_account_name(
     from_format: u32,
     to_format: u32,
 ) -> std::io::Result<String> {
-    let u = utf16_from_string(&username);
+    let u = utf16_from_string(username);
     let mut n = 50_u32;
     let mut b = vec![0_u16; n as usize];
     loop {
@@ -190,6 +190,7 @@ pub fn translate_account_name(
 
 /// String converts sid to a string format
 /// suitable for display, storage, or transmission.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn sid_to_string(sid: winapi::um::winnt::PSID) -> std::io::Result<String> {
     // fn (sid *SID) String() (string, error) {
 
@@ -229,18 +230,19 @@ pub struct AccontLookupResult {
 /// lookup_account retrieves the name of the account for this sid
 /// and the name of the first domain on which this sid is found.
 /// System specify target computer to search for.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn lookup_account(
     sid: winapi::um::winnt::PSID,
     system: &str,
 ) -> std::io::Result<AccontLookupResult> {
     let system_wide_str: Vec<u16>;
     let mut system_wide_str_ptr = std::ptr::null::<u16>() as *const u16;
-    if system.len() > 0 {
+    if !system.is_empty() {
         system_wide_str = super::utf16_from_string(system);
         system_wide_str_ptr = system_wide_str.as_ptr();
     }
-    let mut n = 50 as u32;
-    let mut dn = 50 as u32;
+    let mut n = 50_u32;
+    let mut dn = 50_u32;
     let mut b = vec![0_u16; n as usize];
     let mut db = vec![0_u16; dn as usize];
     let mut acc_type = 0;
@@ -358,7 +360,7 @@ impl Tokenuser {
 
     pub fn get_sid(&self) -> winapi::um::winnt::PSID {
         let p = self.get();
-        return unsafe { (*p).User.Sid };
+        unsafe { (*p).User.Sid }
     }
 }
 
@@ -376,7 +378,7 @@ impl Tokenprimarygroup {
 
     pub fn get_sid(&self) -> winapi::um::winnt::PSID {
         let p = self.get();
-        return unsafe { (*p).PrimaryGroup };
+        unsafe { (*p).PrimaryGroup }
     }
 }
 

@@ -38,7 +38,7 @@ fn lookup_full_name_server(servername: &str, username: &str) -> std::io::Result<
         unsafe { winapi::um::lmapibuf::NetApiBufferFree(p as *mut winapi::ctypes::c_void) };
         return Ok(name);
     }
-    return Err(std::io::Error::last_os_error());
+    Err(std::io::Error::last_os_error())
 }
 
 fn lookup_full_name(
@@ -89,7 +89,7 @@ fn lookup_username_and_domain(usid: winapi::um::winnt::PSID) -> std::io::Result<
             format!("user: should be user account type, not {}", res.acc_type),
         ));
     }
-    return Ok((res.account, res.domain));
+    Ok((res.account, res.domain))
 }
 
 // // findHomeDirInRegistry finds the user home path based on the uid.
@@ -205,7 +205,7 @@ pub(super) fn current_internal() -> std::io::Result<super::User> {
     let gid = syscall::sid_to_string(pg.get_sid())?;
     let dir = t.get_user_profile_directory()?;
     let (username, domain) = lookup_username_and_domain(u.get_sid())?;
-    return new_user(uid, gid, dir, username, domain);
+    new_user(uid, gid, dir, username, domain)
 }
 
 // // lookupUserPrimaryGroup obtains the primary group SID for a user using this method:
