@@ -10,6 +10,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  test-on-min-supported-version:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: rustup update 1.70.0 --no-self-update && rustup default 1.70.0
+    - { name: "cargo build",          run: "cargo build --verbose" }
+    - { name: "cargo test",           run: "cargo test --verbose" }
+    - { name: "cargo test --release", run: "cargo test --verbose --release" }
+
   test-on-linux:
     runs-on: ubuntu-latest
     steps:
@@ -32,9 +41,8 @@ jobs:
   test-on-windows:
     runs-on: windows-latest
     steps:
-    - name: Install latest rust toolchain
-      uses: dtolnay/rust-toolchain@stable
     - uses: actions/checkout@v3
+    - run: rustup update stable --no-self-update && rustup default stable
     - { name: "cargo build",          run: "cargo build --verbose" }
     - { name: "cargo test",           run: "cargo test --verbose" }
     - { name: "cargo test --release", run: "cargo test --verbose --release" }

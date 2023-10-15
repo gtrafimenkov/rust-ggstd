@@ -74,6 +74,10 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - unicode
 - unicode::utf8
 
+## Minimal supported Rust version
+
+1.70.0
+
 ## Development process
 
 When a piece of functionality is needed, appropriate Go source code is copied from
