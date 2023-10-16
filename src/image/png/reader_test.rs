@@ -502,7 +502,7 @@ fn test_paletted_decode_config() {
                 )
             }
             _ => {
-                assert!(false, "{}: expected paletted color model", filename);
+                panic!("{}: expected paletted color model", filename);
             }
         }
     }
@@ -815,7 +815,7 @@ fn test_dimension_overflow() {
         if tc.unsupported_config {
             match cfg {
                 Ok(_) => {
-                    assert!(false, "i={}: decode_config: got nil error, want non-nil", i);
+                    panic!("i={}: decode_config: got nil error, want non-nil", i);
                 }
                 Err(err) => {
                     let msg = err.to_string();
@@ -924,7 +924,7 @@ fn test_decode_paletted_with_transparency() {
             let (_, _, _, alpha) = pal.colors[0].rgba();
             assert_eq!(alpha, 0, "decode_config: got {}, want 0", alpha);
         }
-        _ => assert!(false, "expect Paletted model"),
+        _ => panic!("expect Paletted model"),
     }
 
     let img = decode(&mut bytes::Reader::new(src)).unwrap();
@@ -933,7 +933,7 @@ fn test_decode_paletted_with_transparency() {
             let (_, _, _, alpha) = pal.colors[0].rgba();
             assert_eq!(alpha, 0, "decode: got {}, want 0", alpha);
         }
-        _ => assert!(false, "expect Paletted model"),
+        _ => panic!("expect Paletted model"),
     }
 }
 

@@ -102,8 +102,7 @@ fn test_rectangle() {
                     continue;
                 }
                 if in_fn(b, r).is_ok() && in_fn(b, s).is_ok() {
-                    assert!(
-                        false,
+                    panic!(
                         "intersect: r={:?}, s={:?}, a={:?}, b={:?}, i={}: intersection could be larger",
                         r, s, a, b, i
                     );
@@ -147,8 +146,7 @@ fn test_rectangle() {
             smaller_than_a[3].max.y -= 1;
             for (i, b) in smaller_than_a.iter().enumerate() {
                 if in_fn(r, b).is_ok() && in_fn(s, b).is_ok() {
-                    assert!(
-                        false,
+                    panic!(
                         "Union: r={:?}, s={:?}, a={:?}, b={:?}, i={}: union could be smaller",
                         r, s, a, b, i
                     );

@@ -129,7 +129,7 @@ fn test_writer_dict_is_used() {
         compressor.close().unwrap();
     }
     let expected_max_size = 25;
-    let output = bytes::Buffer::bytes(&mut buf);
+    let output = bytes::Buffer::bytes(&buf);
     assert!(
         output.len() <= expected_max_size,
         "result too large (got {}, want <= {} bytes). Is the dictionary being used?",

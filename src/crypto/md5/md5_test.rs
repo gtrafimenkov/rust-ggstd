@@ -175,14 +175,14 @@ const GOLDEN: &[MD5Test] = &[
 
 #[test]
 fn test_golden() {
-    for i in 0..GOLDEN.len() {
-        let g = &GOLDEN[i];
+    for g in GOLDEN {
         let s = hex::encode_to_string(&md5::sum(g.input));
         assert_eq!(g.output, s);
 
         let mut c = md5::new();
         let mut buf = vec![0_u8; g.input.len() + 4];
         for j in 0..3 + 4 {
+            #[allow(clippy::comparison_chain)]
             if j < 2 {
                 c.write_all(g.input).unwrap();
             } else if j == 2 {

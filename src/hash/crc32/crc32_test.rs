@@ -15,7 +15,7 @@ use std::io::Write;
 // 	// whether tab == castagnoliTable.
 // 	ieee := NewIEEE()
 // 	go MakeTable(Castagnoli)
-// 	ieee.write([u8]("hello"))
+// 	ieee.write_all([u8]("hello"))
 // }
 
 struct Test {
@@ -395,8 +395,8 @@ fn test_golden() {
             if d >= b.len() {
                 d = b.len()
             }
-            ieee.write(&b[..d]).unwrap();
-            ieee.write(&b[d..]).unwrap();
+            ieee.write_all(&b[..d]).unwrap();
+            ieee.write_all(&b[d..]).unwrap();
             ieee.sum32()
         })
     }
@@ -408,7 +408,7 @@ fn test_golden() {
 
     // 	testGoldenCastagnoli(t, func(b [u8]) u32 {
     // 		castagnoli := New(castagnoliTab)
-    // 		castagnoli.write(b)
+    // 		castagnoli.write_all(b)
     // 		return castagnoli.sum32()
     // 	})
 
@@ -421,8 +421,8 @@ fn test_golden() {
     // 			if d >= b.len() {
     // 				d = b.len()
     // 			}
-    // 			castagnoli.write(b[..d])
-    // 			castagnoli.write(b[d:])
+    // 			castagnoli.write_all(b[..d])
+    // 			castagnoli.write_all(b[d:])
     // 			return castagnoli.sum32()
     // 		})
     // 	}
@@ -463,7 +463,7 @@ fn test_golden() {
 
 // 	// Warm up
 // 	h.Reset()
-// 	h.write(data)
+// 	h.write_all(data)
 // 	h.Sum(in)
 // 	// Avoid further allocations
 // 	in = in[..0]
@@ -471,7 +471,7 @@ fn test_golden() {
 // 	b.ResetTimer()
 // 	for i := 0; i < b.N; i += 1 {
 // 		h.Reset()
-// 		h.write(data)
+// 		h.write_all(data)
 // 		h.Sum(in)
 // 		in = in[..0]
 // 	}

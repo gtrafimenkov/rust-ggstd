@@ -147,7 +147,7 @@ fn get_tests() -> [ZlibTest; 14] {
 fn test_decompressor() {
     fn compare_errors_zlib(got: &zlib::Error, want: &Option<zlib::Error>) {
         if want.is_none() {
-            assert!(false, "unexpected error {:?}", got);
+            panic!("unexpected error {:?}", got);
         }
         assert_eq!(
             got,
@@ -159,21 +159,13 @@ fn test_decompressor() {
     }
     fn compare_errors(got: &std::io::Error, want: &Option<zlib::Error>) {
         if want.is_none() {
-            assert!(false, "unexpected error {:?}", got);
+            panic!("unexpected error {:?}", got);
         }
-        match want.as_ref().unwrap() {
-            zlib::Error::StdIo(want) => {
-                assert_eq!(got.kind(), want.kind());
-                return;
-            }
-            _ => {}
+        if let zlib::Error::StdIo(want) = want.as_ref().unwrap() {
+            assert_eq!(got.kind(), want.kind());
+            return;
         }
-        assert!(
-            false,
-            "expecting {:?}, got {:?}",
-            want.as_ref().unwrap(),
-            got
-        );
+        panic!("expecting {:?}, got {:?}", want.as_ref().unwrap(), got);
     }
     for tt in get_tests() {
         let mut input = bytes::Reader::new(tt.compressed);

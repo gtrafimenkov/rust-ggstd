@@ -1244,7 +1244,7 @@ fn test_repeat() {
     {
         let mut input = "a".to_string();
         input.push_str(&"b".to_string().repeat(1 << 16));
-        input.push_str(&"z".to_string());
+        input.push('z');
         let output = format!("{}{}", input, input);
         // var longString = "a" + string(make([u8], 1<<16)) + "z"
         // 	{longString, longString + longString, 2},

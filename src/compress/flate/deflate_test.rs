@@ -171,6 +171,7 @@ const REVERSE_BITS_TESTS: &[ReverseBitsTest] = &[
 
 fn large_data_chunk() -> Vec<u8> {
     let mut result = Vec::with_capacity(100000);
+    #[allow(clippy::needless_range_loop)]
     for i in 0..result.len() {
         result[i] = ((i * i) & 0xFF) as u8;
     }
@@ -190,6 +191,7 @@ fn test_bulk_hash4() {
         while j < y.len() {
             let y = &y[..j];
             let mut dst = vec![0; y.len() - MIN_MATCH_LENGTH + 1];
+            #[allow(clippy::needless_range_loop)]
             for i in 0..dst.len() {
                 dst[i] = (i + 100) as u32;
             }
@@ -197,16 +199,14 @@ fn test_bulk_hash4() {
             for (i, got) in dst.iter().enumerate() {
                 let want = hash4(&y[i..]);
                 if *got != want && *got == (i as u32) + 100 {
-                    assert!(
-                        false,
+                    panic!(
                         "Len:{} Index:{}, want 0x{:08x} but not modified",
                         y.len(),
                         i,
                         want
                     );
                 } else if *got != want {
-                    assert!(
-                        false,
+                    panic!(
                         "Len:{} Index:{}, got 0x{:08x} want:0x{:08x}",
                         y.len(),
                         i,
@@ -225,7 +225,7 @@ fn test_deflate() {
     for h in DEFLATE_TESTS {
         let mut buf = bytes::Buffer::new();
         let mut w = Writer::new(&mut buf, h.level).unwrap();
-        w.write(h.input).unwrap();
+        w.write_all(h.input).unwrap();
         w.close().unwrap();
         assert_eq!(h.out, buf.bytes());
     }
@@ -241,7 +241,7 @@ fn test_writer_close() {
 
     zw.close().unwrap();
 
-    let res = zw.write("Test".as_bytes());
+    let res = zw.write_all("Test".as_bytes());
     assert!(res.is_err(), "Write to closed writer");
 
     let res = zw.flush();
@@ -327,7 +327,7 @@ fn test_very_long_sparse_chunk() {
 // }
 
 // fn (b *syncBuffer) Write(p [u8]) (n isize, err error) {
-// 	n, err = b.buf.Write(p)
+// 	n, err = b.buf.Write_all(p)
 // 	b.signal()
 // 	return
 // }
@@ -372,7 +372,7 @@ fn test_very_long_sparse_chunk() {
 //     // 			lo, hi = (input.len()+1)/2, input.len()
 //     // 		}
 //     // 		t.Logf("#{}: write {}-{}", i, lo, hi)
-//     // 		if _, err := w.write(input[lo:hi]); err != nil {
+//     // 		if _, err := w.write_all(input[lo:hi]); err != nil {
 //     // 			t.Errorf("test_sync: write: {}", err)
 //     // 			return
 //     // 		}
@@ -436,12 +436,11 @@ fn test_very_long_sparse_chunk() {
 fn test_to_from_with_level_and_limit(level: isize, input: &[u8], name: &str, limit: usize) {
     let mut buffer = bytes::Buffer::new();
     let mut w = Writer::new(&mut buffer, level).unwrap();
-    w.write(input).unwrap();
+    w.write_all(input).unwrap();
     w.close().unwrap();
 
     if limit > 0 && buffer.len() > limit {
-        assert!(
-            false,
+        panic!(
             "level: {}, len(compress(data)) = {} > limit = {}",
             level,
             buffer.len(),
@@ -543,10 +542,10 @@ fn test_deflate_inflate_string() {
 //     let text = "hello again world";
 //     let mut b = bytes::Buffer::new();
 //     let mut w = Writer::new(&mut b, 5).unwrap();
-//     w.write(dict.as_bytes()).unwrap();
+//     w.write_all(dict.as_bytes()).unwrap();
 //     w.flush().unwrap();
 //     b.reset();
-//     let _ = w.write(text.as_bytes());
+//     let _ = w.write_all(text.as_bytes());
 //     w.close().unwrap();
 
 //     // 	r := new_reader_dict(&b, [u8](dict))
@@ -567,10 +566,10 @@ fn test_writer_dict() {
     let mut b = bytes::Buffer::new();
     {
         let mut w = Writer::new(&mut b, 5).unwrap();
-        w.write(dict).unwrap();
+        w.write_all(dict).unwrap();
         w.flush().unwrap();
         // data written since this moment should be the same as in b1
-        w.write(text).unwrap();
+        w.write_all(text).unwrap();
         w.close().unwrap();
     }
 
@@ -578,7 +577,7 @@ fn test_writer_dict() {
 
     {
         let mut w = Writer::new_dict(&mut b1, 5, dict).unwrap();
-        w.write(text).unwrap();
+        w.write_all(text).unwrap();
         w.close().unwrap();
     }
 
@@ -594,9 +593,9 @@ fn test_regression2508() {
     // 	}
     let mut discard = ggio::Discard::new();
     let mut w = Writer::new(&mut discard, 1).unwrap();
-    let mut buf = vec![0; 1024];
+    let buf = vec![0; 1024];
     for i in 0..131072 {
-        let res = w.write(&mut buf);
+        let res = w.write_all(&buf);
         assert!(res.is_ok(), "writer failed: {}, {:?}", i, res.err());
     }
     w.close().unwrap();
@@ -617,7 +616,7 @@ fn test_writer_reset() {
         // 			n = 10
         // 		}
         for _ in 0..n {
-            w.write(buf).unwrap();
+            w.write_all(buf).unwrap();
         }
         let mut x = ggio::Discard::new();
         w.reset(&mut x);
@@ -668,16 +667,16 @@ fn test_writer_reset() {
 // fn testResetOutput(, level isize, dict [u8]) {
 // 	writeData := fn(w *Writer) {
 // 		msg := [u8]("now is the time for all good gophers")
-// 		w.write(msg)
+// 		w.write_all(msg)
 // 		w.flush()
 
 // 		hello := [u8]("hello world")
 // 		for i := 0; i < 1024; i += 1 {
-// 			w.write(hello)
+// 			w.write_all(hello)
 // 		}
 
 // 		fill := bytes.Repeat([u8]("x"), 65000)
-// 		w.write(fill)
+// 		w.write_all(fill)
 // 	}
 
 // 	let mut buf = bytes::Buffer::new();
@@ -771,7 +770,7 @@ fn test_writer_reset() {
 // 				}
 // 				for _, n := range tc {
 // 					want = append(want, abcabc[..n]...)
-// 					if _, err := w.write(abcabc[..n]); err != nil {
+// 					if _, err := w.write_all(abcabc[..n]); err != nil {
 // 						t.Errorf("i={}, firstN={}, flush=%t: Write: {}", i, firstN, flush, err)
 // 						continue outer
 // 					}
@@ -839,7 +838,7 @@ fn test_writer_reset() {
 // 		fw := &failWriter{i}
 // 		zw.Reset(fw)
 
-// 		_, werr := zw.Write(d)
+// 		_, werr := zw.Write_all(d)
 // 		cerr := zw.Close()
 // 		ferr := zw.Flush()
 // 		if werr != errIO && werr != nil {
@@ -865,7 +864,7 @@ fn test_writer_reset() {
 // 	}
 // 	flushErr := zw.Flush()
 // 	closeErr := zw.Close()
-// 	_, writeErr := zw.Write([u8]("Test"))
+// 	_, writeErr := zw.Write_all([u8]("Test"))
 // 	checkErrors([]error{closeErr, flushErr, writeErr}, errIO, t)
 // }
 
@@ -877,7 +876,7 @@ fn test_writer_reset() {
 // 	}
 // 	closeErr := zw.Close()
 // 	flushErr := zw.Flush()
-// 	_, writeErr := zw.Write([u8]("Test"))
+// 	_, writeErr := zw.Write_all([u8]("Test"))
 // 	checkErrors([]error{closeErr, flushErr, writeErr}, errIO, t)
 
 // 	// After closing writer we should persistent "write after close" error across Flush and Write calls, but return nil
@@ -894,7 +893,7 @@ fn test_writer_reset() {
 // 	}
 
 // 	flushErr = zw.Flush()
-// 	_, writeErr = zw.Write([u8]("Test"))
+// 	_, writeErr = zw.Write_all([u8]("Test"))
 // 	checkErrors([]error{flushErr, writeErr}, errWriterClosed, t)
 // }
 
@@ -1083,7 +1082,7 @@ fn test_best_speed_match() {
 // 					report("new_writer: ", err)
 // 					continue
 // 				}
-// 				if _, err := w.write(src); err != nil {
+// 				if _, err := w.write_all(src); err != nil {
 // 					report("Write: ", err)
 // 					continue
 // 				}
@@ -1119,6 +1118,7 @@ fn test_best_speed_shift_offsets() {
     let mut test_data: Vec<u8> = vec![0; 32];
     // ggrust TODO: use rand when implemented
     // 	let rng = rand.New(rand.NewSource(0));
+    #[allow(clippy::needless_range_loop)]
     for i in 0..test_data.len() {
         // testData[i] = byte(rng.Uint32())
         test_data[i] = i as u8;
@@ -1216,7 +1216,7 @@ fn test_best_speed_shift_offsets() {
 //     // 			if err != nil {
 //     // 				t.Errorf("level {}, Writer::new() = {}, want nil", level, err)
 //     // 			}
-//     // 			if n, err := zw.Write(b); n != b.len() || err != nil {
+//     // 			if n, err := zw.Write_all(b); n != b.len() || err != nil {
 //     // 				t.Errorf("level {}, Write() = ({}, {}), want ({}, nil)", level, n, err, b.len())
 //     // 			}
 //     // 			if err := zw.Close(); err != nil {

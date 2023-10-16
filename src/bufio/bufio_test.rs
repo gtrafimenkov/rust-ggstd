@@ -608,15 +608,13 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 fn test_writer() {
     let mut data = [0_u8; 8192];
 
+    #[allow(clippy::needless_range_loop)]
     for i in 0..data.len() {
         data[i] = b' ' + (i % (b'~' - b' ') as usize) as u8;
     }
     let mut w = bytes::Buffer::new();
-    for i in 0..BUFSIZES.len() {
-        for j in 0..BUFSIZES.len() {
-            let nwrite = BUFSIZES[i];
-            let bs = BUFSIZES[j];
-
+    for nwrite in BUFSIZES {
+        for bs in BUFSIZES {
             // Write nwrite bytes using buffer size bs.
             // Check that the right amount makes it out
             // and that the data is correct.

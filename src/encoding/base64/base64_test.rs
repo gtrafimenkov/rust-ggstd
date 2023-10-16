@@ -472,7 +472,7 @@ fn test_decode_corrupt() {
                 }
             }
         } else {
-            assert!(false, "Decoder failed to detect corruption in {:?}", tc);
+            panic!("Decoder failed to detect corruption in {:?}", tc);
         }
     }
 }
@@ -692,9 +692,7 @@ impl std::io::Read for FaultInjectReader<'_> {
             return Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof));
         }
         match self.nextc.remove(0) {
-            Ok(n) => {
-                self.source.read(&mut buf[..n])
-            }
+            Ok(n) => self.source.read(&mut buf[..n]),
             Err(err) => Err(err),
         }
     }

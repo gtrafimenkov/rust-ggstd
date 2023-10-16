@@ -16,6 +16,7 @@ const N: usize = 10000; // make this bigger for a larger (and slower) test
 
 fn create_test_data() -> Vec<u8> {
     let mut buf = vec![0; N];
+    #[allow(clippy::needless_range_loop)]
     for i in 0..N {
         buf[i] = b'a' + (i % 26) as u8;
     }
@@ -231,7 +232,7 @@ fn test_cap_with_preallocated_slice() {
 #[test]
 fn test_cap_with_slice_and_written_data() {
     let mut buf = buffer::new_buffer(Vec::with_capacity(10));
-    buf.write("test".as_bytes()).unwrap();
+    buf.write_all("test".as_bytes()).unwrap();
     assert_eq!(10, buf.cap());
 }
 

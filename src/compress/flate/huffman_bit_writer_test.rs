@@ -625,13 +625,13 @@ fn write_to_type(ttype: &str, bw: &mut HuffmanBitWriter, tok: &[Token], input: O
     }
 
     if bw.error().is_err() {
-        assert!(false, "write error: {}", bw.error().as_ref().unwrap_err());
+        panic!("write error: {}", bw.error().as_ref().unwrap_err());
     }
 
     bw.flush();
 
     if bw.error().is_err() {
-        assert!(false, "flush error: {}", bw.error().as_ref().unwrap_err());
+        panic!("flush error: {}", bw.error().as_ref().unwrap_err());
     }
 }
 
@@ -661,14 +661,12 @@ fn test_writer_eof(ttype: &str, test: &HuffTest, use_input: bool) {
         }
     }
     if bw.error().is_err() {
-        eprintln!("error: {}", bw.error().as_ref().unwrap());
-        assert!(false);
+        panic!("error: {}", bw.error().as_ref().unwrap());
     }
 
     bw.flush();
     if bw.error().is_err() {
-        eprintln!("error: {}", bw.error().as_ref().unwrap());
-        assert!(false);
+        panic!("error: {}", bw.error().as_ref().unwrap());
     }
     let b = buf.bytes();
     assert_ne!(0, b.len(), "no output received");

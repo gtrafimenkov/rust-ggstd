@@ -20,11 +20,11 @@ fn test_reset() {
     let mut deflated1 = bytes::Buffer::new();
     {
         let mut w = Writer::new(&mut deflated0, 1).unwrap();
-        w.write(ss[0].as_bytes()).unwrap();
+        w.write_all(ss[0].as_bytes()).unwrap();
         w.close().unwrap();
 
         let mut w = Writer::new(&mut deflated1, 1).unwrap();
-        w.write(ss[1].as_bytes()).unwrap();
+        w.write_all(ss[1].as_bytes()).unwrap();
         w.close().unwrap();
     }
 
@@ -134,11 +134,11 @@ fn test_reset_dict() {
     let mut deflated1 = bytes::Buffer::new();
     {
         let mut w = Writer::new_dict(&mut deflated0, DEFAULT_COMPRESSION, dict).unwrap();
-        w.write(ss[0].as_bytes()).unwrap();
+        w.write_all(ss[0].as_bytes()).unwrap();
         w.close().unwrap();
 
         let mut w = Writer::new_dict(&mut deflated1, DEFAULT_COMPRESSION, dict).unwrap();
-        w.write(ss[1].as_bytes()).unwrap();
+        w.write_all(ss[1].as_bytes()).unwrap();
         w.close().unwrap();
     }
 

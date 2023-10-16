@@ -444,7 +444,7 @@ fn test_decompressor() {
 
         // Test Reader.reset.
         if let Err(err) = r1.reset(Box::leak(Box::new(bytes::Reader::new(tt.gzip)))) {
-            assert!(false, "{}: reset: {}", tt.desc, err);
+            panic!("{}: reset: {}", tt.desc, err);
         };
         test(tt, &mut r1, &mut b);
     }
@@ -470,8 +470,7 @@ fn test_multistream_false() {
     let tt = match GUNZIP_TESTS.iter().find(|x| x.desc.ends_with(" x2")) {
         Some(item) => item,
         None => {
-            assert!(false, "cannot find hello.txt x2 in gunzip tests");
-            return;
+            panic!("cannot find hello.txt x2 in gunzip tests");
         }
     };
     let mut br = bytes::Reader::new(tt.gzip);

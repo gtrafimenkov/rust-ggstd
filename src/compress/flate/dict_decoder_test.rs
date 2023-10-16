@@ -235,7 +235,7 @@ And that has made all the difference.
 
             length -= cnt;
             if dd.avail_write() == 0 {
-                buf.write(dd.read_flush()).unwrap();
+                buf.write_all(dd.read_flush()).unwrap();
             }
         }
     }
@@ -250,7 +250,7 @@ And that has made all the difference.
             str = &str[cnt..];
             dd.write_mark(cnt);
             if dd.avail_write() == 0 {
-                buf.write(dd.read_flush()).unwrap();
+                buf.write_all(dd.read_flush()).unwrap();
             }
         }
     }
@@ -277,7 +277,7 @@ And that has made all the difference.
         let size = dd.hist_size();
         write_copy(&mut got, &mut dd, size, 33);
         let first_33 = want.bytes()[..33].to_vec();
-        want.write(&first_33).unwrap();
+        want.write_all(&first_33).unwrap();
     }
 
     write_string(&mut got, &mut dd, abc);
@@ -303,10 +303,10 @@ And that has made all the difference.
         write_copy(&mut got, &mut dd, size, 10);
         let len = want.bytes().len();
         let first_10 = want.bytes()[len - size..][..10].to_vec();
-        want.write(&first_10).unwrap();
+        want.write_all(&first_10).unwrap();
     }
 
-    got.write(dd.read_flush()).unwrap();
+    got.write_all(dd.read_flush()).unwrap();
 
     assert_eq!(want.string().len(), got.string().len());
     assert_eq!(want.string(), got.string());

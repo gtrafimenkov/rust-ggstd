@@ -107,37 +107,34 @@ fn test_reader() {
     for (i, tt) in tests.iter().enumerate() {
         let res = r.seek(tt.off, tt.seek);
         if res.is_ok() && tt.seekerr.is_some() {
-            assert!(
-                false,
-                "{}. want seek error {}",
-                i,
-                tt.seekerr.as_ref().unwrap()
-            );
+            panic!("{}. want seek error {}", i, tt.seekerr.as_ref().unwrap());
         }
-        if res.is_err() {
-            let errstr = res.err().unwrap().to_string();
-            assert_eq!(
-                tt.seekerr.as_ref().unwrap(),
-                &errstr,
-                "{}. seek error = '{}'; want '{}'",
-                i,
-                errstr,
-                tt.seekerr.as_ref().unwrap()
-            );
-        } else {
-            let pos = res.unwrap();
-            if tt.wantpos != 0 {
-                assert_eq!(tt.wantpos, pos, "{}. pos = {}, want {}", i, pos, tt.wantpos);
+        match res {
+            Err(err) => {
+                let errstr = err.to_string();
+                assert_eq!(
+                    tt.seekerr.as_ref().unwrap(),
+                    &errstr,
+                    "{}. seek error = '{}'; want '{}'",
+                    i,
+                    errstr,
+                    tt.seekerr.as_ref().unwrap()
+                );
+            }
+            Ok(pos) => {
+                if tt.wantpos != 0 {
+                    assert_eq!(tt.wantpos, pos, "{}. pos = {}, want {}", i, pos, tt.wantpos);
+                }
             }
         }
         let mut buf = vec![0; tt.n];
         let res = r.read(&mut buf);
         if res.is_ok() {
             if tt.readerr.is_some() {
-                assert!(false, "{}. read = no error; want {:?}", i, tt.readerr);
+                panic!("{}. read = no error; want {:?}", i, tt.readerr);
             }
         } else if tt.readerr.is_none() {
-            assert!(false, "{}. read = {:?}; want = no error", i, res);
+            panic!("{}. read = {:?}; want = no error", i, res);
         } else {
             let errstr = res.as_ref().unwrap_err().to_string();
             assert_eq!(

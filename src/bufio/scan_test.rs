@@ -416,7 +416,7 @@ fn test_non_eofwith_empty_read() {
             err
         );
     } else {
-        assert!(false, "expecting Error::ErrRead, got {:?}", err);
+        panic!("expecting Error::ErrRead, got {:?}", err);
     }
 }
 

@@ -55,6 +55,7 @@ struct TimeTest {
 }
 
 impl TimeTest {
+    #[allow(clippy::too_many_arguments)]
     const fn new(
         seconds: i64,
         year: isize,

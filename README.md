@@ -103,6 +103,10 @@ When a piece of functionality is needed, appropriate Go source code is copied fr
 Go: ` 1 << 1 + 1 == 3`
 Rust: `1 << 1 + 1 == 4`
 
+## Release checklist
+
+- there are no warnings produced by `cargo doc`, `cargo clippy`, `cargo clippy --tests`
+
 ## License
 
 The same license as used by Go project.  See [LICENSE](./LICENSE).

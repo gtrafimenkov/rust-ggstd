@@ -293,7 +293,7 @@ fn test_read_at_least() {
 
 fn test_read_at_least_int(rb: &mut bytes::Buffer) {
     // fn test_read_at_least_int(rb: &mut dyn ReadWriter) {
-    rb.write("0123".as_bytes()).unwrap();
+    rb.write_all("0123".as_bytes()).unwrap();
     let buf = &mut [0; 2];
 
     let (n, err) = ggio::read_at_least(rb, buf, 2);
@@ -321,7 +321,7 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
     );
     assert_eq!(0, n, "expected to have read 0 bytes, got {}", n);
 
-    rb.write("4".as_bytes()).unwrap();
+    rb.write_all("4".as_bytes()).unwrap();
     let (n, err) = ggio::read_at_least(rb, buf, 2);
     assert!(err.as_ref().unwrap().kind() == std::io::ErrorKind::UnexpectedEof);
     assert_eq!(1, n, "expected to have read 1 bytes, got {}", n);
