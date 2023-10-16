@@ -10,50 +10,14 @@ use crate::hash::crc32;
 use crate::io as ggio;
 use crate::time;
 
-// import (
-// 	"bufio"
-// 	"compress/flate"
-// 	"encoding/binary"
-// 	"errors"
-// 	"hash/crc32"
-// 	"io"
-// 	"time"
-// )
-
 pub(super) const GZIP_ID1: u8 = 0x1f;
 const GZIP_ID2: u8 = 0x8b;
 const GZIP_DEFLATE: u8 = 8;
-// const FLAG_TEXT: u8 = 1 << 0;
+const _FLAG_TEXT: u8 = 1 << 0;
 const FLAG_HDR_CRC: u8 = 1 << 1;
 const FLAG_EXTRA: u8 = 1 << 2;
 const FLAG_NAME: u8 = 1 << 3;
 const FLAG_COMMENT: u8 = 1 << 4;
-
-// /// Error describes possible errors.
-// #[derive(Debug)]
-// pub enum Error {
-//     /// ErrChecksum is returned when reading GZIP data that has an invalid checksum.
-//     ErrChecksum,
-//     // ErrHeader is returned when reading GZIP data that has an invalid header.
-//     ErrHeader,
-//     Io(std::io::Error),
-// }
-
-// impl std::fmt::Display for Error {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Error::ErrChecksum => write!(f, "{}", ERR_CHECKSUM_MSG),
-//             Error::ErrHeader => write!(f, "gzip: invalid header"),
-//             Error::Io(e) => write!(f, "{}", e),
-//         }
-//     }
-// }
-
-// impl From<std::io::Error> for Error {
-//     fn from(error: std::io::Error) -> Self {
-//         Error::Io(error)
-//     }
-// }
 
 /// ERR_CHECKSUM_MSG is an error message that will be return as std::io::Error
 /// when the checksum is wrong.
@@ -69,15 +33,6 @@ fn get_err_checksum() -> std::io::Error {
 fn get_err_invalid_header() -> std::io::Error {
     errors::new_stdio_other_error(ERR_INVALID_HEADER.to_string())
 }
-// var le = binary.LittleEndian
-
-// // noEOF converts io.EOF to io.ErrUnexpectedEOF.
-// fn noEOF(err error) error {
-// 	if err == io.EOF {
-// 		return io.ErrUnexpectedEOF
-// 	}
-// 	return err
-// }
 
 /// The gzip file stores a header giving metadata about the compressed file.
 /// That header is exposed as the fields of the Writer and Reader structs.
@@ -98,7 +53,7 @@ struct ReadState {
     buf: Vec<u8>,
 }
 
-/// A Reader implements io::Reader and (TODO std::io::Read) that can be used to retrieve
+/// A Reader implements io::Reader and std::io::Read that can be used to retrieve
 /// uncompressed data from a gzip-format compressed file.
 ///
 /// In general, a gzip file can be a concatenation of gzip files,
@@ -365,15 +320,7 @@ impl ReadState {
                 return Err(get_err_invalid_header());
             }
         }
-
         self.digest = 0;
-        // 	if self.decompressor == nil {
-        // 		self.decompressor = flate.Reader::new(r)
-        // 	} else {
-        // 		self.decompressor.(flate.Resetter).reset(r, nil)
-        // 	}
-        // 	return hdr, nil
-
         Ok(Some(Header {
             comment,
             extra: extra_data,

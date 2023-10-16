@@ -3,7 +3,7 @@
 
 mod gunzip;
 
-pub use gunzip::{Reader, ERR_CHECKSUM_MSG, ERR_INVALID_HEADER};
+pub use gunzip::{Header, Reader, ERR_CHECKSUM_MSG, ERR_INVALID_HEADER};
 
 #[cfg(test)]
 mod gunzip_test;

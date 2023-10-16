@@ -16,3 +16,10 @@ test-flate-speed:
 
 print-partially-implemented-modules:
 	find src -name '*.rs' -exec dirname '{}' \; | sort | uniq | sed 's@src/@- @g' | sed 's@/@::@' | grep -v compat
+
+check:
+	cargo build
+	cargo build --release
+	cargo test
+	cargo clippy
+	cargo clippy --tests
