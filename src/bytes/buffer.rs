@@ -64,9 +64,10 @@ impl Buffer {
     }
 
     /// string returns the contents of the unread portion of the buffer
-    /// as a string. If the Buffer is a nil pointer, it returns "<nil>".
-    ///
-    /// To build strings more efficiently, see the strings.Builder type.
+    /// as a string.
+    // If the Buffer is a nil pointer, it returns "<nil>".
+    //
+    // To build strings more efficiently, see the strings.Builder type.
     pub fn string(&self) -> String {
         // 	if b == nil {
         // 		// Special case, useful in debugging.

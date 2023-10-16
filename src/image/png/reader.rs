@@ -110,7 +110,7 @@ impl InterlaceScan {
 }
 
 /// INTERLACING defines Adam7 interlacing, with 7 passes of reduced images.
-/// See https://www.w3.org/TR/PNG/#8Interlace
+/// See <https://www.w3.org/TR/PNG/#8Interlace>
 const INTERLACING: &[InterlaceScan] = &[
     InterlaceScan::new(8, 8, 0, 0),
     InterlaceScan::new(8, 8, 4, 0),
@@ -126,7 +126,7 @@ const INTERLACING: &[InterlaceScan] = &[
 /// present), IDAT and IEND chunks must appear in that order. There may be
 /// multiple IDAT chunks, and IDAT chunks must be sequential (i.e. they may not
 /// have any other chunks between them).
-/// https://www.w3.org/TR/PNG/#5ChunkOrdering
+/// <https://www.w3.org/TR/PNG/#5ChunkOrdering>
 #[derive(PartialEq, PartialOrd)]
 enum DecodingStage {
     Start = 0,

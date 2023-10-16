@@ -526,7 +526,7 @@ impl Encoding {
         (dbuf, err)
     }
 
-    /// decode_to_vec decodes src to Vec<u8>.
+    /// decode_to_vec decodes src to `Vec<u8>`.
     /// New line characters (\r and \n) are ignored.
     pub fn decode_to_vec(&self, src: &[u8]) -> Result<Vec<u8>, Error> {
         let len = self.decoded_len(src.len());
