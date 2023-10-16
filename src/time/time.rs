@@ -129,6 +129,7 @@
 // // clock reading.
 
 /// A Time represents an instant in time with nanosecond precision.
+#[derive(Debug, Default)]
 pub struct Time {
     // wall and ext encode the wall time seconds, wall time nanoseconds,
     // and optional monotonic clock reading in nanoseconds.

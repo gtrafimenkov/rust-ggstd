@@ -48,7 +48,7 @@ fn test_copy() {
     let mut rb = bytes::Buffer::new();
     let mut wb = bytes::Buffer::new();
     rb.write_string("hello, world.").unwrap();
-    ggio::copy(&mut wb, &mut rb);
+    std::io::copy(&mut rb, &mut wb).unwrap();
     assert_eq!("hello, world.", wb.string(), "Copy did not work properly");
 }
 

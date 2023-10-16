@@ -250,15 +250,15 @@ impl HuffmanDecoder {
     }
 }
 
-/// The actual read interface needed by new_reader.
-/// If you have only ggio::Reader and not ggio::ByteReader,
-/// you can use bufio::Reader as a wrapper.
-// pub trait Reader: ggio::Reader + ggio::ByteReader {}
-pub trait Reader {
-    //: ggio::Reader + ggio::ByteReader {
-    fn read(&mut self, p: &mut [u8]) -> (usize, Option<std::io::Error>);
-    fn read_byte(&mut self) -> Result<u8, std::io::Error>;
-}
+// /// The actual read interface needed by new_reader.
+// /// If you have only ggio::Reader and not ggio::ByteReader,
+// /// you can use bufio::Reader as a wrapper.
+// // pub trait Reader: ggio::Reader + ggio::ByteReader {}
+// pub trait Reader {
+//     //: ggio::Reader + ggio::ByteReader {
+//     fn read(&mut self, p: &mut [u8]) -> ggio::IoRes;
+//     fn read_byte(&mut self) -> Result<u8, std::io::Error>;
+// }
 
 #[derive(PartialEq)]
 enum HDDecoder {
@@ -272,14 +272,14 @@ enum HLDecoder {
     H1,
 }
 
-pub struct Decompressor<'a> {
+pub struct Reader<'a> {
     /// Input source.
     r: std::io::BufReader<&'a mut dyn std::io::Read>,
     err: Option<std::io::Error>,
     pub(super) td: DecompressorFilter,
 }
 
-/// Same as Decompressor, but doesn't keep reader in the internal state.
+/// Same as Reader, but doesn't keep reader in the internal state.
 pub struct DecompressorFilter {
     roffset: u64,
     // Input bits, in top of b.
@@ -366,13 +366,12 @@ const CODE_ORDER: [usize; 19] = [
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ];
 
-impl std::io::Read for Decompressor<'_> {
+impl std::io::Read for Reader<'_> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if self.err.is_some() {
             return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
         }
         let (n, err) = self.td.read(&mut self.r, buf);
-        println!("decompr read: {}, {:?}", n, err);
         self.err = err;
         if n > 0 {
             Ok(n)
@@ -384,15 +383,15 @@ impl std::io::Read for Decompressor<'_> {
     }
 }
 
-impl Decompressor<'_> {
-    /// new returns a new Decompressor that can be used
+impl<'a> Reader<'a> {
+    /// new returns a new Reader that can be used
     /// to read the uncompressed version of r.
     /// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has
     /// been encountered. Any trailing data after the final block is ignored.
     ///
     // ggrust: not implemented
     // The ReadCloser returned by new_reader also implements Resetter.
-    pub fn new(r: &mut dyn std::io::Read) -> Decompressor<'_> {
+    pub fn new(r: &'a mut dyn std::io::Read) -> Reader<'_> {
         Self::new_dict(r, &[])
     }
 
@@ -404,20 +403,51 @@ impl Decompressor<'_> {
     ///
     // ggrust: not implemented
     // The ReadCloser returned by new_reader also implements Resetter.
-    pub fn new_dict<'a>(r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Decompressor<'a> {
-        Decompressor {
+    pub fn new_dict(r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Reader<'a> {
+        Reader {
             r: std::io::BufReader::new(r),
             td: DecompressorFilter::new_dict(dict),
             err: None,
         }
     }
 
-    pub fn read(&mut self, b: &mut [u8]) -> (usize, Option<std::io::Error>) {
-        self.td.read(&mut self.r, b)
-    }
-
     pub fn close(&mut self) -> Result<(), std::io::Error> {
         self.td.close()
+    }
+
+    /// Read the next Huffman-encoded symbol from f according to h.
+    #[allow(dead_code)]
+    pub(super) fn huff_sym(&mut self, decoder: DecoderToUse) -> Result<usize, std::io::Error> {
+        self.td.huff_sym(&mut self.r, decoder)
+    }
+
+    // Reset discards any buffered data and resets the instance if it was
+    // newly initialized with the given reader.
+    pub fn reset(&mut self, r: &'a mut dyn std::io::Read, dict: &[u8]) {
+        // keep following fields
+        // self.bits = vec![0; MAX_NUM_LIT + MAX_NUM_DIST];
+        // self.codebits = [0; NUM_CODES];
+
+        // reset everything else
+        self.r = std::io::BufReader::new(r);
+        self.reset_state(dict);
+    }
+
+    // reset_state discards any buffered data and resets the instance if it was
+    // newly initialized with the reader it already holds.
+    pub fn reset_state(&mut self, dict: &[u8]) {
+        self.td.reset(dict);
+    }
+
+    /// underlying_reader returns mutable reference to the underlying reader.
+    pub fn underlying_reader(&mut self) -> &mut dyn std::io::Read {
+        &mut self.r
+    }
+}
+
+impl crate::io::Reader for Reader<'_> {
+    fn read(&mut self, p: &mut [u8]) -> ggio::IoRes {
+        self.td.read(&mut self.r, p)
     }
 }
 
@@ -620,14 +650,6 @@ fn copy_data(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Decompr
     f.finish_block();
 }
 
-impl Decompressor<'_> {
-    /// Read the next Huffman-encoded symbol from f according to h.
-    #[allow(dead_code)]
-    pub(super) fn huff_sym(&mut self, decoder: DecoderToUse) -> Result<usize, std::io::Error> {
-        self.td.huff_sym(&mut self.r, decoder)
-    }
-}
-
 fn generate_fixed_huffman_decoder() -> HuffmanDecoder {
     let mut h = HuffmanDecoder::new();
     // These come from the RFC section 3.2.6.
@@ -652,53 +674,14 @@ fn generate_fixed_huffman_decoder() -> HuffmanDecoder {
     h
 }
 
-impl<'a> Decompressor<'a> {
-    pub fn reset(&mut self, r: &'a mut dyn std::io::Read, dict: &[u8]) {
-        // keep following fields
-        // self.bits = vec![0; MAX_NUM_LIT + MAX_NUM_DIST];
-        // self.codebits = [0; NUM_CODES];
-
-        // reset everything else
-        self.r = std::io::BufReader::new(r);
-        self.td.reset(dict);
-    }
-}
-
-/// new_reader returns a new Decompressor that can be used
-/// to read the uncompressed version of r.
-/// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has
-/// been encountered. Any trailing data after the final block is ignored.
-///
-// ggrust: not implemented
-// The ReadCloser returned by new_reader also implements Resetter.
-pub fn new_reader(r: &mut dyn std::io::Read) -> Decompressor {
-    Decompressor::new(r)
-}
-
-/// new_reader_dict is like new_reader but initializes the reader
-/// with a preset dictionary. The returned Reader behaves as if
-/// the uncompressed data stream started with the given dictionary,
-/// which has already been read. new_reader_dict is typically used
-/// to read data compressed by Writer::new_dict.
-///
-// ggrust: not implemented
-// The ReadCloser returned by new_reader also implements Resetter.
-pub fn new_reader_dict<'a>(r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Decompressor<'a> {
-    Decompressor::new_dict(r, dict)
-}
-
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-
 impl DecompressorFilter {
     pub fn read(
         &mut self,
         r: &mut std::io::BufReader<&mut dyn std::io::Read>,
         b: &mut [u8],
-    ) -> (usize, Option<std::io::Error>) {
+    ) -> ggio::IoRes {
         // first returning available data, then an error if it exists
         loop {
-            // self.dict.stash_len()
             if self.dict.stash_len() > 0 {
                 let n = self.dict.stash_read(b);
                 if n > 0 {
@@ -706,10 +689,10 @@ impl DecompressorFilter {
                 }
             }
             if self.err.is_some() {
-                return (0, self.copy_error());
+                return (0, errors::copy_stdio_option_error(&self.err));
             }
             if self.end_of_stream {
-                return (0, None);
+                return ggio::EOF;
             }
             (self.step)(r, self);
             if self.err.is_some() && self.dict.stash_len() == 0 {
@@ -718,9 +701,6 @@ impl DecompressorFilter {
         }
     }
 
-    fn copy_error(&self) -> Option<std::io::Error> {
-        self.err.as_ref().map(errors::copy_stdio_error)
-    }
     /// new returns a new DecompressorFilter that can be used
     /// to read the uncompressed version of r.
     /// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has

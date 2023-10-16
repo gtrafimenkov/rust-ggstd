@@ -149,3 +149,18 @@ pub fn new_unexpected_eof() -> std::io::Error {
 pub fn copy_stdio_error(e: &std::io::Error) -> std::io::Error {
     std::io::Error::new(e.kind(), e.to_string())
 }
+
+pub fn copy_stdio_option_error(e: &Option<std::io::Error>) -> Option<std::io::Error> {
+    e.as_ref().map(copy_stdio_error)
+}
+
+/// RUST_EOF is Rust representation  of EOF
+pub const RUST_EOF: std::io::Result<usize> = Ok(0);
+
+pub fn is_rust_eof(res: &std::io::Result<usize>) -> bool {
+    if let Ok(value) = res {
+        *value == 0
+    } else {
+        false
+    }
+}

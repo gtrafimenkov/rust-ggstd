@@ -10,7 +10,7 @@ mod bytes;
 mod reader;
 
 pub use buffer::{new_buffer, new_buffer_string, Buffer};
-pub use bytes::{equal, has_suffix, index_byte};
+pub use bytes::{equal, has_suffix, index_byte, repeat};
 pub use reader::Reader;
 
 #[cfg(test)]

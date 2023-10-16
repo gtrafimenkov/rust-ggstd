@@ -16,9 +16,9 @@ fn test_nlit_out_of_range() {
         \x6f\xf2\xd2\xe6\x3d\x99\xa0\x85\x8c\x48\xeb\xf8\xda\x83\x04\x2a\
         \x75\xc4\xf8\x0f\x12\x11\xb9\xb4\x4b\x09\xa0\xbe\x8b\x91\x4c",
     );
-    ggio::copy(
+    _ = std::io::copy(
+        &mut flate::Reader::new(&mut reader),
         &mut ggio::Discard::new(),
-        &mut flate::new_reader(&mut reader),
     );
 }
 

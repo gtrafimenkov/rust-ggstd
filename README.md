@@ -10,7 +10,7 @@ Why:
   and well tested.
 
 If you are considering using this library, take following into account:
-- the quality of the code is lower that in Go library
+- the quality of the code may be lower that in the Go library
 - the code is less tested
 - some optimizations are missing, so the performance may be lower than expected
 
@@ -38,6 +38,7 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - bytes
 - compress
 - compress::flate
+- compress::gzip
 - compress::zlib
 - crypto
 - crypto::md5

@@ -7,7 +7,7 @@
 //! The tests in package compress/gzip serve as the
 //! end-to-end test of the decompressor.
 
-use super::inflate::{DecoderToUse, Decompressor, HuffmanDecoder};
+use super::inflate::{DecoderToUse, HuffmanDecoder, Reader};
 use crate::bytes;
 use crate::encoding::hex;
 use crate::errors;
@@ -65,7 +65,7 @@ fn test_invalid_encoding() {
 
     // Initialize decompressor with invalid Huffman coding.
     let mut r = bytes::Reader::new(&[0xff]);
-    let mut f = Decompressor::new(&mut r);
+    let mut f = Reader::new(&mut r);
     f.td.h1 = h;
 
     assert!(
@@ -282,7 +282,7 @@ fn test_streams() {
     for (i, tc) in test_cases.iter().enumerate() {
         let (data, err) = hex::decode_string(tc.stream);
         assert!(err.is_none());
-        let (data, err) = ggio::read_all(&mut Decompressor::new(&mut bytes::Reader::new(&data)));
+        let (data, err) = ggio::read_all(&mut Reader::new(&mut bytes::Reader::new(&data)));
         if tc.want == "fail" {
             assert!(
                 err.is_some(),
@@ -306,18 +306,17 @@ fn test_streams() {
 fn test_truncated_streams() {
     let data = b"\x00\x0c\x00\xf3\xffhello, world\x01\x00\x00\xff\xff";
 
-    // // all data should be decompressed correctly
-    // {
-    //     let mut reader = bytes::Reader::new(data.as_slice());
-    //     let mut r = Decompressor::new(&mut reader);
-    //     let (_n, err) = ggio::copy(&mut ggio::Discard::new(), &mut r);
-    //     assert!(err.is_none());
-    // }
+    // all data should be decompressed correctly
+    {
+        let mut reader = bytes::Reader::new(data.as_slice());
+        let mut r = Reader::new(&mut reader);
+        std::io::copy(&mut r, &mut ggio::Discard::new()).unwrap();
+    }
 
     // truncated streams shoud report error
     for i in 0..data.len() - 1 {
         let mut reader = bytes::Reader::new(&data[..i]);
-        let mut r = Decompressor::new(&mut reader);
+        let mut r = Reader::new(&mut reader);
         let (_n, err) = ggio::copy(&mut ggio::Discard::new(), &mut r);
         assert!(
             err.is_some() && err.as_ref().unwrap().kind() == std::io::ErrorKind::UnexpectedEof,

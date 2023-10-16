@@ -14,7 +14,7 @@
 /// A ByteOrder specifies how to convert u8 slices into
 /// 16-, 32-, or 64-bit unsigned integers.
 pub trait ByteOrder {
-    // 	Uint16(b: &[u8]) u16
+    fn uint16(&self, b: &[u8]) -> u16;
     fn uint32(&self, b: &[u8]) -> u32;
     fn uint64(&self, b: &[u8]) -> u64;
     // 	PutUint16(b: &[u8], u16)
@@ -38,6 +38,10 @@ pub struct LittleEndian {}
 pub const LITTLE_ENDIAN: LittleEndian = LittleEndian {};
 
 impl ByteOrder for LittleEndian {
+    fn uint16(&self, b: &[u8]) -> u16 {
+        (b[0] as u16) | ((b[1] as u16) << 8)
+    }
+
     fn uint32(&self, b: &[u8]) -> u32 {
         (b[0] as u32) | (b[1] as u32) << 8 | (b[2] as u32) << 16 | (b[3] as u32) << 24
     }
@@ -75,11 +79,6 @@ impl ByteOrder for LittleEndian {
 // var LittleEndian littleEndian
 
 // type littleEndian struct{}
-
-// fn (littleEndian) Uint16(b: &[u8]) u16 {
-// 	_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808
-// 	return u16(b[0]) | u16(b[1])<<8
-// }
 
 // fn (littleEndian) PutUint16(b: &[u8], v: u16) {
 // 	_ = b[1] // early bounds check to guarantee safety of writes below
@@ -126,10 +125,9 @@ pub struct BigEndian {}
 pub const BIG_ENDIAN: BigEndian = BigEndian {};
 
 impl ByteOrder for BigEndian {
-    // pub fn Uint16(b: &[u8]) u16 {
-    // 	_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808
-    // 	return u16(b[1]) | u16(b[0])<<8
-    // }
+    fn uint16(&self, b: &[u8]) -> u16 {
+        (b[1] as u16) | ((b[0] as u16) << 8)
+    }
 
     fn uint32(&self, b: &[u8]) -> u32 {
         (b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24

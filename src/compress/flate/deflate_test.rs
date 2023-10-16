@@ -8,7 +8,7 @@ use super::deflate::{
 };
 use super::deflatefast::{DeflateFast, TableEntry, BUFFER_RESET, TABLE_SIZE};
 use super::huffman_code::reverse_bits;
-use super::inflate::new_reader;
+use super::inflate;
 use super::token::Token;
 use crate::bytes;
 use crate::io as ggio;
@@ -292,8 +292,7 @@ fn test_very_long_sparse_chunk() {
     let mut w = Writer::new(&mut x, 1).unwrap();
     let size = 2_300_000_000;
     let mut sr = SparseReader { l: size, cur: 0 };
-    let (n, err) = ggio::copy(&mut w, &mut sr);
-    assert!(err.is_none(), "Compress failed: {}", err.unwrap());
+    let n = std::io::copy(&mut sr, &mut w).unwrap();
     assert_eq!(size, n);
 }
 
@@ -449,7 +448,7 @@ fn test_to_from_with_level_and_limit(level: isize, input: &[u8], name: &str, lim
             limit
         );
     }
-    let mut r = new_reader(&mut buffer);
+    let mut r = inflate::Reader::new(&mut buffer);
     let (data, err) = ggio::read_all(&mut r);
     assert!(err.is_none(), "read: {}", err.unwrap());
     r.close().unwrap();

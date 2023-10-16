@@ -466,8 +466,8 @@ fn test_index_byte() {
 // 		{"a☺b☻c☹d\xe2\x98�\xff�\xed\xa0\x80", utf8.MAX_RUNE + 1, -1},
 // 	}
 // 	for tt in tests {
-// 		if got := IndexRune([u8](tt.in), tt.rune); got != tt.want {
-// 			t.Errorf("IndexRune(%q, {}) = {}; want {}", tt.in, tt.rune, got, tt.want)
+// 		if got := IndexRune([u8](tt.input), tt.rune); got != tt.want {
+// 			t.Errorf("IndexRune(%q, {}) = {}; want {}", tt.input, tt.rune, got, tt.want)
 // 		}
 // 	}
 
@@ -1192,87 +1192,73 @@ fn test_index_byte() {
 // #[test]
 // fn TestTrimSpace() { runStringTests(t, TrimSpace, "TrimSpace", trimSpaceTests) }
 
-// type RepeatTest struct {
-// 	in, out string
-// 	count   int
-// }
+#[derive(Debug)]
+struct RepeatTest<'a> {
+    input: &'a [u8],
+    out: &'a [u8],
+    count: usize,
+}
 
-// var longString = "a" + string(make([u8], 1<<16)) + "z"
+impl<'a> RepeatTest<'a> {
+    const fn new(input: &'a [u8], out: &'a [u8], count: usize) -> Self {
+        Self { input, out, count }
+    }
+}
 
-// var RepeatTests = []RepeatTest{
-// 	{"", "", 0},
-// 	{"", "", 1},
-// 	{"", "", 2},
-// 	{"-", "", 0},
-// 	{"-", "-", 1},
-// 	{"-", "----------", 10},
-// 	{"abc ", "abc abc abc ", 3},
-// 	// Tests for results over the chunkLimit
-// 	{string(rune(0)), string(make([u8], 1<<16)), 1 << 16},
-// 	{longString, longString + longString, 2},
-// }
+const REPEAT_TESTS: &[RepeatTest] = &[
+    RepeatTest::new(b"", b"", 0),
+    RepeatTest::new(b"", b"", 1),
+    RepeatTest::new(b"", b"", 2),
+    RepeatTest::new(b"-", b"", 0),
+    RepeatTest::new(b"-", b"-", 1),
+    RepeatTest::new(b"-", b"----------", 10),
+    RepeatTest::new(b"abc ", b"abc abc abc ", 3),
+];
 
-// #[test]
-// fn TestRepeat() {
-// 	for tt in RepeatTests {
-// 		tin := [u8](tt.in)
-// 		tout := [u8](tt.out)
-// 		a := Repeat(tin, tt.count)
-// 		if !Equal(a, tout) {
-// 			t.Errorf("Repeat(%q, {}) = %q; want %q", tin, tt.count, a, tout)
-// 			continue
-// 		}
-// 	}
-// }
-
-// fn repeat(b [u8], count int) (err error) {
-// 	defer fn() {
-// 		if r := recover(); r != nil {
-// 			switch v := r.(type) {
-// 			case error:
-// 				err = v
-// 			default:
-// 				err = fmt.Errorf("%s", v)
-// 			}
-// 		}
-// 	}()
-
-// 	Repeat(b, count)
-
-// 	return
-// }
-
-// // See Issue golang.org/issue/16237
-// #[test]
-// fn TestRepeatCatchesOverflow() {
-// 	tests := [...]struct {
-// 		s      string
-// 		count  int
-// 		errStr string
-// 	}{
-// 		0: {"--", -2147483647, "negative"},
-// 		1: {"", int(^uint(0) >> 1), ""},
-// 		2: {"-", 10, ""},
-// 		3: {"gopher", 0, ""},
-// 		4: {"-", -1, "negative"},
-// 		5: {"--", -102, "negative"},
-// 		6: {string(make([u8], 255)), int((^uint(0))/255 + 1), "overflow"},
-// 	}
-
-// 	for i, tt := range tests {
-// 		err := repeat([u8](tt.s), tt.count)
-// 		if tt.errStr == "" {
-// 			if err != nil {
-// 				t.Errorf("#{} panicked {}", i, err)
-// 			}
-// 			continue
-// 		}
-
-// 		if err == nil || !strings::contains(err.Error(), tt.errStr) {
-// 			t.Errorf("#{} expected %q got %q", i, tt.errStr, err)
-// 		}
-// 	}
-// }
+#[test]
+fn test_repeat() {
+    fn test(tt: &RepeatTest<'_>) {
+        let tin = tt.input;
+        let tout = tt.out;
+        let a = super::repeat(tin, tt.count);
+        assert_eq!(
+            a.as_slice(),
+            tout,
+            "repeat({:?}, {}) = {:?}; want {:?}",
+            tin,
+            tt.count,
+            a,
+            tout
+        );
+    }
+    for tt in REPEAT_TESTS {
+        test(tt);
+    }
+    // Tests for results over the chunkLimit
+    {
+        // 	{string(rune(0)), string(make([u8], 1<<16)), 1 << 16},
+        let input = [0];
+        let output = vec![0; 1 << 16];
+        test(&RepeatTest::new(&input, &output, 1 << 16));
+    }
+    {
+        let mut input = "a".to_string();
+        input.push_str(&"b".to_string().repeat(1 << 16));
+        input.push_str(&"z".to_string());
+        let output = format!("{}{}", input, input);
+        // var longString = "a" + string(make([u8], 1<<16)) + "z"
+        // 	{longString, longString + longString, 2},
+        test(&RepeatTest::new(input.as_bytes(), output.as_bytes(), 2));
+    }
+    // catching overflow
+    {
+        let res = std::panic::catch_unwind(|| {
+            let input = &[0, 1, 2, 3];
+            let _res = super::repeat(input, usize::MAX / 2);
+        });
+        assert!(res.is_err(), "no panic on overflow")
+    }
+}
 
 // fn runesEqual(a, b []rune) bool {
 // 	if len(a) != b.len() {
@@ -1305,7 +1291,7 @@ fn test_index_byte() {
 // #[test]
 // fn TestRunes() {
 // 	for tt in RunesTests {
-// 		tin := [u8](tt.in)
+// 		tin := [u8](tt.input)
 // 		a := Runes(tin)
 // 		if !runesEqual(a, tt.out) {
 // 			t.Errorf("Runes(%q) = {}; want {}", tin, a, tt.out)
@@ -1314,7 +1300,7 @@ fn test_index_byte() {
 // 		if !tt.lossy {
 // 			// can only test reassembly if we didn't lose information
 // 			s := string(a)
-// 			if s != tt.in {
+// 			if s != tt.input {
 // 				t.Errorf("string(Runes(%q)) = %x; want %x", tin, s, tin)
 // 			}
 // 		}
@@ -1639,19 +1625,19 @@ fn test_index_byte() {
 // #[test]
 // fn TestReplace() {
 // 	for tt in ReplaceTests {
-// 		in := append([u8](tt.in), "<spare>"...)
-// 		in = in[..len(tt.in)]
+// 		in := append([u8](tt.input), "<spare>"...)
+// 		in = in[..len(tt.input)]
 // 		out := Replace(in, [u8](tt.old), [u8](tt.new), tt.n)
 // 		if s := string(out); s != tt.out {
-// 			t.Errorf("Replace(%q, %q, %q, {}) = %q, want %q", tt.in, tt.old, tt.new, tt.n, s, tt.out)
+// 			t.Errorf("Replace(%q, %q, %q, {}) = %q, want %q", tt.input, tt.old, tt.new, tt.n, s, tt.out)
 // 		}
 // 		if cap(in) == cap(out) && &in[..1][0] == &out[..1][0] {
-// 			t.Errorf("Replace(%q, %q, %q, {}) didn't copy", tt.in, tt.old, tt.new, tt.n)
+// 			t.Errorf("Replace(%q, %q, %q, {}) didn't copy", tt.input, tt.old, tt.new, tt.n)
 // 		}
 // 		if tt.n == -1 {
 // 			out := ReplaceAll(in, [u8](tt.old), [u8](tt.new))
 // 			if s := string(out); s != tt.out {
-// 				t.Errorf("ReplaceAll(%q, %q, %q) = %q, want %q", tt.in, tt.old, tt.new, s, tt.out)
+// 				t.Errorf("ReplaceAll(%q, %q, %q) = %q, want %q", tt.input, tt.old, tt.new, s, tt.out)
 // 			}
 // 		}
 // 	}
@@ -1676,8 +1662,8 @@ fn test_index_byte() {
 // #[test]
 // fn TestTitle() {
 // 	for tt in TitleTests {
-// 		if s := string(Title([u8](tt.in))); s != tt.out {
-// 			t.Errorf("Title(%q) = %q, want %q", tt.in, s, tt.out)
+// 		if s := string(Title([u8](tt.input))); s != tt.out {
+// 			t.Errorf("Title(%q) = %q, want %q", tt.input, s, tt.out)
 // 		}
 // 	}
 // }
@@ -1695,8 +1681,8 @@ fn test_index_byte() {
 // #[test]
 // fn TestToTitle() {
 // 	for tt in ToTitleTests {
-// 		if s := string(ToTitle([u8](tt.in))); s != tt.out {
-// 			t.Errorf("ToTitle(%q) = %q, want %q", tt.in, s, tt.out)
+// 		if s := string(ToTitle([u8](tt.input))); s != tt.out {
+// 			t.Errorf("ToTitle(%q) = %q, want %q", tt.input, s, tt.out)
 // 		}
 // 	}
 // }

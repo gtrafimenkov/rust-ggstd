@@ -38,13 +38,14 @@ pub fn copy_stdio_error(e: &std::io::Error) -> std::io::Error {
 
 /// string converts a byte slice into a string.
 /// This is somewhat similar to Go `string(b)`, but not exactly.
-/// In go any sequence of bytes can be converted into a string, but in Rust
+/// In Go any sequence of bytes can be converted into a string, but in Rust
 /// a string can contain only valid utf-8.
 /// This function panics if the byte slice cannot be converted into a valid Rust string.
 pub fn string(b: &[u8]) -> String {
     String::from_utf8(b.to_vec()).unwrap()
 }
 
+pub mod chars;
 pub mod readers;
 
 #[cfg(test)]

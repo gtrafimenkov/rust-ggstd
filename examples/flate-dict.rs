@@ -5,7 +5,6 @@
 
 use ggstd::bytes;
 use ggstd::compress::flate;
-use ggstd::io as ggio;
 
 fn main() {
     example_dictionary();
@@ -39,10 +38,7 @@ fn example_dictionary() {
     {
         let mut zw = flate::Writer::new_dict(&mut b, flate::DEFAULT_COMPRESSION, dict).unwrap();
         let mut data_reader = bytes::new_buffer_string(data);
-        let (_, err) = ggio::copy(&mut zw, &mut data_reader);
-        if err.is_some() {
-            panic!("unexpected error: {}", err.unwrap());
-        }
+        std::io::copy(&mut data_reader, &mut zw).unwrap();
         zw.close().unwrap();
     }
 
@@ -50,13 +46,10 @@ fn example_dictionary() {
     // Otherwise, the input may appear as corrupted.
     println!("Decompressed output using the dictionary:");
     {
-        let mut data_reader = b.bytes().clone();
-        let mut zr = flate::Decompressor::new_dict(&mut data_reader, dict);
+        let mut data_reader = b.bytes();
+        let mut zr = flate::Reader::new_dict(&mut data_reader, dict);
         let mut decompressed = bytes::Buffer::new();
-        let (_, err) = ggio::copy(&mut decompressed, &mut zr);
-        if err.is_some() {
-            panic!("unexpected error: {}", err.unwrap());
-        }
+        std::io::copy(&mut zr, &mut decompressed).unwrap();
         zr.close().unwrap();
         println!("{}", String::from_utf8_lossy(decompressed.bytes()));
         println!();
@@ -67,12 +60,9 @@ fn example_dictionary() {
     println!("Substrings matched by the dictionary are marked with #:");
     {
         let hash_dict = vec![b'#'; dict.len()];
-        let mut zr = flate::Decompressor::new_dict(&mut b, &hash_dict);
+        let mut zr = flate::Reader::new_dict(&mut b, &hash_dict);
         let mut decompressed = bytes::Buffer::new();
-        let (_, err) = ggio::copy(&mut decompressed, &mut zr);
-        if err.is_some() {
-            panic!("unexpected error: {}", err.unwrap());
-        }
+        std::io::copy(&mut zr, &mut decompressed).unwrap();
         zr.close().unwrap();
         println!("{}", String::from_utf8_lossy(decompressed.bytes()));
     }

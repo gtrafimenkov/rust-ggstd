@@ -10,8 +10,9 @@
 pub mod io;
 
 pub use io::{
-    copy, copy_, copy_buffer, copy_n, err_no_progress, is_short_write_error, new_error_short_write,
-    read_all, read_full, write_string, ByteReader, Discard, Seek,
+    copy, copy_buffer, copy_n, err_no_progress, is_eof, is_short_write_error, is_unexpected_eof,
+    new_error_short_write, read_all, read_full, write_string, ByteReader, Discard, IoRes, Reader,
+    Seek, EOF,
 };
 
 #[cfg(test)]

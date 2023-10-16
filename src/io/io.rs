@@ -27,13 +27,52 @@ pub enum Seek {
 //     }
 // }
 
+// // ErrShortWrite means that a write accepted fewer bytes than requested
+// // but failed to return an explicit error.
+// var ErrShortWrite = errors.New("short write")
+
+// // errInvalidWrite means that a write returned an impossible count.
+// var errInvalidWrite = errors.New("invalid write result")
+
+// // ErrShortBuffer means that a read required a longer buffer than was provided.
+// var ErrShortBuffer = errors.New("short buffer")
+
+/// IoRes describes the result of an IO operation.  This is analog of Go `(n int, err error)`.
+pub type IoRes = (usize, Option<std::io::Error>);
+
+/// EOF is the error returned by Read when no more input is available.
+// // (Read must return EOF itself, not an error wrapping EOF,
+// // because callers will test for EOF using ==.)
+/// Functions should return EOF only to signal a graceful end of input.
+/// If the EOF occurs unexpectedly in a structured data stream,
+/// the appropriate error is either ErrUnexpectedEOF or some other error
+/// giving more detail.
+// var EOF = errors.New("EOF")
+pub const EOF: IoRes = (0, None);
+
+/// is_eof checks if the IoRes represents end of file
+pub fn is_eof(res: &IoRes) -> bool {
+    res.0 == 0 && res.1.is_none()
+}
+
+/// is_unexpected_eof checks if the IoRes represents UnexpectedEof.
+pub fn is_unexpected_eof(res: &IoRes) -> bool {
+    if let Some(err) = &res.1 {
+        err.kind() == std::io::ErrorKind::UnexpectedEof
+    } else {
+        false
+    }
+}
+
+// // ErrUnexpectedEOF means that EOF was encountered in the
+// // middle of reading a fixed-size block or data structure.
+// var ErrUnexpectedEOF = errors.New("unexpected EOF")
+
+// // ErrNoProgress is returned by some clients of a Reader when
+// // many calls to Read have failed to return any data or error,
+// // usually the sign of a broken Reader implementation.
+// var ErrNoProgress = errors.New("multiple Read calls return no data or error")
 // ErrNoProgress
-// pub static ERR_NO_PROGRESS: errors::ErrorStaticString =
-//     errors::new_static("multiple read calls return no data or error");
-// pub static ERR_NO_PROGRESS: std::io::Error = std::io::Error::new(
-//     std::io::ErrorKind::Other,
-//     "multiple read calls return no data or error",
-// );
 pub fn err_no_progress() -> std::io::Error {
     std::io::Error::new(
         std::io::ErrorKind::Other,
@@ -41,44 +80,44 @@ pub fn err_no_progress() -> std::io::Error {
     )
 }
 
-// Instead of using Reader, use std::io::Read.  That will make the
-// code more idiomatic and make it easier to interoperate with the
-// rest of Rust ecosystem.
-//
-// The main difference between std::io::Read and ggio::Reader is
-// that std::io::Read returns 0 to indicate the end of file.
-//
-// /// Reader is the interface that wraps the basic read method.
-// ///
-// /// read reads up to len(p) bytes into p. It returns the number of bytes
-// /// read (0 <= n <= len(p)) and any error encountered. Even if read
-// /// returns n < len(p), it may use all of p as scratch space during the call.
-// /// If some data is available but not len(p) bytes, read conventionally
-// /// returns what is available instead of waiting for more.
-// ///
-// /// When read encounters an error or end-of-file condition after
-// /// successfully reading n > 0 bytes, it returns the number of
-// /// bytes read. It may return the (non-nil) error from the same call
-// /// or return the error (and n == 0) from a subsequent call.
-// /// An instance of this general case is that a Reader returning
-// /// a non-zero number of bytes at the end of the input stream may
-// /// return either err == EOF or err == nil. The next read should
-// /// return 0, EOF.
-// ///
-// /// Callers should always process the n > 0 bytes returned before
-// /// considering the error err. Doing so correctly handles I/O errors
-// /// that happen after reading some bytes and also both of the
-// /// allowed EOF behaviors.
-// ///
-// /// Implementations of read are discouraged from returning a
-// /// zero byte count with a nil error, except when len(p) == 0.
-// /// Callers should treat a return of 0 and nil as indicating that
-// /// nothing happened; in particular it does not indicate EOF.
-// ///
-// /// Implementations must not retain p.
-// pub trait Reader {
-//     fn read(&mut self, p: &mut [u8]) -> (usize, Option<Error>);
-// }
+/// Reader is the interface that wraps the basic read method.
+///
+/// Whenever possible prefer using std::io::Read instead of Reader
+/// to make the code mode idiomatic and make it easier to interoperate
+/// with the rest of Rust ecosystem.
+///
+/// The main difference between std::io::Read and Reader is
+/// that std::io::Read read method returns 0 to indicate the end of file,
+/// while Reader's read method returns EOF error to indicate the end of file.
+pub trait Reader {
+    /// read reads up to len(p) bytes into p. It returns the number of bytes
+    /// read (0 <= n <= len(p)) and any error encountered. Even if read
+    /// returns n < len(p), it may use all of p as scratch space during the call.
+    /// If some data is available but not len(p) bytes, read conventionally
+    /// returns what is available instead of waiting for more.
+    ///
+    /// When read encounters an error or end-of-file condition after
+    /// successfully reading n > 0 bytes, it returns the number of
+    /// bytes read. It may return the (non-nil) error from the same call
+    /// or return the error (and n == 0) from a subsequent call.
+    /// An instance of this general case is that a Reader returning
+    /// a non-zero number of bytes at the end of the input stream may
+    /// return either err == EOF or err == nil. The next read should
+    /// return 0, EOF.
+    ///
+    /// Callers should always process the n > 0 bytes returned before
+    /// considering the error err. Doing so correctly handles I/O errors
+    /// that happen after reading some bytes and also both of the
+    /// allowed EOF behaviors.
+    ///
+    /// Implementations of read are discouraged from returning a
+    /// zero byte count with a nil error, except when len(p) == 0.
+    /// Callers should treat a return of 0 and nil as indicating that
+    /// nothing happened; in particular it does not indicate EOF.
+    ///
+    /// Implementations must not retain p.
+    fn read(&mut self, p: &mut [u8]) -> IoRes;
+}
 
 // Instead of using Writer, use std::io::Write.  That will make the
 // code more idiomatic and make it easier to interoperate with the
@@ -313,11 +352,7 @@ pub fn write_string(w: &mut dyn std::io::Write, s: &str) -> std::io::Result<usiz
 /// It returns the number of bytes copied and an error if fewer bytes were read.
 /// If fewer than min bytes were read, read_at_least returns an error.
 /// If min is greater than the length of buf, read_at_least returns ErrorKind::InvalidInput.
-pub fn read_at_least(
-    r: &mut dyn std::io::Read,
-    buf: &mut [u8],
-    min: usize,
-) -> (usize, Option<std::io::Error>) {
+pub fn read_at_least(r: &mut dyn std::io::Read, buf: &mut [u8], min: usize) -> IoRes {
     if buf.len() < min {
         return (
             0,
@@ -345,7 +380,7 @@ pub fn read_at_least(
 /// read_full reads exactly buf.len() bytes from r into buf.
 /// The difference from Rust's std::io::Read::read_exact, it that read_full returns both
 /// number of bytes read and a possible error, when std::io::Read::read_exact returns one or another.
-pub fn read_full(r: &mut dyn std::io::Read, buf: &mut [u8]) -> (usize, Option<std::io::Error>) {
+pub fn read_full(r: &mut dyn std::io::Read, buf: &mut [u8]) -> IoRes {
     read_at_least(r, buf, buf.len())
 }
 
@@ -356,11 +391,7 @@ pub fn read_full(r: &mut dyn std::io::Read, buf: &mut [u8]) -> (usize, Option<st
 ///
 /// If dst implements the ReaderFrom interface,
 /// the copy is implemented using it.
-pub fn copy_n(
-    dst: &mut dyn std::io::Write,
-    src: &mut dyn std::io::Read,
-    n: usize,
-) -> (usize, Option<std::io::Error>) {
+pub fn copy_n(dst: &mut dyn std::io::Write, src: &mut dyn std::io::Read, n: usize) -> IoRes {
     // -> (written int64, err error) {
     let (written, err) = copy(dst, &mut LimitedReader::new(src, n));
     if written == n as u64 {
@@ -379,6 +410,9 @@ pub fn copy_n(
 /// copy copies from src to dst until either EOF is reached
 /// on src or an error occurs. It returns the number of bytes
 /// copied and the first error encountered while copying, if any.
+///
+/// This function is similar to `std::io::copy`, but returns both
+/// number of bytes copied and an potential error.
 //
 // A successful copy returns err == nil, not err == EOF.
 // Because copy is defined to read from src until EOF, it does
@@ -394,17 +428,6 @@ pub fn copy(
     src: &mut dyn std::io::Read,
 ) -> (u64, Option<std::io::Error>) {
     copy_buffer_int(dst, src, None)
-}
-
-/// copy copies from src to dst until either EOF is reached
-/// on src or an error occurs. It returns the first error
-/// encountered while copying, if any.
-pub fn copy_(dst: &mut dyn std::io::Write, src: &mut dyn std::io::Read) -> std::io::Result<()> {
-    let (_n, err) = copy_buffer_int(dst, src, None);
-    match err {
-        Some(err) => Err(err),
-        None => Ok(()),
-    }
 }
 
 /// copy_buffer is identical to copy except that it stages through the
@@ -449,8 +472,6 @@ fn copy_buffer_int(
     ) -> (u64, Option<std::io::Error>) {
         let mut written: u64 = 0;
         loop {
-            // println!("   copy_buf, written = {}, buf len= {}", written, buf.len());
-            // let (nr, er) = src.read(buf);
             let res = src.read(buf);
             match res {
                 Ok(nr) => {

@@ -6,8 +6,6 @@
 use ggstd::crypto::md5;
 use ggstd::encoding::hex;
 use ggstd::hash::Hash;
-use ggstd::io as ggio;
-use ggstd::os as ggos;
 use std::io::Write;
 
 fn main() {
@@ -37,11 +35,8 @@ fn example_sum() {
 }
 
 fn example_new_file(path: &str) {
-    let mut f = ggos::open(path).unwrap();
+    let mut f = std::fs::File::open(path).unwrap();
     let mut h = md5::new();
-    let (_, err) = ggio::copy(&mut h, &mut f);
-    if err.is_some() {
-        panic!("{}", err.unwrap());
-    }
+    std::io::copy(&mut f, &mut h).unwrap();
     println!("{}", hex::encode_to_string(&h.sum(&[])));
 }

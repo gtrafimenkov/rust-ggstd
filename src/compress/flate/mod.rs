@@ -10,7 +10,7 @@ pub use deflate::{
     WriteFilter, Writer, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, HUFFMAN_ONLY,
     NO_COMPRESSION,
 };
-pub use inflate::{new_reader, new_reader_dict, Decompressor, DecompressorFilter};
+pub use inflate::{DecompressorFilter, Reader};
 
 #[cfg(test)]
 mod deflate_test;

@@ -578,59 +578,71 @@ pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
 // 	return b
 // }
 
-// // Repeat returns a new byte slice consisting of count copies of b.
-// //
-// // It panics if count is negative or if the result of (b.len() * count)
-// // overflows.
-// fn Repeat(b: &[u8], count int) [u8] {
-// 	if count == 0 {
-// 		return [u8]{}
-// 	}
-// 	// Since we cannot return an error on overflow,
-// 	// we should panic if the repeat will generate
-// 	// an overflow.
-// 	// See golang.org/issue/16237.
-// 	if count < 0 {
-// 		panic("bytes: negative Repeat count")
-// 	} else if b.len()*count/count != b.len() {
-// 		panic("bytes: Repeat count causes overflow")
-// 	}
+/// repeat returns a new byte slice consisting of count copies of b.
+///
+/// It panics if the result of (b.len() * count) overflows.
+///
+/// slice::repeat which the Rust standard library has the same functionality.
+pub fn repeat(b: &[u8], count: usize) -> Vec<u8> {
+    let b_len = b.len();
+    if count == 0 || b_len == 0 {
+        return Vec::with_capacity(0);
+    }
+    let (n, overflow) = b_len.overflowing_mul(count);
+    if overflow {
+        panic!("bytes: repeat count causes overflow");
+    }
 
-// 	if b.len() == 0 {
-// 		return [u8]{}
-// 	}
+    // ggstd: There are 3 implements:
+    //   1) optimized Go implementation
+    //   2) use b.repeat from the Rust standard library
+    //   3) utilize extend_from_slice N times
+    //
+    // When b.len() is small and count is big:
+    //   implementation 2) is 1.5x slower than 1)
+    //   implementation 3) is 12x slower than 1)
 
-// 	n := b.len() * count
+    // ggstd: implementation 2)
+    // return b.repeat(count);
 
-// 	// Past a certain chunk size it is counterproductive to use
-// 	// larger chunks as the source of the write, as when the source
-// 	// is too large we are basically just thrashing the CPU D-cache.
-// 	// So if the result length is larger than an empirically-found
-// 	// limit (8KB), we stop growing the source string once the limit
-// 	// is reached and keep reusing the same source string - that
-// 	// should therefore be always resident in the L1 cache - until we
-// 	// have completed the construction of the result.
-// 	// This yields significant speedups (up to +100%) in cases where
-// 	// the result length is large (roughly, over L2 cache size).
-// 	const chunkLimit = 8 * 1024
-// 	chunkMax := n
-// 	if chunkMax > chunkLimit {
-// 		chunkMax = chunkLimit / b.len() * b.len()
-// 		if chunkMax == 0 {
-// 			chunkMax = b.len()
-// 		}
-// 	}
-// 	nb := make([u8], n)
-// 	bp := copy(nb, b)
-// 	for bp < len(nb) {
-// 		chunk := bp
-// 		if chunk > chunkMax {
-// 			chunk = chunkMax
-// 		}
-// 		bp += copy(nb[bp..], nb[..chunk])
-// 	}
-// 	return nb
-// }
+    // ggstd: implementation 3)
+    // let mut nb = Vec::with_capacity(n);
+    // for _ in 0..count {
+    //     nb.extend_from_slice(&b);
+    // }
+    // return nb;
+
+    // ggstd: implementation 1)
+
+    let mut nb = Vec::with_capacity(n);
+
+    // Past a certain chunk size it is counterproductive to use
+    // larger chunks as the source of the write, as when the source
+    // is too large we are basically just thrashing the CPU D-cache.
+    // So if the result length is larger than an empirically-found
+    // limit (8KB), we stop growing the source string once the limit
+    // is reached and keep reusing the same source string - that
+    // should therefore be always resident in the L1 cache - until we
+    // have completed the construction of the result.
+    // This yields significant speedups (up to +100%) in cases where
+    // the result length is large (roughly, over L2 cache size).
+    let chunk_limit = 8 * 1024;
+    let mut chunk_max = n;
+    if chunk_max > chunk_limit {
+        chunk_max = chunk_limit / b_len * b_len;
+        if chunk_max == 0 {
+            chunk_max = b_len;
+        }
+    }
+    nb.extend_from_slice(b);
+    let mut copied = b_len;
+    while copied < n {
+        let chunk_size = copied.min(chunk_max);
+        nb.extend_from_within(0..chunk_size.min(n - copied));
+        copied += chunk_size;
+    }
+    nb
+}
 
 // // ToUpper returns a copy of the byte slice s with all Unicode letters mapped to
 // // their upper case.

@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 use super::deflate::{Writer, DEFAULT_COMPRESSION};
-use super::inflate::{new_reader, new_reader_dict};
+use super::inflate;
 use crate::bytes;
 use crate::io as ggio;
 use std::io::Write;
@@ -30,14 +30,12 @@ fn test_reset() {
 
     let inflated = &mut [bytes::Buffer::new(), bytes::Buffer::new()];
 
-    let mut f = new_reader(&mut deflated0);
-    let (n, err) = ggio::copy(&mut inflated[0], &mut f);
-    assert!(err.is_none(), "not expecting error '{}'", err.unwrap());
+    let mut f = inflate::Reader::new(&mut deflated0);
+    let n = std::io::copy(&mut f, &mut inflated[0]).unwrap();
     assert!(n > 0);
 
     f.reset(&mut deflated1, &[]);
-    let (n, err) = ggio::copy(&mut inflated[1], &mut f);
-    assert!(err.is_none(), "not expecting error '{}'", err.unwrap());
+    let n = std::io::copy(&mut f, &mut inflated[1]).unwrap();
     assert!(n > 0);
     f.close().unwrap();
 
@@ -60,53 +58,52 @@ fn test_reader_truncated() {
         output: &'a [u8],
     }
     let vectors: &[Test] = &[
-        // Test {
-        //     input: b"\x00",
-        //     output: b"",
-        // },
-        // Test {
-        //     input: b"\x00\x0c",
-        //     output: b"",
-        // },
-        // Test {
-        //     input: b"\x00\x0c\x00",
-        //     output: b"",
-        // },
-        // Test {
-        //     input: b"\x00\x0c\x00\xf3\xff",
-        //     output: b"",
-        // },
+        Test {
+            input: b"\x00",
+            output: b"",
+        },
+        Test {
+            input: b"\x00\x0c",
+            output: b"",
+        },
+        Test {
+            input: b"\x00\x0c\x00",
+            output: b"",
+        },
+        Test {
+            input: b"\x00\x0c\x00\xf3\xff",
+            output: b"",
+        },
         Test {
             input: b"\x00\x0c\x00\xf3\xffhello",
             output: b"hello",
         },
-        // Test {
-        //     input: b"\x00\x0c\x00\xf3\xffhello, world",
-        //     output: b"hello, world",
-        // },
-        // Test {
-        //     input: b"\x02",
-        //     output: b"",
-        // },
-        // Test {
-        //     input: b"\xf2H\xcd",
-        //     output: b"He",
-        // },
-        // Test {
-        //     input: &[242, 72, 205, 153, 48, 97, 194, 132, 9], // "\xf2H͙0a\u0084\t"
-        //     output: b"Hel\x90\x90\x90\x90\x90",
-        // },
-        // Test {
-        //     input: &[242, 72, 205, 153, 48, 97, 194, 132, 9, 0], // "\xf2H͙0a\u0084\t\x00",
-        //     output: b"Hel\x90\x90\x90\x90\x90",
-        // },
+        Test {
+            input: b"\x00\x0c\x00\xf3\xffhello, world",
+            output: b"hello, world",
+        },
+        Test {
+            input: b"\x02",
+            output: b"",
+        },
+        Test {
+            input: b"\xf2H\xcd",
+            output: b"He",
+        },
+        Test {
+            input: &[242, 72, 205, 153, 48, 97, 194, 132, 9], // "\xf2H͙0a\u0084\t"
+            output: b"Hel\x90\x90\x90\x90\x90",
+        },
+        Test {
+            input: &[242, 72, 205, 153, 48, 97, 194, 132, 9, 0], // "\xf2H͙0a\u0084\t\x00",
+            output: b"Hel\x90\x90\x90\x90\x90",
+        },
     ];
 
     for (i, v) in vectors.iter().enumerate() {
         let mut input = std::io::Cursor::new(v.input);
-        let mut zr = new_reader(&mut input);
+        let mut zr = inflate::Reader::new(&mut input);
         let (data, err) = ggio::read_all(&mut zr);
-        println!("{:?}, {:?}", data, err);
         assert!(
             err.as_ref()
                 .is_some_and(|e| e.kind() == std::io::ErrorKind::UnexpectedEof),
@@ -147,14 +144,12 @@ fn test_reset_dict() {
 
     let inflated = &mut [bytes::Buffer::new(), bytes::Buffer::new()];
 
-    let mut f = new_reader_dict(&mut deflated0, dict);
-    let (n, err) = ggio::copy(&mut inflated[0], &mut f);
-    assert!(err.is_none(), "not expecting error '{}'", err.unwrap());
+    let mut f = inflate::Reader::new_dict(&mut deflated0, dict);
+    let n = std::io::copy(&mut f, &mut inflated[0]).unwrap();
     assert!(n > 0);
 
     f.reset(&mut deflated1, dict);
-    let (n, err) = ggio::copy(&mut inflated[1], &mut f);
-    assert!(err.is_none(), "not expecting error '{}'", err.unwrap());
+    let n = std::io::copy(&mut f, &mut inflated[1]).unwrap();
     assert!(n > 0);
     f.close().unwrap();
 
