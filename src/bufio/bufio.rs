@@ -596,31 +596,6 @@ pub struct Writer<'a> {
     wr: &'a mut dyn std::io::Write,
 }
 
-/// new_writer_size returns a new Writer whose buffer has at least the specified
-/// size.
-// If the argument std::io::Write is already a Writer with large enough
-// size, it returns the underlying Writer.
-pub fn new_writer_size(w: &mut dyn std::io::Write, size: usize) -> Writer {
-    // 	// Is it already a Writer?
-    // 	b, ok := w.(*Writer)
-    // 	if ok && b.buf.len() >= size {
-    // 		return b
-    // 	}
-    Writer {
-        err: None,
-        buf: vec![0; if size == 0 { DEFAULT_BUF_SIZE } else { size }],
-        n: 0,
-        wr: w,
-    }
-}
-
-/// new_writer returns a new Writer whose buffer has the default size.
-// If the argument std::io::Write is already a Writer with large enough buffer size,
-// it returns the underlying Writer.
-pub fn new_writer(w: &mut dyn std::io::Write) -> Writer {
-    new_writer_size(w, DEFAULT_BUF_SIZE)
-}
-
 impl std::io::Write for Writer<'_> {
     /// Write writes the contents of p into the buffer.
     /// It returns the number of bytes written.
@@ -691,9 +666,25 @@ impl std::io::Write for Writer<'_> {
 }
 
 impl<'a> Writer<'a> {
-    /// new_writer returns a new Writer whose buffer has the default size.
-    pub fn new(w: &mut dyn std::io::Write) -> Writer {
-        new_writer_size(w, DEFAULT_BUF_SIZE)
+    /// new returns a new Writer whose buffer has the default size.
+    pub fn new(w: &'a mut dyn std::io::Write) -> Self {
+        Self::new_size(w, DEFAULT_BUF_SIZE)
+    }
+
+    /// new_size returns a new Writer whose buffer has at least the specified
+    /// size.
+    pub fn new_size(w: &'a mut dyn std::io::Write, size: usize) -> Self {
+        // 	// Is it already a Writer?
+        // 	b, ok := w.(*Writer)
+        // 	if ok && b.buf.len() >= size {
+        // 		return b
+        // 	}
+        Self {
+            err: None,
+            buf: vec![0; if size == 0 { DEFAULT_BUF_SIZE } else { size }],
+            n: 0,
+            wr: w,
+        }
     }
 
     /// size returns the size of the underlying buffer in bytes.

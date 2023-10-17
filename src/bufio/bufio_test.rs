@@ -3,11 +3,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-use std::io::Write;
-
-use super::bufio::{self, new_writer, new_writer_size};
+use super::bufio::{self, Writer};
 use crate::bytes;
 use crate::io as ggio;
+use std::io::Write;
 
 // import (
 // 	. "bufio"
@@ -547,7 +546,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // fn TestReadWriteRune() {
 // 	const NRune = 1000
 // 	byteBuf := new(bytes::Buffer::new())
-// 	w := new_writer(byteBuf)
+// 	w := Writer::new(byteBuf)
 // 	// Write the runes out using WriteRune
 // 	buf := make([u8], utf8.UTFMAX)
 // 	for r := rune(0); r < NRune; r++ {
@@ -578,7 +577,7 @@ const BUFSIZES: [usize; 10] = [0, MIN_READ_BUFFER_SIZE, 23, 32, 46, 64, 93, 128,
 // 	// replacement character.
 // 	for _, r := range []rune{-1, utf8.MAX_RUNE + 1} {
 // 		var buf strings.Builder
-// 		w := new_writer(&buf)
+// 		w := Writer::new(&buf)
 // 		w.WriteRune(r)
 // 		w.flush()
 // 		if s := buf.String(); s != "\uFFFD" {
@@ -620,7 +619,7 @@ fn test_writer() {
             // and that the data is correct.
 
             w.reset();
-            let mut buf = new_writer_size(&mut w, bs);
+            let mut buf = Writer::new_size(&mut w, bs);
             let context = format!("nwrite={} bufsize={}", nwrite, bs);
             let res = buf.write(&data[0..nwrite]);
             assert!(
@@ -656,7 +655,7 @@ fn test_writer() {
 // 	got := new(bytes::Buffer::new())
 // 	var want [u8]
 // 	rn := rand.New(rand.NewSource(0))
-// 	w := new_writer_size(got, 64)
+// 	w := Writer::new_size(got, 64)
 // 	for i := 0; i < 100; i += 1 {
 // 		// Obtain a buffer to append to.
 // 		b := w.AvailableBuffer()
@@ -720,7 +719,7 @@ fn test_short_write() {
             capacity,
             errkind: None,
         };
-        let mut w = new_writer(&mut buf);
+        let mut w = Writer::new(&mut buf);
 
         // writing 5 bytes
         // no error because the writer has big buffer
@@ -758,7 +757,7 @@ fn test_short_write() {
 
 // fn TestWriteErrors() {
 // 	for _, w := range errorWriterTests {
-// 		buf := new_writer(w)
+// 		buf := Writer::new(w)
 // 		_, e := buf.write([u8]("hello world"))
 // 		if e != nil {
 // 			t.Errorf("Write hello to {}: {}", w, e)
@@ -791,14 +790,14 @@ fn test_short_write() {
 
 // fn TestNewWriterSizeIdempotent() {
 // 	const BufSize = 1000
-// 	b := new_writer_size(new(bytes::Buffer::new()), BufSize)
+// 	b := Writer::new_size(new(bytes::Buffer::new()), BufSize)
 // 	// Does it recognize itself?
-// 	b1 := new_writer_size(b, BufSize)
+// 	b1 := Writer::new_size(b, BufSize)
 // 	if b1 != b {
 // 		t.Error("new_writer_size did not detect underlying Writer")
 // 	}
 // 	// Does it wrap if existing buffer is too small?
-// 	b2 := new_writer_size(b, 2*BufSize)
+// 	b2 := Writer::new_size(b, 2*BufSize)
 // 	if b2 == b {
 // 		t.Error("new_writer_size did not enlarge buffer")
 // 	}
@@ -809,7 +808,7 @@ fn test_write_string() {
     const BUF_SIZE: usize = 8;
     // 	buf := new(strings.Builder)
     let mut buf = Vec::<u8>::new();
-    let mut b = new_writer_size(&mut buf, BUF_SIZE);
+    let mut b = Writer::new_size(&mut buf, BUF_SIZE);
     b.write_string("0").unwrap(); // easy
     b.write_string("123456").unwrap(); // still easy
     b.write_string("7890").unwrap(); // easy after flush
@@ -827,7 +826,7 @@ fn test_write_string() {
 // 	const BufSize = 8
 // 	{
 // 		tw := &teststringwriter{}
-// 		b := new_writer_size(tw, BufSize)
+// 		b := Writer::new_size(tw, BufSize)
 // 		b.write_string("1234")
 // 		tw.check(t, "", "")
 // 		b.write_string("56789012")   // longer than BufSize
@@ -837,13 +836,13 @@ fn test_write_string() {
 // 	}
 // 	{
 // 		tw := &teststringwriter{}
-// 		b := new_writer_size(tw, BufSize)
+// 		b := Writer::new_size(tw, BufSize)
 // 		b.write_string("123456789")   // long string, empty buffer:
 // 		tw.check(t, "", "123456789") // use write_string
 // 	}
 // 	{
 // 		tw := &teststringwriter{}
-// 		b := new_writer_size(tw, BufSize)
+// 		b := Writer::new_size(tw, BufSize)
 // 		b.write_string("abc")
 // 		tw.check(t, "", "")
 // 		b.write_string("123456789012345")      // long string, non-empty buffer
@@ -851,7 +850,7 @@ fn test_write_string() {
 // 	}
 // 	{
 // 		tw := &teststringwriter{}
-// 		b := new_writer_size(tw, BufSize)
+// 		b := Writer::new_size(tw, BufSize)
 // 		b.Write([]byte("abc")) // same as above, but use Write instead of write_string
 // 		tw.check(t, "", "")
 // 		b.write_string("123456789012345")
@@ -1235,7 +1234,7 @@ fn test_write_string() {
 // 		for wi, wfunc := range ws {
 // 			input := createTestInput(8192)
 // 			b := new(strings.Builder)
-// 			w := new_writer(wfunc(b))
+// 			w := Writer::new(wfunc(b))
 // 			r := rfunc(bytes::Reader::new(input))
 // 			if n, err := w.ReadFrom(r); err != nil || n != int64(len(input)) {
 // 				t.Errorf("ws[{}],rs[{}]: w.ReadFrom(r) = {}, {}, want {}, nil", wi, ri, n, err, len(input))
@@ -1276,7 +1275,7 @@ fn test_write_string() {
 
 // fn TestWriterReadFromErrors() {
 // 	for i, rw := range errorReaderFromTests {
-// 		w := new_writer(rw)
+// 		w := Writer::new(rw)
 // 		if _, err := w.ReadFrom(rw); err != rw.expected {
 // 			t.Errorf("w.ReadFrom(errorReaderFromTests[{}]) = _, {}, want _,{}", i, err, rw.expected)
 // 		}
@@ -1289,7 +1288,7 @@ fn test_write_string() {
 // // avoided.
 // fn TestWriterReadFromCounts() {
 // 	var w0 writeCountingDiscard
-// 	b0 := new_writer_size(&w0, 1234)
+// 	b0 := Writer::new_size(&w0, 1234)
 // 	b0.write_string(strings.Repeat("x", 1000))
 // 	if w0 != 0 {
 // 		t.Fatalf("write 1000 'x's: got {} writes, want 0", w0)
@@ -1308,7 +1307,7 @@ fn test_write_string() {
 // 	}
 
 // 	var w1 writeCountingDiscard
-// 	b1 := new_writer_size(&w1, 1234)
+// 	b1 := Writer::new_size(&w1, 1234)
 // 	b1.write_string(strings.Repeat("x", 1200))
 // 	b1.flush()
 // 	if w1 != 1 {
@@ -1404,7 +1403,7 @@ fn test_write_string() {
 // // Test for golang.org/issue/5947
 // fn TestWriterReadFromWhileFull() {
 // 	let mut buf = bytes::Buffer::new();
-// 	w := new_writer_size(buf, 10)
+// 	w := Writer::new_size(buf, 10)
 
 // 	// Fill buffer exactly.
 // 	n, err := w.write([u8]("0123456789"))
@@ -1435,7 +1434,7 @@ fn test_write_string() {
 // // Test for golang.org/issue/7611
 // fn TestWriterReadFromUntilEOF() {
 // 	let mut buf = bytes::Buffer::new();
-// 	w := new_writer_size(buf, 5)
+// 	w := Writer::new_size(buf, 5)
 
 // 	// Partially fill buffer
 // 	n, err := w.write([u8]("0123"))
@@ -1457,7 +1456,7 @@ fn test_write_string() {
 
 // fn TestWriterReadFromErrNoProgress() {
 // 	let mut buf = bytes::Buffer::new();
-// 	w := new_writer_size(buf, 5)
+// 	w := Writer::new_size(buf, 5)
 
 // 	// Partially fill buffer
 // 	n, err := w.write([u8]("0123"))
@@ -1499,7 +1498,7 @@ fn test_write_string() {
 
 // 	input := createTestInput(64)
 // 	rfw := &readFromWriter{}
-// 	w := new_writer_size(rfw, bufsize)
+// 	w := Writer::new_size(rfw, bufsize)
 
 // 	const writeSize = 8
 // 	if n, err := w.write(input[..writeSize]); n != writeSize || err != nil {
@@ -1581,7 +1580,7 @@ fn test_write_string() {
 fn test_writer_reset() {
     let mut buf1 = bytes::Buffer::new();
     // 	var buf1, buf2, buf3, buf4, buf5 strings.Builder
-    let mut w = new_writer(&mut buf1);
+    let mut w = Writer::new(&mut buf1);
     w.write_string("foo").unwrap();
 
     let mut buf2 = bytes::Buffer::new();
@@ -1604,7 +1603,7 @@ fn test_writer_reset() {
 
     // 	// Wrap a writer and then Reset to that writer.
     // 	w.reset(&buf4)
-    // 	w2 := new_writer(w)
+    // 	w2 := Writer::new(w)
     // 	w2.write_string("recur")
     // 	w2.flush()
     // 	if buf4.String() != "recur" {
@@ -1761,10 +1760,10 @@ fn test_writer_reset() {
 fn test_writer_size() {
     let mut w = Vec::<u8>::new();
     {
-        assert_eq!(bufio::DEFAULT_BUF_SIZE, bufio::new_writer(&mut w).size());
+        assert_eq!(bufio::DEFAULT_BUF_SIZE, bufio::Writer::new(&mut w).size());
     }
     {
-        assert_eq!(1234, bufio::new_writer_size(&mut w, 1234).size());
+        assert_eq!(1234, bufio::Writer::new_size(&mut w, 1234).size());
     }
 }
 
@@ -1860,7 +1859,7 @@ fn test_writer_size() {
 // }
 
 // fn TestWriterReadFromMustSetUnderlyingError() {
-// 	var wr = new_writer(writerWithReadFromError{})
+// 	var wr = Writer::new(writerWithReadFromError{})
 // 	if _, err := wr.ReadFrom(strings::Reader::new("test2")); err == nil {
 // 		t.Fatal("expected ReadFrom returns error, got nil")
 // 	}
@@ -1878,7 +1877,7 @@ fn test_writer_size() {
 // // Ensure that previous Write errors are immediately returned
 // // on any ReadFrom. See golang.org/issue/35194.
 // fn TestWriterReadFromMustReturnUnderlyingError() {
-// 	var wr = new_writer(writeErrorOnlyWriter{})
+// 	var wr = Writer::new(writeErrorOnlyWriter{})
 // 	s := "test1"
 // 	wantBuffered := len(s)
 // 	if _, err := wr.write_string(s); err != nil {
@@ -1978,7 +1977,7 @@ fn test_writer_size() {
 // 	srcBuf := bytes::new_buffer(make([u8], 8192))
 // 	src := onlyReader{srcBuf}
 // 	dstBuf := new(bytes::Buffer::new())
-// 	dst := new_writer(dstBuf)
+// 	dst := Writer::new(dstBuf)
 // 	for i := 0; i < b.N; i += 1 {
 // 		srcBuf.Reset()
 // 		dstBuf.Reset()
@@ -1991,7 +1990,7 @@ fn test_writer_size() {
 // 	srcBuf := bytes::new_buffer(make([u8], 8192))
 // 	src := onlyReader{srcBuf}
 // 	dstBuf := new(bytes::Buffer::new())
-// 	dst := new_writer(onlyWriter{dstBuf})
+// 	dst := Writer::new(onlyWriter{dstBuf})
 // 	for i := 0; i < b.N; i += 1 {
 // 		srcBuf.Reset()
 // 		dstBuf.Reset()
@@ -2004,7 +2003,7 @@ fn test_writer_size() {
 // 	srcBuf := bytes::new_buffer(make([u8], 8192))
 // 	src := onlyReader{srcBuf}
 // 	dstBuf := new(bytes::Buffer::new())
-// 	dstWriter := new_writer(dstBuf)
+// 	dstWriter := Writer::new(dstBuf)
 // 	dst := onlyWriter{dstWriter}
 // 	for i := 0; i < b.N; i += 1 {
 // 		srcBuf.Reset()
@@ -2034,7 +2033,7 @@ fn test_writer_size() {
 // 	str := strings.Repeat("x", 1<<10)
 // 	bs := [u8](str)
 // 	for i := 0; i < b.N; i += 1 {
-// 		bw := new_writer(ggio::Discard::new())
+// 		bw := Writer::new(ggio::Discard::new())
 // 		bw.flush()
 // 		bw.write_byte('a')
 // 		bw.flush()
@@ -2049,7 +2048,7 @@ fn test_writer_size() {
 
 // fn BenchmarkWriterFlush(b *testing.B) {
 // 	b.ReportAllocs()
-// 	bw := new_writer(ggio::Discard::new())
+// 	bw := Writer::new(ggio::Discard::new())
 // 	str := strings.Repeat("x", 50)
 // 	for i := 0; i < b.N; i += 1 {
 // 		bw.write_string(str)

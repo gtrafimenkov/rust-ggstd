@@ -573,11 +573,11 @@ impl<'a> EncoderBuffer<'a> {
 
         // match self.bw.as_mut() {
         //     Some(bw) => bw.reset(e),
-        //     None => self.bw = Some(bufio::new_writer_size(e, 1 << 15)),
+        //     None => self.bw = Some(bufio::Writer::new_size(e, 1 << 15)),
         // }
 
         // if self.bw == nil {
-        //     self.bw = bufio::new_writer_size(e, 1 << 15);
+        //     self.bw = bufio::Writer::new_size(e, 1 << 15);
         // } else {
         //     self.bw.Reset(e);
         // }
@@ -586,7 +586,7 @@ impl<'a> EncoderBuffer<'a> {
         // ggstd TODO: try to implement optimizations present in the original code:
         //   - caching buf writer
         //   - caching zlib compressor
-        let mut bw = bufio::new_writer_size(&mut w, 1 << 15);
+        let mut bw = bufio::Writer::new_size(&mut w, 1 << 15);
         self.write_image(
             &mut bw,
             self.m,
