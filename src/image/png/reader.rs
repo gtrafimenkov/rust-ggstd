@@ -142,7 +142,7 @@ pub(super) const PNG_HEADER: &[u8] = b"\x89PNG\r\n\x1a\n";
 
 struct Decoder {
     img: Option<Box<Img>>,
-    crc: crc32::Digest,
+    crc: crc32::Digest<'static>,
     width: usize,
     height: usize,
     depth: u8,
@@ -700,7 +700,7 @@ pub fn decode_config<Input: std::io::BufRead>(r: &mut Input) -> std::io::Result<
 struct IdatReader<'a, Input: std::io::BufRead> {
     idat_length: u32,
     r: &'a mut Input,
-    crc: &'a mut crc32::Digest,
+    crc: &'a mut crc32::Digest<'static>,
 }
 
 impl<Input: std::io::BufRead> std::io::Read for IdatReader<'_, Input> {

@@ -147,25 +147,25 @@ pub static IEEE_TABLE: Table = [
 // 	}
 // }
 
-// // MakeTable returns a Table constructed from the specified polynomial.
-// // The contents of this Table must not be modified.
-// func MakeTable(poly uint32) *Table {
-// 	switch poly {
-// 	case IEEE:
-// 		ieeeOnce.Do(ieeeInit)
-// 		return IEEE_TABLE
-// 	case Castagnoli:
-// 		castagnoliOnce.Do(castagnoliInit)
-// 		return castagnoliTable
-// 	default:
-// 		return simple_make_table(poly)
-// 	}
-// }
+/// MakeTable returns a Table constructed from the specified polynomial.
+// The contents of this Table must not be modified.
+pub fn make_table(poly: u32) -> Table {
+    // 	switch poly {
+    // 	case IEEE:
+    // 		ieeeOnce.Do(ieeeInit)
+    // 		return IEEE_TABLE
+    // 	case Castagnoli:
+    // 		castagnoliOnce.Do(castagnoliInit)
+    // 		return castagnoliTable
+    // 	default:
+    super::crc32_generic::simple_make_table(poly)
+    // 	}
+}
 
 // digest represents the partial evaluation of a checksum.
-pub struct Digest {
+pub struct Digest<'a> {
     crc: u32,
-    tab: &'static Table,
+    tab: &'a Table,
 }
 
 // New creates a new hash::Hash32 computing the CRC-32 checksum using the
@@ -173,7 +173,7 @@ pub struct Digest {
 // value out in big-endian byte order. The returned Hash32 also
 // implements encoding.BinaryMarshaler and encoding.BinaryUnmarshaler to
 // marshal and unmarshal the internal state of the hash.
-pub fn new(tab: &'static Table) -> Digest {
+pub fn new(tab: &Table) -> Digest {
     // if tab == IEEE_TABLE {
     // 	ieeeOnce.Do(ieeeInit)
     // }
@@ -185,11 +185,11 @@ pub fn new(tab: &'static Table) -> Digest {
 // big-endian byte order. The returned Hash32 also implements
 // encoding.BinaryMarshaler and encoding.BinaryUnmarshaler to marshal
 // and unmarshal the internal state of the hash.
-pub fn new_ieee() -> Digest {
+pub fn new_ieee() -> Digest<'static> {
     new(&IEEE_TABLE)
 }
 
-impl hash::Hash for Digest {
+impl hash::Hash for Digest<'_> {
     fn reset(&mut self) {
         self.crc = 0;
     }
@@ -210,7 +210,7 @@ impl hash::Hash for Digest {
     }
 }
 
-impl hash::Hash32 for Digest {
+impl hash::Hash32 for Digest<'_> {
     fn sum32(&self) -> u32 {
         // func (d *digest) Sum32() uint32 { return d.crc }
         self.crc
@@ -283,7 +283,7 @@ pub fn update(crc: u32, tab: &Table, p: &[u8]) -> u32 {
     update_internal(crc, tab, p)
 }
 
-impl std::io::Write for Digest {
+impl std::io::Write for Digest<'_> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.crc = update(self.crc, self.tab, buf);
         Ok(buf.len())
