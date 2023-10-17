@@ -32,11 +32,11 @@ static ERR_BUFFER_FULL: errors::ErrorStaticString = errors::new_static("bufio: b
 /// Reader implements buffering for an std::io::Read object.
 ///
 /// Consider using native Rust std::io::BufReader.
-pub struct Reader<'a> {
+pub struct Reader<'a, Input: std::io::Read> {
     buf: Vec<u8>,
-    rd: &'a mut dyn std::io::Read, // reader provided by the client
-    r: usize,                      // buf read  positions
-    w: usize,                      // buf write positions
+    rd: &'a mut Input, // reader provided by the client
+    r: usize,          // buf read  positions
+    w: usize,          // buf write positions
     err: Option<Box<dyn std::error::Error>>,
     last_byte: isize,      // last byte read for UnreadByte; -1 means invalid
     last_rune_size: isize, // size of last rune read for UnreadRune; -1 means invalid
@@ -45,15 +45,15 @@ pub struct Reader<'a> {
 const MIN_READ_BUFFER_SIZE: usize = 16;
 pub(super) const MAX_CONSECUTIVE_EMPTY_READS: usize = 100;
 
-impl<'a> Reader<'a> {
+impl<'a, Input: std::io::Read> Reader<'a, Input> {
     /// new creates a reader with the default size buffer
-    pub fn new(r: &'a mut dyn std::io::Read) -> Self {
+    pub fn new(r: &'a mut Input) -> Self {
         Self::new_size(r, DEFAULT_BUF_SIZE)
     }
 
     /// new_size returns a new Reader whose buffer has at least the specified
     /// size.
-    pub fn new_size(r: &mut dyn std::io::Read, size: usize) -> Reader {
+    pub fn new_size(r: &'a mut Input, size: usize) -> Self {
         // Is it already a Reader?
         // 	b, ok := rd.(*Reader)
         // 	if ok && b.buf.len() >= size {
@@ -78,7 +78,7 @@ impl<'a> Reader<'a> {
 
     /// reset discards any buffered data, resets all state, and switches
     /// the buffered reader to read from r.
-    pub fn reset(&mut self, r: &'a mut dyn std::io::Read) {
+    pub fn reset(&mut self, r: &'a mut Input) {
         self.buf.resize(DEFAULT_BUF_SIZE, 0);
         self.rd = r;
         self.r = 0;
