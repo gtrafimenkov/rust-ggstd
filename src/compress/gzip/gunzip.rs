@@ -53,7 +53,7 @@ struct ReadState {
     buf: Vec<u8>,
 }
 
-/// A Reader implements io::Reader and std::io::Read that can be used to retrieve
+/// A Reader can be used to retrieve
 /// uncompressed data from a gzip-format compressed file.
 ///
 /// In general, a gzip file can be a concatenation of gzip files,
@@ -67,16 +67,16 @@ struct ReadState {
 /// have the expected length or checksum. Clients should treat data
 /// returned by Read as tentative until they receive the io.EOF
 /// marking the end of the data.
-pub struct Reader<'a> {
+pub struct Reader<'a, Input: std::io::BufRead> {
     pub header: Option<Header>, // valid after Reader::new or Reader.reset
     read_state: ReadState,
-    decompressor: flate::Reader<'a>,
+    decompressor: flate::Reader<&'a mut Input>,
     size: u32, // Uncompressed size (section 2.3.1)
     err: Option<std::io::Error>,
     multistream: bool,
 }
 
-impl<'a> Reader<'a> {
+impl<'a, Input: std::io::BufRead> Reader<'a, Input> {
     /// new creates a new Reader reading the given reader.
     ///
     /// Make sure that the reader implements buffering otherwise the performance
@@ -90,7 +90,7 @@ impl<'a> Reader<'a> {
     //
     /// The Reader.header fields will be valid in the Reader returned.
     /// If Reader.header is None, then there is no stream available.
-    pub fn new(r: &'a mut dyn std::io::Read) -> std::io::Result<Self> {
+    pub fn new(r: &'a mut Input) -> std::io::Result<Self> {
         // 	z := new(Reader)
         // 	if err := self.reset(r); err != nil {
         // 		return nil, err
@@ -114,7 +114,7 @@ impl<'a> Reader<'a> {
     /// reset discards the Reader self's state and makes it equivalent to the
     /// result of its original state from Reader::new, but reading from r instead.
     /// This permits reusing a Reader rather than allocating a new one.
-    pub fn reset(&mut self, r: &'a mut dyn std::io::Read) -> std::io::Result<()> {
+    pub fn reset(&mut self, r: &'a mut Input) -> std::io::Result<()> {
         self.read_state = ReadState::new();
         self.header = self.read_state.read_header(r)?;
         self.decompressor.reset(r, &[]);
@@ -129,7 +129,7 @@ impl<'a> Reader<'a> {
         self.read_state = ReadState::new();
         self.header = self
             .read_state
-            .read_header(self.decompressor.underlying_reader())?;
+            .read_header(self.decompressor.input_reader())?;
         self.decompressor.reset_state(&[]);
         self.multistream = true;
         self.size = 0;
@@ -170,7 +170,7 @@ impl<'a> Reader<'a> {
     }
 }
 
-impl crate::io::Reader for Reader<'_> {
+impl<Input: std::io::BufRead> crate::io::Reader for Reader<'_, Input> {
     /// read implements io.Reader, reading uncompressed bytes from its underlying Reader.
     fn read(&mut self, p: &mut [u8]) -> ggio::IoRes {
         let mut n = 0;
@@ -194,7 +194,7 @@ impl crate::io::Reader for Reader<'_> {
             // Finished file; check checksum and size.
             {
                 let mut buf = [0; 8];
-                if let Err(err) = self.decompressor.underlying_reader().read_exact(&mut buf) {
+                if let Err(err) = self.decompressor.input_reader().read_exact(&mut buf) {
                     self.err = Some(err);
                     return (n, errors::copy_stdio_option_error(&self.err));
                 }
@@ -217,7 +217,7 @@ impl crate::io::Reader for Reader<'_> {
             self.read_state = ReadState::new();
             self.header = match self
                 .read_state
-                .read_header(self.decompressor.underlying_reader())
+                .read_header(self.decompressor.input_reader())
             {
                 Ok(header) => header,
                 Err(err) => {
@@ -231,7 +231,7 @@ impl crate::io::Reader for Reader<'_> {
     }
 }
 
-impl std::io::Read for Reader<'_> {
+impl<Input: std::io::BufRead> std::io::Read for Reader<'_, Input> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let res = crate::io::Reader::read(self, buf);
         if res.0 > 0 {
@@ -254,7 +254,10 @@ impl ReadState {
 
     /// read_header reads the GZIP header according to section 2.3.1.
     /// This method does not set self.err.
-    fn read_header(&mut self, r: &mut dyn std::io::Read) -> Result<Option<Header>, std::io::Error> {
+    fn read_header<T: std::io::BufRead>(
+        &mut self,
+        r: &mut T,
+    ) -> Result<Option<Header>, std::io::Error> {
         // 	if _, err = io.ReadFull(r, self.buf[..10]); err != nil {
         // 		// RFC 1952, section 2.2, says the following:
         // 		//	A gzip file consists of a series of "members" (compressed data sets).
@@ -334,7 +337,7 @@ impl ReadState {
     /// It treats the bytes read as being encoded as ISO 8859-1 (Latin-1) and
     /// will output a string encoded using UTF-8.
     /// This method always updates self.digest with the data read.
-    fn read_string(&mut self, r: &mut dyn std::io::Read) -> std::io::Result<String> {
+    fn read_string<T: std::io::BufRead>(&mut self, r: &mut T) -> std::io::Result<String> {
         let mut need_conv = false;
         let mut i = 0;
         loop {

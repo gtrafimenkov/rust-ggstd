@@ -398,7 +398,7 @@ fn test_decompressor() {
         }
     }
 
-    fn test(tt: &GunzipTest, r: &mut Reader, b: &mut bytes::Buffer) {
+    fn test(tt: &GunzipTest, r: &mut Reader<bytes::Reader>, b: &mut bytes::Buffer) {
         let header = r.header.as_ref().unwrap();
         assert_eq!(
             to_op_str(tt.name),
@@ -459,7 +459,8 @@ fn test_issue6550() {
     // See golang.org/issue/34986
     let mut f = crate::os::open("src/compress/gzip/testdata/issue6550.gz.base64").unwrap();
     let mut decoder = base64::Decoder::new(base64::get_std_encoding(), &mut f);
-    let mut gzip = super::Reader::new(&mut decoder).unwrap();
+    let mut br = std::io::BufReader::new(&mut decoder);
+    let mut gzip = super::Reader::new(&mut br).unwrap();
     let res = crate::io::copy(&mut ggio::Discard::new(), &mut gzip);
     assert!(res.1.is_some(), "copy succeeded when it should have failed");
 }

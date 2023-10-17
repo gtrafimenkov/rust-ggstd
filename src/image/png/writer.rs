@@ -312,9 +312,9 @@ impl<'a> EncoderBuffer<'a> {
         filter
     }
 
-    fn write_image(
+    fn write_image<Output: std::io::Write>(
         &mut self,
-        w: &mut dyn std::io::Write,
+        w: &mut Output,
         m: &image::Img,
         cb: CB,
         level: isize,

@@ -64,7 +64,8 @@ const FILENAMES_PALETTED: &[&str] = &[
 
 pub(super) fn read_png(filename: &str) -> std::io::Result<Box<Img>> {
     let mut f = std::fs::File::open(filename)?;
-    super::decode(&mut f)
+    let mut br = std::io::BufReader::new(&mut f);
+    super::decode(&mut br)
 }
 
 /// An approximation of the sng command-line tool.
@@ -492,7 +493,8 @@ fn test_reader_error() {
 fn test_paletted_decode_config() {
     for filename in FILENAMES_PALETTED {
         let mut f = os::open(&format!("src/image/png/testdata/pngsuite/{}.png", filename)).unwrap();
-        let cfg = decode_config(&mut f).unwrap();
+        let mut br = std::io::BufReader::new(&mut f);
+        let cfg = decode_config(&mut br).unwrap();
         match cfg.color_model {
             image::color::Model::Paletted(pal) => {
                 assert!(

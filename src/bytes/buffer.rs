@@ -54,7 +54,7 @@ impl Buffer {
         }
     }
 
-    /// bytes returns a slice of length b.Len() holding the unread portion of the buffer.
+    /// bytes returns a slice of length b.len() holding the unread portion of the buffer.
     /// The slice is valid for use only until the next buffer modification (that is,
     /// only until the next call to a method like Read, Write, Reset, or Truncate).
     /// The slice aliases the buffer content at least until the next buffer modification,
@@ -439,5 +439,15 @@ pub fn new_buffer_string(s: &str) -> Buffer {
     Buffer {
         buf: s.as_bytes().to_vec(),
         off: 0,
+    }
+}
+
+impl std::io::BufRead for Buffer {
+    fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
+        Ok(self.bytes())
+    }
+
+    fn consume(&mut self, amt: usize) {
+        self.off += amt.min(self.len());
     }
 }

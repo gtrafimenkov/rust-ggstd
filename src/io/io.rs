@@ -352,7 +352,7 @@ pub fn write_string(w: &mut dyn std::io::Write, s: &str) -> std::io::Result<usiz
 /// It returns the number of bytes copied and an error if fewer bytes were read.
 /// If fewer than min bytes were read, read_at_least returns an error.
 /// If min is greater than the length of buf, read_at_least returns ErrorKind::InvalidInput.
-pub fn read_at_least(r: &mut dyn std::io::Read, buf: &mut [u8], min: usize) -> IoRes {
+pub fn read_at_least<T: std::io::Read + ?Sized>(r: &mut T, buf: &mut [u8], min: usize) -> IoRes {
     if buf.len() < min {
         return (
             0,
@@ -380,7 +380,7 @@ pub fn read_at_least(r: &mut dyn std::io::Read, buf: &mut [u8], min: usize) -> I
 /// read_full reads exactly buf.len() bytes from r into buf.
 /// The difference from Rust's std::io::Read::read_exact, it that read_full returns both
 /// number of bytes read and a possible error, when std::io::Read::read_exact returns one or another.
-pub fn read_full(r: &mut dyn std::io::Read, buf: &mut [u8]) -> IoRes {
+pub fn read_full<T: std::io::Read + ?Sized>(r: &mut T, buf: &mut [u8]) -> IoRes {
     read_at_least(r, buf, buf.len())
 }
 

@@ -615,7 +615,12 @@ fn test_block(test: &HuffTest, ttype: &str) {
     test_writer_eof("wb", test, true);
 }
 
-fn write_to_type(ttype: &str, bw: &mut HuffmanBitWriter, tok: &[Token], input: Option<&[u8]>) {
+fn write_to_type(
+    ttype: &str,
+    bw: &mut HuffmanBitWriter<bytes::Buffer>,
+    tok: &[Token],
+    input: Option<&[u8]>,
+) {
     match ttype {
         "wb" => bw.write_block(tok, false, input),
         "dyn" => bw.write_block_dynamic(tok, false, input),
@@ -682,7 +687,7 @@ fn test_writer_eof(ttype: &str, test: &HuffTest, use_input: bool) {
 #[test]
 fn test_structure_sizes() {
     assert!(
-        200 >= std::mem::size_of::<HuffmanBitWriter>(),
+        200 >= std::mem::size_of::<HuffmanBitWriter<bytes::Buffer>>(),
         "consider reducing size of HuffmanBitWriter"
     );
 }

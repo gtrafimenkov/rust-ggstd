@@ -10,9 +10,9 @@
 use super::deflate::MAX_MATCH_OFFSET;
 use super::dict_decoder::DictDecoder;
 use super::huffman_bit_writer::END_BLOCK_MARKER;
+use crate::compat;
 use crate::errors;
 use crate::io as ggio;
-use crate::io::ByteReader;
 use crate::math::bits;
 use std::sync::OnceLock;
 
@@ -32,7 +32,7 @@ const NUM_CODES: usize = 19; // number of codes in Huffman meta-code
 /// Initialize the fixedHuffmanDecoder only once upon first use.
 pub(super) fn get_fixed_huffman_decoder() -> &'static HuffmanDecoder {
     static ENCODER: OnceLock<HuffmanDecoder> = OnceLock::new();
-    ENCODER.get_or_init(generate_fixed_huffman_decoder)
+    ENCODER.get_or_init(fixed_huffman_decoder_init)
 }
 
 // // Resetter resets a ReadCloser returned by new_reader or new_reader_dict
@@ -250,16 +250,6 @@ impl HuffmanDecoder {
     }
 }
 
-// /// The actual read interface needed by new_reader.
-// /// If you have only ggio::Reader and not ggio::ByteReader,
-// /// you can use bufio::Reader as a wrapper.
-// // pub trait Reader: ggio::Reader + ggio::ByteReader {}
-// pub trait Reader {
-//     //: ggio::Reader + ggio::ByteReader {
-//     fn read(&mut self, p: &mut [u8]) -> ggio::IoRes;
-//     fn read_byte(&mut self) -> Result<u8, std::io::Error>;
-// }
-
 #[derive(PartialEq)]
 enum HDDecoder {
     None,
@@ -272,15 +262,15 @@ enum HLDecoder {
     H1,
 }
 
-pub struct Reader<'a> {
+/// Reader uncompress data provided by another reader (input source).
+/// Reader returns Ok(0) after the final block in the DEFLATE stream has
+/// been encountered. Any trailing data after the final block is ignored.
+///
+/// The input source must be buffered because the implementation uses
+/// many 1-byte reads.
+pub struct Reader<Input: std::io::BufRead> {
     /// Input source.
-    r: std::io::BufReader<&'a mut dyn std::io::Read>,
-    err: Option<std::io::Error>,
-    pub(super) td: DecompressorFilter,
-}
-
-/// Same as Reader, but doesn't keep reader in the internal state.
-pub struct DecompressorFilter {
+    r: Input,
     roffset: u64,
     // Input bits, in top of b.
     b: u32,
@@ -299,7 +289,7 @@ pub struct DecompressorFilter {
     buf: [u8; 4],
     // Next step in the decompression,
     // and decompression state.
-    step: fn(r: &mut std::io::BufReader<&mut dyn std::io::Read>, &mut DecompressorFilter),
+    step: StepFunc,
     step_state: StepState,
     final_: bool,
     end_of_stream: bool,
@@ -308,6 +298,12 @@ pub struct DecompressorFilter {
     hd: HDDecoder,
     copy_len: usize,
     copy_dist: usize,
+}
+
+enum StepFunc {
+    NextBlock,
+    HuffmanBlock,
+    CopyData,
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -322,43 +318,6 @@ pub(super) enum DecoderToUse {
     H2,
 }
 
-fn next_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut DecompressorFilter) {
-    while f.nb < 1 + 2 {
-        let res = f.more_bits(r);
-        if res.is_err() {
-            f.err = Some(res.err().unwrap());
-            return;
-        }
-    }
-    f.final_ = f.b & 1 == 1;
-    f.b >>= 1;
-    let typ = f.b & 3;
-    f.b >>= 2;
-    f.nb -= 1 + 2;
-    match typ {
-        0 => f.data_block(r),
-        1 => {
-            // compressed, fixed Huffman tables
-            f.hl = HLDecoder::Fixed;
-            f.hd = HDDecoder::None;
-            huffman_block(r, f);
-        }
-        2 => {
-            // compressed, dynamic Huffman tables
-            let res = f.read_huffman(r);
-            if res.is_ok() {
-                f.hl = HLDecoder::H1;
-                f.hd = HDDecoder::H2;
-                huffman_block(r, f);
-            }
-        }
-        _ => {
-            // 3 is reserved.
-            f.err = Some(new_corrupted_input_error(f.roffset));
-        }
-    }
-}
-
 // RFC 1951 section 3.2.7.
 // Compression with dynamic Huffman codes
 
@@ -366,24 +325,13 @@ const CODE_ORDER: [usize; 19] = [
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ];
 
-impl std::io::Read for Reader<'_> {
+impl<Input: std::io::BufRead> std::io::Read for Reader<Input> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if self.err.is_some() {
-            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
-        }
-        let (n, err) = self.td.read(&mut self.r, buf);
-        self.err = err;
-        if n > 0 {
-            Ok(n)
-        } else if self.err.is_some() {
-            return Err(errors::copy_stdio_error(self.err.as_ref().unwrap()));
-        } else {
-            return Ok(0);
-        }
+        errors::iores_to_result(crate::io::Reader::read(self, buf))
     }
 }
 
-impl<'a> Reader<'a> {
+impl<'a, Input: std::io::BufRead> Reader<Input> {
     /// new returns a new Reader that can be used
     /// to read the uncompressed version of r.
     /// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has
@@ -391,7 +339,7 @@ impl<'a> Reader<'a> {
     ///
     // ggrust: not implemented
     // The ReadCloser returned by new_reader also implements Resetter.
-    pub fn new(r: &'a mut dyn std::io::Read) -> Reader<'_> {
+    pub fn new(r: Input) -> Reader<Input> {
         Self::new_dict(r, &[])
     }
 
@@ -403,88 +351,221 @@ impl<'a> Reader<'a> {
     ///
     // ggrust: not implemented
     // The ReadCloser returned by new_reader also implements Resetter.
-    pub fn new_dict(r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Reader<'a> {
+    pub fn new_dict(r: Input, dict: &'a [u8]) -> Reader<Input> {
         Reader {
-            r: std::io::BufReader::new(r),
-            td: DecompressorFilter::new_dict(dict),
+            r,
+            roffset: 0,
+            b: 0,
+            nb: 0,
+            h1: HuffmanDecoder::new(),
+            h2: HuffmanDecoder::new(),
+            bits: vec![0; MAX_NUM_LIT + MAX_NUM_DIST],
+            codebits: [0; NUM_CODES],
+            dict: DictDecoder::new(MAX_MATCH_OFFSET, dict),
+            buf: [0; 4],
+            step: StepFunc::NextBlock,
+            step_state: StepState::StateInit,
+            final_: false,
+            end_of_stream: false,
             err: None,
+            hl: HLDecoder::Fixed,
+            hd: HDDecoder::None,
+            copy_len: 0,
+            copy_dist: 0,
         }
     }
 
-    pub fn close(&mut self) -> Result<(), std::io::Error> {
-        self.td.close()
+    fn next_block(&mut self) {
+        while self.nb < 1 + 2 {
+            let res = self.more_bits();
+            if res.is_err() {
+                self.err = Some(res.err().unwrap());
+                return;
+            }
+        }
+        self.final_ = self.b & 1 == 1;
+        self.b >>= 1;
+        let typ = self.b & 3;
+        self.b >>= 2;
+        self.nb -= 1 + 2;
+        match typ {
+            0 => self.data_block(),
+            1 => {
+                // compressed, fixed Huffman tables
+                self.hl = HLDecoder::Fixed;
+                self.hd = HDDecoder::None;
+                self.huffman_block();
+            }
+            2 => {
+                // compressed, dynamic Huffman tables
+                let res = self.read_huffman();
+                if res.is_ok() {
+                    self.hl = HLDecoder::H1;
+                    self.hd = HDDecoder::H2;
+                    self.huffman_block();
+                }
+            }
+            _ => {
+                // 3 is reserved.
+                self.err = Some(new_corrupted_input_error(self.roffset));
+            }
+        }
     }
 
-    /// Read the next Huffman-encoded symbol from f according to h.
-    #[allow(dead_code)]
-    pub(super) fn huff_sym(&mut self, decoder: DecoderToUse) -> Result<usize, std::io::Error> {
-        self.td.huff_sym(&mut self.r, decoder)
+    pub fn close(&mut self) -> std::io::Result<()> {
+        // if self.err.is_some() {
+        //     let err = self.err.as_ref().unwrap();
+        //     if err.is_eof() {
+        //         return Ok(());
+        //     }
+        //     return Err(err.lossy_copy());
+        // }
+        Ok(())
     }
 
-    // Reset discards any buffered data and resets the instance if it was
-    // newly initialized with the given reader.
-    pub fn reset(&mut self, r: &'a mut dyn std::io::Read, dict: &[u8]) {
-        // keep following fields
-        // self.bits = vec![0; MAX_NUM_LIT + MAX_NUM_DIST];
-        // self.codebits = [0; NUM_CODES];
+    fn read_huffman(&mut self) -> std::io::Result<()> {
+        // HLIT[5], HDIST[5], HCLEN[4].
+        while self.nb < 5 + 5 + 4 {
+            self.more_bits()?
+        }
+        let nlit = (self.b & 0x1F) as usize + 257;
+        if nlit > MAX_NUM_LIT {
+            return Err(new_corrupted_input_error(self.roffset));
+        }
+        self.b >>= 5;
+        let ndist = (self.b & 0x1F) as usize + 1;
+        if ndist > MAX_NUM_DIST {
+            return Err(new_corrupted_input_error(self.roffset));
+        }
+        self.b >>= 5;
+        let nclen = (self.b & 0xF) as usize + 4;
+        // NUM_CODES is 19, so nclen is always valid.
+        self.b >>= 4;
+        self.nb -= 5 + 5 + 4;
 
-        // reset everything else
-        self.r = std::io::BufReader::new(r);
-        self.reset_state(dict);
-    }
+        // (HCLEN+4)*3 bits: code lengths in the magic CODE_ORDER order.
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..nclen {
+            while self.nb < 3 {
+                self.more_bits()?
+            }
+            self.codebits[CODE_ORDER[i]] = self.b & 0x7;
+            self.b >>= 3;
+            self.nb -= 3;
+        }
+        #[allow(clippy::needless_range_loop)]
+        for i in nclen..CODE_ORDER.len() {
+            self.codebits[CODE_ORDER[i]] = 0;
+        }
+        if !self.h1.init(&self.codebits[0..]) {
+            return Err(new_corrupted_input_error(self.roffset));
+        }
 
-    // reset_state discards any buffered data and resets the instance if it was
-    // newly initialized with the reader it already holds.
-    pub fn reset_state(&mut self, dict: &[u8]) {
-        self.td.reset(dict);
-    }
-
-    /// underlying_reader returns mutable reference to the underlying reader.
-    pub fn underlying_reader(&mut self) -> &mut dyn std::io::Read {
-        &mut self.r
-    }
-}
-
-impl crate::io::Reader for Reader<'_> {
-    fn read(&mut self, p: &mut [u8]) -> ggio::IoRes {
-        self.td.read(&mut self.r, p)
-    }
-}
-
-// Decode a single Huffman block from self.
-// hl and hd are the Huffman states for the lit/length values
-// and the distance values, respectively. If hd == nil, using the
-// fixed distance encoding associated with fixed Huffman blocks.
-fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut DecompressorFilter) {
-    enum StateMachine {
-        ReadLiteral,
-        CopyHistory,
-    }
-    let mut next_step = match f.step_state {
-        StepState::StateInit => StateMachine::ReadLiteral,
-        StepState::StateDict => StateMachine::CopyHistory,
-    };
-    loop {
-        match next_step {
-            StateMachine::ReadLiteral => {
-                // Read literal and/or (length, distance) according to RFC section 3.2.3.
-                let v = match f.huff_sym(r, DecoderToUse::HL) {
-                    Ok(v) => v,
-                    Err(err) => {
-                        f.err = Some(err);
-                        return;
+        // HLIT + 257 code lengths, HDIST + 1 code lengths,
+        // using the code length Huffman code.
+        let mut i = 0;
+        let n = nlit + ndist;
+        while i < n {
+            let x = self.huff_sym(DecoderToUse::H1)?;
+            if x < 16 {
+                // Actual length.
+                self.bits[i] = x as u32;
+                i += 1;
+                continue;
+            }
+            // Repeat previous length or zero.
+            let mut rep: usize;
+            let nb: usize;
+            let b: u32;
+            match x {
+                16 => {
+                    rep = 3;
+                    nb = 2;
+                    if i == 0 {
+                        return Err(new_corrupted_input_error(self.roffset));
                     }
-                };
-                let n: usize; // number of bits extra
-                let length: usize;
-                match v {
+                    b = self.bits[i - 1];
+                }
+                17 => {
+                    rep = 3;
+                    nb = 3;
+                    b = 0;
+                }
+                18 => {
+                    rep = 11;
+                    nb = 7;
+                    b = 0;
+                }
+                _ => {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "unexpected length code",
+                    ))
+                }
+            };
+            while self.nb < nb {
+                self.more_bits()?
+            }
+            rep += (self.b & ((1 << nb) - 1) as u32) as usize;
+            self.b >>= nb;
+            self.nb -= nb;
+            if i + rep > n {
+                return Err(new_corrupted_input_error(self.roffset));
+            }
+            for _j in 0..rep {
+                self.bits[i] = b;
+                i += 1;
+            }
+        }
+
+        if !self.h1.init(&self.bits[0..nlit]) || !self.h2.init(&self.bits[nlit..nlit + ndist]) {
+            return Err(new_corrupted_input_error(self.roffset));
+        }
+
+        // As an optimization, we can initialize the min bits to read at a time
+        // for the HLIT tree to the length of the EOB marker since we know that
+        // every block must terminate with one. This preserves the property that
+        // we never read any extra bytes after the end of the DEFLATE stream.
+        if self.h1.min < self.bits[END_BLOCK_MARKER] {
+            self.h1.min = self.bits[END_BLOCK_MARKER];
+        }
+        Ok(())
+    }
+
+    // Decode a single Huffman block from self.
+    // hl and hd are the Huffman states for the lit/length values
+    // and the distance values, respectively. If hd == nil, using the
+    // fixed distance encoding associated with fixed Huffman blocks.
+    fn huffman_block(&mut self) {
+        enum StateMachine {
+            ReadLiteral,
+            CopyHistory,
+        }
+        let mut next_step = match self.step_state {
+            StepState::StateInit => StateMachine::ReadLiteral,
+            StepState::StateDict => StateMachine::CopyHistory,
+        };
+        loop {
+            match next_step {
+                StateMachine::ReadLiteral => {
+                    // Read literal and/or (length, distance) according to RFC section 3.2.3.
+                    let v = match self.huff_sym(DecoderToUse::HL) {
+                        Ok(v) => v,
+                        Err(err) => {
+                            self.err = Some(err);
+                            return;
+                        }
+                    };
+                    let n: usize; // number of bits extra
+                    let length: usize;
+                    match v {
                     0..=255 => {
                         // 		case v < 256:
-                        f.dict.write_byte(v as u8);
-                        if f.dict.avail_write() == 0 {
-                            f.dict.stash_flush();
-                            f.step = huffman_block;
-                            f.step_state = StepState::StateInit;
+                        self.dict.write_byte(v as u8);
+                        if self.dict.avail_write() == 0 {
+                            self.dict.stash_flush();
+                            self.step = StepFunc::HuffmanBlock;
+                            self.step_state = StepState::StateInit;
                             return;
                         }
                         // next_step = StateMachine::ReadLiteral;
@@ -492,7 +573,7 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                     }
                     256 => {
                         // 		case v == 256:
-                        f.finish_block();
+                        self.finish_block();
                         return;
                     }
                     // otherwise, reference to older data
@@ -532,349 +613,111 @@ fn huffman_block(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut Dec
                         n = 0;
                     }
                     _ => {
-                        // 		default:
-                        f.err = Some(new_corrupted_input_error(f.roffset));
+                        self.err = Some(new_corrupted_input_error(self.roffset));
                         return;
                     }
                 };
-                let mut length = length;
-                if n > 0 {
-                    while f.nb < n {
-                        if let Err(err) = f.more_bits(r) {
-                            f.err = Some(err);
-                            return;
-                        }
-                    }
-                    length += (f.b & ((1 << n) - 1) as u32) as usize;
-                    f.b >>= n;
-                    f.nb -= n;
-                }
-
-                let mut dist: usize;
-                match f.hd {
-                    HDDecoder::None => {
-                        while f.nb < 5 {
-                            if let Err(err) = f.more_bits(r) {
-                                f.err = Some(err);
+                    let mut length = length;
+                    if n > 0 {
+                        while self.nb < n {
+                            if let Err(err) = self.more_bits() {
+                                self.err = Some(err);
                                 return;
                             }
                         }
-                        dist = bits::reverse8(((f.b & 0x1F) << 3) as u8) as usize;
-                        f.b >>= 5;
-                        f.nb -= 5;
+                        length += (self.b & ((1 << n) - 1) as u32) as usize;
+                        self.b >>= n;
+                        self.nb -= n;
                     }
-                    HDDecoder::H2 => {
-                        let res = f.huff_sym(r, DecoderToUse::H2);
-                        dist = match res {
-                            Ok(v) => v,
-                            Err(err) => {
-                                f.err = Some(err);
-                                return;
-                            }
-                        };
-                    }
-                }
 
-                if (0..4).contains(&dist) {
-                    // 		case dist < 4:
-                    dist += 1;
-                } else if (4..MAX_NUM_DIST).contains(&dist) {
-                    // 		case dist < MAX_NUM_DIST:
-                    let nb = (dist - 2) >> 1;
-                    // have 1 bit in bottom of dist, need nb more.
-                    let mut extra = (dist & 1) << nb;
-                    while f.nb < nb {
-                        if let Err(err) = f.more_bits(r) {
-                            f.err = Some(err);
-                            return;
+                    let mut dist: usize;
+                    match self.hd {
+                        HDDecoder::None => {
+                            while self.nb < 5 {
+                                if let Err(err) = self.more_bits() {
+                                    self.err = Some(err);
+                                    return;
+                                }
+                            }
+                            dist = bits::reverse8(((self.b & 0x1F) << 3) as u8) as usize;
+                            self.b >>= 5;
+                            self.nb -= 5;
+                        }
+                        HDDecoder::H2 => {
+                            let res = self.huff_sym(DecoderToUse::H2);
+                            dist = match res {
+                                Ok(v) => v,
+                                Err(err) => {
+                                    self.err = Some(err);
+                                    return;
+                                }
+                            };
                         }
                     }
-                    extra |= (f.b & ((1 << nb) - 1) as u32) as usize;
-                    f.b >>= nb;
-                    f.nb -= nb;
-                    dist = 1_usize.overflowing_shl((nb + 1) as u32).0 + 1 + extra;
-                } else {
-                    // 		default:
-                    f.err = Some(new_corrupted_input_error(f.roffset));
-                    return;
-                }
 
-                // No check on length; encoding can be prescient.
-                if dist > f.dict.hist_size() {
-                    f.err = Some(new_corrupted_input_error(f.roffset));
-                    return;
-                }
-
-                f.copy_len = length;
-                f.copy_dist = dist;
-                next_step = StateMachine::CopyHistory;
-            }
-            StateMachine::CopyHistory => {
-                // Perform a backwards copy according to RFC section 3.2.3.
-                let mut cnt = f.dict.try_write_copy(f.copy_dist, f.copy_len);
-                if cnt == 0 {
-                    cnt = f.dict.write_copy(f.copy_dist, f.copy_len);
-                }
-                f.copy_len -= cnt;
-
-                if f.dict.avail_write() == 0 || f.copy_len > 0 {
-                    f.dict.stash_flush();
-                    f.step = huffman_block; // We need to continue this work
-                    f.step_state = StepState::StateDict;
-                    return;
-                }
-                next_step = StateMachine::ReadLiteral;
-            }
-        }
-    }
-}
-
-/// copy_data copies self.copy_len bytes from the underlying reader into self.hist.
-/// It pauses for reads when self.hist is full.
-fn copy_data(r: &mut std::io::BufReader<&mut dyn std::io::Read>, f: &mut DecompressorFilter) {
-    let buf = f.dict.write_slice(f.copy_len);
-    let (n, err) = ggio::read_full(r, buf);
-    f.roffset += n as u64;
-    f.copy_len -= n;
-    f.dict.write_mark(n);
-    if let Some(err) = err {
-        f.err = Some(err);
-        return;
-    }
-
-    if f.dict.avail_write() == 0 || f.copy_len > 0 {
-        f.dict.stash_flush();
-        f.step = copy_data;
-        return;
-    }
-    f.finish_block();
-}
-
-fn generate_fixed_huffman_decoder() -> HuffmanDecoder {
-    let mut h = HuffmanDecoder::new();
-    // These come from the RFC section 3.2.6.
-    let mut bits = [0; 288];
-    #[allow(clippy::needless_range_loop)]
-    for i in 0..144 {
-        bits[i] = 8;
-    }
-    #[allow(clippy::needless_range_loop)]
-    for i in 144..256 {
-        bits[i] = 9;
-    }
-    #[allow(clippy::needless_range_loop)]
-    for i in 256..280 {
-        bits[i] = 7;
-    }
-    #[allow(clippy::needless_range_loop)]
-    for i in 280..288 {
-        bits[i] = 8;
-    }
-    h.init(&bits);
-    h
-}
-
-impl DecompressorFilter {
-    pub fn read(
-        &mut self,
-        r: &mut std::io::BufReader<&mut dyn std::io::Read>,
-        b: &mut [u8],
-    ) -> ggio::IoRes {
-        // first returning available data, then an error if it exists
-        loop {
-            if self.dict.stash_len() > 0 {
-                let n = self.dict.stash_read(b);
-                if n > 0 {
-                    return (n, None);
-                }
-            }
-            if self.err.is_some() {
-                return (0, errors::copy_stdio_option_error(&self.err));
-            }
-            if self.end_of_stream {
-                return ggio::EOF;
-            }
-            (self.step)(r, self);
-            if self.err.is_some() && self.dict.stash_len() == 0 {
-                self.dict.stash_flush(); // Flush what's left in case of error
-            }
-        }
-    }
-
-    /// new returns a new DecompressorFilter that can be used
-    /// to read the uncompressed version of r.
-    /// The reader returns std::io::Error::EOF after the final block in the DEFLATE stream has
-    /// been encountered. Any trailing data after the final block is ignored.
-    ///
-    // ggrust: not implemented
-    // The ReadCloser returned by new_reader also implements Resetter.
-    pub fn new() -> Self {
-        Self::new_dict(&[])
-    }
-
-    /// new_dict is like new but initializes the reader
-    /// with a preset dictionary. The returned Reader behaves as if
-    /// the uncompressed data stream started with the given dictionary,
-    /// which has already been read. new_dict is typically used
-    /// to read data compressed by Writer::new_dict.
-    ///
-    // ggrust: not implemented
-    // The ReadCloser returned by new_reader also implements Resetter.
-    pub fn new_dict(dict: &[u8]) -> Self {
-        Self {
-            roffset: 0,
-            b: 0,
-            nb: 0,
-            h1: HuffmanDecoder::new(),
-            h2: HuffmanDecoder::new(),
-            bits: vec![0; MAX_NUM_LIT + MAX_NUM_DIST],
-            codebits: [0; NUM_CODES],
-            dict: DictDecoder::new(MAX_MATCH_OFFSET, dict),
-            buf: [0; 4],
-            step: next_block,
-            step_state: StepState::StateInit,
-            final_: false,
-            end_of_stream: false,
-            err: None,
-            hl: HLDecoder::Fixed,
-            hd: HDDecoder::None,
-            copy_len: 0,
-            copy_dist: 0,
-        }
-    }
-
-    pub fn close(&mut self) -> Result<(), std::io::Error> {
-        // if self.err.is_some() {
-        //     let err = self.err.as_ref().unwrap();
-        //     if err.is_eof() {
-        //         return Ok(());
-        //     }
-        //     return Err(err.lossy_copy());
-        // }
-        Ok(())
-    }
-
-    fn read_huffman(
-        &mut self,
-        r: &mut std::io::BufReader<&mut dyn std::io::Read>,
-    ) -> Result<(), std::io::Error> {
-        // HLIT[5], HDIST[5], HCLEN[4].
-        while self.nb < 5 + 5 + 4 {
-            self.more_bits(r)?
-        }
-        let nlit = (self.b & 0x1F) as usize + 257;
-        if nlit > MAX_NUM_LIT {
-            return Err(new_corrupted_input_error(self.roffset));
-        }
-        self.b >>= 5;
-        let ndist = (self.b & 0x1F) as usize + 1;
-        if ndist > MAX_NUM_DIST {
-            return Err(new_corrupted_input_error(self.roffset));
-        }
-        self.b >>= 5;
-        let nclen = (self.b & 0xF) as usize + 4;
-        // NUM_CODES is 19, so nclen is always valid.
-        self.b >>= 4;
-        self.nb -= 5 + 5 + 4;
-
-        // (HCLEN+4)*3 bits: code lengths in the magic CODE_ORDER order.
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..nclen {
-            while self.nb < 3 {
-                self.more_bits(r)?
-            }
-            self.codebits[CODE_ORDER[i]] = self.b & 0x7;
-            self.b >>= 3;
-            self.nb -= 3;
-        }
-        #[allow(clippy::needless_range_loop)]
-        for i in nclen..CODE_ORDER.len() {
-            self.codebits[CODE_ORDER[i]] = 0;
-        }
-        if !self.h1.init(&self.codebits[0..]) {
-            return Err(new_corrupted_input_error(self.roffset));
-        }
-
-        // HLIT + 257 code lengths, HDIST + 1 code lengths,
-        // using the code length Huffman code.
-        let mut i = 0;
-        let n = nlit + ndist;
-        while i < n {
-            let x = self.huff_sym(r, DecoderToUse::H1)?;
-            if x < 16 {
-                // Actual length.
-                self.bits[i] = x as u32;
-                i += 1;
-                continue;
-            }
-            // Repeat previous length or zero.
-            let mut rep: usize;
-            let nb: usize;
-            let b: u32;
-            match x {
-                16 => {
-                    rep = 3;
-                    nb = 2;
-                    if i == 0 {
-                        return Err(new_corrupted_input_error(self.roffset));
+                    if (0..4).contains(&dist) {
+                        // 		case dist < 4:
+                        dist += 1;
+                    } else if (4..MAX_NUM_DIST).contains(&dist) {
+                        // 		case dist < MAX_NUM_DIST:
+                        let nb = (dist - 2) >> 1;
+                        // have 1 bit in bottom of dist, need nb more.
+                        let mut extra = (dist & 1) << nb;
+                        while self.nb < nb {
+                            if let Err(err) = self.more_bits() {
+                                self.err = Some(err);
+                                return;
+                            }
+                        }
+                        extra |= (self.b & ((1 << nb) - 1) as u32) as usize;
+                        self.b >>= nb;
+                        self.nb -= nb;
+                        dist = 1_usize.overflowing_shl((nb + 1) as u32).0 + 1 + extra;
+                    } else {
+                        // 		default:
+                        self.err = Some(new_corrupted_input_error(self.roffset));
+                        return;
                     }
-                    b = self.bits[i - 1];
-                }
-                17 => {
-                    rep = 3;
-                    nb = 3;
-                    b = 0;
-                }
-                18 => {
-                    rep = 11;
-                    nb = 7;
-                    b = 0;
-                }
-                _ => {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "unexpected length code",
-                    ))
-                }
-            };
-            while self.nb < nb {
-                self.more_bits(r)?
-            }
-            rep += (self.b & ((1 << nb) - 1) as u32) as usize;
-            self.b >>= nb;
-            self.nb -= nb;
-            if i + rep > n {
-                return Err(new_corrupted_input_error(self.roffset));
-            }
-            for _j in 0..rep {
-                self.bits[i] = b;
-                i += 1;
-            }
-        }
 
-        if !self.h1.init(&self.bits[0..nlit]) || !self.h2.init(&self.bits[nlit..nlit + ndist]) {
-            return Err(new_corrupted_input_error(self.roffset));
-        }
+                    // No check on length; encoding can be prescient.
+                    if dist > self.dict.hist_size() {
+                        self.err = Some(new_corrupted_input_error(self.roffset));
+                        return;
+                    }
 
-        // As an optimization, we can initialize the min bits to read at a time
-        // for the HLIT tree to the length of the EOB marker since we know that
-        // every block must terminate with one. This preserves the property that
-        // we never read any extra bytes after the end of the DEFLATE stream.
-        if self.h1.min < self.bits[END_BLOCK_MARKER] {
-            self.h1.min = self.bits[END_BLOCK_MARKER];
+                    self.copy_len = length;
+                    self.copy_dist = dist;
+                    next_step = StateMachine::CopyHistory;
+                }
+                StateMachine::CopyHistory => {
+                    // Perform a backwards copy according to RFC section 3.2.3.
+                    let mut cnt = self.dict.try_write_copy(self.copy_dist, self.copy_len);
+                    if cnt == 0 {
+                        cnt = self.dict.write_copy(self.copy_dist, self.copy_len);
+                    }
+                    self.copy_len -= cnt;
+
+                    if self.dict.avail_write() == 0 || self.copy_len > 0 {
+                        self.dict.stash_flush();
+                        self.step = StepFunc::HuffmanBlock; // We need to continue this work
+                        self.step_state = StepState::StateDict;
+                        return;
+                    }
+                    next_step = StateMachine::ReadLiteral;
+                }
+            }
         }
-        Ok(())
     }
 
     /// Copy a single uncompressed data block from input to output.
-    fn data_block(&mut self, r: &mut std::io::BufReader<&mut dyn std::io::Read>) {
+    fn data_block(&mut self) {
         // Uncompressed.
         // Discard current half-u8.
         self.nb = 0;
         self.b = 0;
 
         // Length then ones-complement of length.
-        let (n, err) = ggio::read_full(r, &mut self.buf[0..4]);
+        let (n, err) = ggio::read_full(&mut self.r, &mut self.buf[0..4]);
         self.roffset += n as u64;
         if let Some(err) = err {
             self.err = Some(err);
@@ -894,7 +737,28 @@ impl DecompressorFilter {
         }
 
         self.copy_len = n;
-        copy_data(r, self);
+        self.copy_data();
+    }
+
+    /// copy_data copies self.copy_len bytes from the underlying reader into self.hist.
+    /// It pauses for reads when self.hist is full.
+    fn copy_data(&mut self) {
+        let buf = self.dict.write_slice(self.copy_len);
+        let (n, err) = ggio::read_full(&mut self.r, buf);
+        self.roffset += n as u64;
+        self.copy_len -= n;
+        self.dict.write_mark(n);
+        if let Some(err) = err {
+            self.err = Some(err);
+            return;
+        }
+
+        if self.dict.avail_write() == 0 || self.copy_len > 0 {
+            self.dict.stash_flush();
+            self.step = StepFunc::CopyData;
+            return;
+        }
+        self.finish_block();
     }
 
     fn finish_block(&mut self) {
@@ -904,14 +768,11 @@ impl DecompressorFilter {
             }
             self.end_of_stream = true;
         }
-        self.step = next_block;
+        self.step = StepFunc::NextBlock;
     }
 
-    fn more_bits(
-        &mut self,
-        r: &mut std::io::BufReader<&mut dyn std::io::Read>,
-    ) -> std::io::Result<()> {
-        let c = r.read_byte()?;
+    fn more_bits(&mut self) -> std::io::Result<()> {
+        let c = compat::readers::read_byte(&mut self.r)?;
         self.roffset += 1;
         self.b |= (c as u32) << self.nb;
         self.nb += 8;
@@ -919,11 +780,7 @@ impl DecompressorFilter {
     }
 
     /// Read the next Huffman-encoded symbol from f according to h.
-    pub(super) fn huff_sym(
-        &mut self,
-        r: &mut std::io::BufReader<&mut dyn std::io::Read>,
-        decoder: DecoderToUse,
-    ) -> Result<usize, std::io::Error> {
+    pub(super) fn huff_sym(&mut self, decoder: DecoderToUse) -> Result<usize, std::io::Error> {
         let h = match decoder {
             DecoderToUse::H1 => &self.h1,
             DecoderToUse::HL => match self.hl {
@@ -943,7 +800,7 @@ impl DecompressorFilter {
         let (mut nb, mut b) = (self.nb, self.b);
         loop {
             while nb < n {
-                match r.read_byte() {
+                match compat::readers::read_byte(&mut self.r) {
                     Err(err) => {
                         self.b = b;
                         self.nb = nb;
@@ -977,7 +834,16 @@ impl DecompressorFilter {
         }
     }
 
-    pub fn reset(&mut self, dict: &[u8]) {
+    // Reset discards any buffered data and resets the instance if it was
+    // newly initialized with the given reader.
+    pub fn reset(&mut self, r: Input, dict: &[u8]) {
+        self.r = r;
+        self.reset_state(dict);
+    }
+
+    // reset_state discards any buffered data and resets the instance if it was
+    // newly initialized with the reader it already holds.
+    pub fn reset_state(&mut self, dict: &[u8]) {
         // keep following fields
         // self.bits = vec![0; MAX_NUM_LIT + MAX_NUM_DIST];
         // self.codebits = [0; NUM_CODES];
@@ -991,7 +857,7 @@ impl DecompressorFilter {
         self.h1 = HuffmanDecoder::new();
         self.h2 = HuffmanDecoder::new();
         self.buf = [0; 4];
-        self.step = next_block;
+        self.step = StepFunc::NextBlock;
         self.step_state = StepState::StateInit;
         self.final_ = false;
         self.end_of_stream = false;
@@ -1001,12 +867,63 @@ impl DecompressorFilter {
         self.copy_len = 0;
         self.copy_dist = 0;
     }
+
+    /// input_reader returns mutable reference to the underlying reader.
+    pub fn input_reader(&mut self) -> &mut Input {
+        &mut self.r
+    }
 }
 
-impl Default for DecompressorFilter {
-    fn default() -> Self {
-        Self::new()
+impl<Input: std::io::BufRead> crate::io::Reader for Reader<Input> {
+    fn read(&mut self, p: &mut [u8]) -> ggio::IoRes {
+        // first returning available data, then an error if it exists
+        loop {
+            if self.dict.stash_len() > 0 {
+                let n = self.dict.stash_read(p);
+                if n > 0 {
+                    return (n, None);
+                }
+            }
+            if self.err.is_some() {
+                return (0, errors::copy_stdio_option_error(&self.err));
+            }
+            if self.end_of_stream {
+                return ggio::EOF;
+            }
+            match self.step {
+                StepFunc::NextBlock => self.next_block(),
+                StepFunc::HuffmanBlock => self.huffman_block(),
+                StepFunc::CopyData => self.copy_data(),
+            }
+            if self.err.is_some() && self.dict.stash_len() == 0 {
+                self.dict.stash_flush(); // Flush what's left in case of error
+            }
+        }
     }
+}
+
+fn fixed_huffman_decoder_init() -> HuffmanDecoder {
+    let mut h = HuffmanDecoder::new();
+    // These come from the RFC section 3.2.6.
+    let mut bits = [0; 288];
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..144 {
+        bits[i] = 8;
+    }
+    #[allow(clippy::needless_range_loop)]
+    for i in 144..256 {
+        bits[i] = 9;
+    }
+    #[allow(clippy::needless_range_loop)]
+    for i in 256..280 {
+        bits[i] = 7;
+    }
+    #[allow(clippy::needless_range_loop)]
+    for i in 280..288 {
+        bits[i] = 8;
+    }
+    h.init(&bits);
+    h
 }
 
 fn new_corrupted_input_error(offset: u64) -> std::io::Error {

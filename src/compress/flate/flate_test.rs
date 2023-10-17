@@ -66,7 +66,7 @@ fn test_invalid_encoding() {
     // Initialize decompressor with invalid Huffman coding.
     let mut r = bytes::Reader::new(&[0xff]);
     let mut f = Reader::new(&mut r);
-    f.td.h1 = h;
+    f.h1 = h;
 
     assert!(
         f.huff_sym(DecoderToUse::H1).is_err(),

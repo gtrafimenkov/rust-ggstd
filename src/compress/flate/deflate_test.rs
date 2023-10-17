@@ -1229,7 +1229,7 @@ fn test_best_speed_shift_offsets() {
 
 #[test]
 fn test_structure_sizes() {
-    let size = std::mem::size_of::<Compressor>();
+    let size = std::mem::size_of::<Compressor<std::io::BufWriter<std::fs::File>>>();
     assert!(
         500 >= size,
         "consider reducing size of Compressor ({})",

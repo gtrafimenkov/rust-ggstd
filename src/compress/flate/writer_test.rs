@@ -83,7 +83,8 @@ fn test_write_error() {
         while fail <= 32 {
             // Fail after 'fail' writes
             let mut ew = ErrorWriter { n: fail };
-            let mut w = flate::Writer::new(&mut ew, l).unwrap();
+            let mut eww: &mut dyn std::io::Write = &mut ew;
+            let mut w = flate::Writer::new(&mut eww, l).unwrap();
             let mut reader = bytes::Reader::new(input);
             let (_n, err) = ggio::copy_buffer(&mut w, &mut reader, Some(&mut copy_buffer));
             assert!(
@@ -100,7 +101,8 @@ fn test_write_error() {
             assert!(res.is_err(), "Level {}, Expected an error on close", l);
 
             let mut discard_writer = ggio::Discard::new();
-            w.reset(&mut discard_writer);
+            let mut dw: &mut dyn std::io::Write = &mut discard_writer;
+            w.reset(&mut dw);
             let res = w.write(&[1, 2, 3, 4, 5, 6]);
             assert!(
                 res.as_ref().is_ok() && *res.as_ref().unwrap() == 6,

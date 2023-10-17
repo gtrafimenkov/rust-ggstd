@@ -164,3 +164,14 @@ pub fn is_rust_eof(res: &std::io::Result<usize>) -> bool {
         false
     }
 }
+
+/// iores_to_result converts Go IO error to Rust IO error.
+pub fn iores_to_result(iores: crate::io::IoRes) -> std::io::Result<usize> {
+    if iores.0 > 0 {
+        Ok(iores.0)
+    } else if let Some(err) = iores.1 {
+        Err(err)
+    } else {
+        Ok(0)
+    }
+}

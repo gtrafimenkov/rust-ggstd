@@ -13,6 +13,7 @@ use crate::image::{
     color::{self, Color, Gray, Gray16, Model, Palette, RGBA},
     Image, Img,
 };
+use std::io::Read;
 use std::io::Write;
 
 /// Color type, as per the PNG spec.
@@ -258,7 +259,11 @@ fn decode_cb(depth: u8, color_type: u8) -> std::io::Result<CB> {
 }
 
 impl Decoder {
-    fn parse_ihdr(&mut self, r: &mut dyn std::io::Read, length: u32) -> std::io::Result<()> {
+    fn parse_ihdr<Input: std::io::BufRead>(
+        &mut self,
+        r: &mut Input,
+        length: u32,
+    ) -> std::io::Result<()> {
         if length != 13 {
             return Err(new_format_error("bad IHDR length"));
         }
@@ -301,7 +306,11 @@ impl Decoder {
         verify_checksum(r, &self.crc)
     }
 
-    fn parse_plte(&mut self, r: &mut dyn std::io::Read, length: u32) -> std::io::Result<()> {
+    fn parse_plte<Input: std::io::BufRead>(
+        &mut self,
+        r: &mut Input,
+        length: u32,
+    ) -> std::io::Result<()> {
         let np = (length / 3) as usize; // The number of palette entries.
 
         if length % 3 != 0 || np == 0 || np > 256 || np > (1 << (self.depth)) {
@@ -335,7 +344,11 @@ impl Decoder {
         verify_checksum(r, &self.crc)
     }
 
-    fn parset_rns(&mut self, r: &mut dyn std::io::Read, length: u32) -> std::io::Result<()> {
+    fn parset_rns<Input: std::io::BufRead>(
+        &mut self,
+        r: &mut Input,
+        length: u32,
+    ) -> std::io::Result<()> {
         let length = length as usize;
         match self.cb {
             CB::G1 | CB::G2 | CB::G4 | CB::G8 | CB::G16 => {
@@ -392,8 +405,12 @@ impl Decoder {
         verify_checksum(r, &self.crc)
     }
 
-    fn parse_idat(&mut self, r: &mut dyn std::io::Read, length: u32) -> std::io::Result<()> {
-        let mut idat_reader = IdatReader {
+    fn parse_idat<Input: std::io::BufRead>(
+        &mut self,
+        r: &mut Input,
+        length: u32,
+    ) -> std::io::Result<()> {
+        let mut idat_reader = &mut IdatReader {
             idat_length: length,
             r,
             crc: &mut self.crc,
@@ -411,7 +428,8 @@ impl Decoder {
         let pal = convert_palette(&self.palette_vec);
 
         let img = {
-            let mut zlib_reader = match zlib::Reader::new(&mut idat_reader) {
+            let mut br = std::io::BufReader::new(&mut idat_reader);
+            let mut zlib_reader = match zlib::Reader::new(&mut br) {
                 Ok(reader) => reader,
                 Err(err) => return Err(err.to_stdio_error()),
             };
@@ -452,14 +470,22 @@ impl Decoder {
         verify_checksum(r, &self.crc)
     }
 
-    fn parse_iend(&mut self, r: &mut dyn std::io::Read, length: u32) -> std::io::Result<()> {
+    fn parse_iend<Input: std::io::BufRead>(
+        &mut self,
+        r: &mut Input,
+        length: u32,
+    ) -> std::io::Result<()> {
         if length != 0 {
             return Err(new_format_error("bad IEND length"));
         }
         verify_checksum(r, &self.crc)
     }
 
-    fn parse_chunk(&mut self, r: &mut dyn std::io::Read, config_only: bool) -> std::io::Result<()> {
+    fn parse_chunk<Input: std::io::BufRead>(
+        &mut self,
+        r: &mut Input,
+        config_only: bool,
+    ) -> std::io::Result<()> {
         // Read the length and chunk type.
         let mut tmp = [0; 8];
         r.read_exact(&mut tmp)?;
@@ -590,7 +616,10 @@ fn merge_pass_into(dst: &mut Img, src: &Img, pass: usize) {
     }
 }
 
-fn verify_checksum(r: &mut dyn std::io::Read, crc: &crc32::Digest) -> std::io::Result<()> {
+fn verify_checksum<Input: std::io::BufRead>(
+    r: &mut Input,
+    crc: &crc32::Digest,
+) -> std::io::Result<()> {
     let mut tmp = [0_u8; 4];
     r.read_exact(&mut tmp)?;
 
@@ -600,7 +629,7 @@ fn verify_checksum(r: &mut dyn std::io::Read, crc: &crc32::Digest) -> std::io::R
     Ok(())
 }
 
-fn check_header(r: &mut dyn std::io::Read) -> std::io::Result<()> {
+fn check_header<Input: std::io::BufRead>(r: &mut Input) -> std::io::Result<()> {
     let mut tmp = [0_u8; PNG_HEADER.len()];
     r.read_exact(&mut tmp)?;
     if tmp != PNG_HEADER {
@@ -611,7 +640,7 @@ fn check_header(r: &mut dyn std::io::Read) -> std::io::Result<()> {
 
 /// decode reads a PNG image from r and returns it as an image.Image.
 /// The type of Image returned depends on the PNG contents.
-pub fn decode(r: &mut dyn std::io::Read) -> std::io::Result<Box<Img>> {
+pub fn decode<Input: std::io::BufRead>(r: &mut Input) -> std::io::Result<Box<Img>> {
     let mut d = Decoder::default();
     check_header(r)?;
     while d.stage != DecodingStage::SeenIEND {
@@ -622,7 +651,7 @@ pub fn decode(r: &mut dyn std::io::Read) -> std::io::Result<Box<Img>> {
 
 /// decode_config returns the color model and dimensions of a PNG image without
 /// decoding the entire image.
-pub fn decode_config(r: &mut dyn std::io::Read) -> std::io::Result<image::Config> {
+pub fn decode_config<Input: std::io::BufRead>(r: &mut Input) -> std::io::Result<image::Config> {
     let mut d = Decoder::default();
     check_header(r)?;
 
@@ -668,13 +697,13 @@ pub fn decode_config(r: &mut dyn std::io::Read) -> std::io::Result<image::Config
 /// immediately before the first Read call is that d.r is positioned between the
 /// first IDAT and xxx, and the decoder state immediately after the last Read
 /// call is that d.r is positioned between yy and crc1.
-struct IdatReader<'a> {
+struct IdatReader<'a, Input: std::io::BufRead> {
     idat_length: u32,
-    r: &'a mut dyn std::io::Read,
+    r: &'a mut Input,
     crc: &'a mut crc32::Digest,
 }
 
-impl std::io::Read for IdatReader<'_> {
+impl<Input: std::io::BufRead> std::io::Read for IdatReader<'_, Input> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if buf.is_empty() {
             return Ok(0);
@@ -762,9 +791,9 @@ fn allocate_image(dp: &DecodeParams, palette: &Palette) -> Img {
 }
 
 /// read_image_pass reads a single image pass, sized according to the pass number.
-fn read_image_pass(
+fn read_image_pass<Input: std::io::BufRead>(
     dp: &DecodeParams,
-    r: &mut dyn std::io::Read,
+    r: &mut zlib::Reader<Input>,
     pass: usize,
     img: &mut Img,
 ) -> std::io::Result<bool> {

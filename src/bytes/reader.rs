@@ -181,3 +181,13 @@ impl<'a> Reader<'a> {
         // self.prevRune = -1;
     }
 }
+
+impl std::io::BufRead for Reader<'_> {
+    fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
+        Ok(&self.s[self.i as usize..])
+    }
+
+    fn consume(&mut self, amt: usize) {
+        self.i += amt.min(self.len()) as u64;
+    }
+}

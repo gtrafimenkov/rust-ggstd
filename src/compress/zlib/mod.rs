@@ -34,7 +34,7 @@
 mod reader;
 mod writer;
 
-pub use reader::{new_reader, new_reader_dict, Error, Reader};
+pub use reader::{Error, Reader};
 pub use writer::{
     new_writer, new_writer_level, new_writer_level_dict, Writer, BEST_COMPRESSION, BEST_SPEED,
     DEFAULT_COMPRESSION, HUFFMAN_ONLY, NO_COMPRESSION,

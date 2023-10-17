@@ -6,7 +6,7 @@
 use crate::compress::flate;
 use crate::errors;
 use crate::hash::{self, adler32, Hash32};
-use std::io::{Read, Write};
+use std::io::Write;
 
 const ZLIB_DEFLATE: u8 = 8;
 const ZLIB_MAX_WINDOW: u8 = 7;
@@ -68,54 +68,40 @@ impl From<std::io::ErrorKind> for Error {
     }
 }
 
-pub struct Reader<'a> {
-    /// Input source.
-    r: std::io::BufReader<&'a mut dyn std::io::Read>,
-    decompressor: flate::DecompressorFilter,
+/// Reader reads and decompress data from the input reader.
+// If r does not implement io.ByteReader, the decompressor may read more
+// data than necessary from r.
+// It is the caller's responsibility to call close on the Reader when done.
+pub struct Reader<'a, Input: std::io::BufRead> {
+    decompressor: flate::Reader<&'a mut Input>,
     digest: adler32::Digest,
 }
 
-/// new_reader creates a new Reader.
-/// Reads from the returned Reader read and decompress data from r.
-/// If r does not implement io.ByteReader, the decompressor may read more
-/// data than necessary from r.
-/// It is the caller's responsibility to call close on the Reader when done.
-//
-// ggstd not implemented:
-// The Reader returned by new_reader also implements Resetter.
-pub fn new_reader(r: &mut dyn std::io::Read) -> Result<Reader, Error> {
-    new_reader_dict(r, &[])
-}
-
-/// new_reader_dict is like new_reader but uses a preset dictionary.
-/// new_reader_dict ignores the dictionary if the compressed data does not refer to it.
-/// If the compressed data refers to a different dictionary, new_reader_dict returns ErrDictionary.
-//
-// ggstd not implemented:
-// The Reader returned by new_reader_dict also implements Resetter.
-pub fn new_reader_dict<'a>(
-    r: &'a mut dyn std::io::Read,
-    dict: &'a [u8],
-) -> Result<Reader<'a>, Error> {
-    Reader::new_dict(r, dict)
-}
-
-impl<'a> Reader<'a> {
-    pub fn new(r: &'a mut dyn std::io::Read) -> Result<Self, Error> {
+impl<'a, Input: std::io::BufRead> Reader<'a, Input> {
+    pub fn new(r: &'a mut Input) -> Result<Self, Error> {
         Self::new_dict(r, &[])
     }
 
-    pub fn new_dict(r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Result<Self, Error> {
-        let (decompressor, digest) = init_stream(r, dict)?;
+    /// new_dict is like new but uses a preset dictionary.
+    /// new_dict ignores the dictionary if the compressed data does not refer to it.
+    /// If the compressed data refers to a different dictionary, new_dict returns ErrDictionary.
+    //
+    // ggstd not implemented:
+    // The Reader returned by new_reader_dict also implements Resetter.
+    pub fn new_dict(r: &'a mut Input, dict: &'a [u8]) -> Result<Self, Error> {
+        let have_dict = read_dictionary_config(r, dict)?;
         Ok(Self {
-            r: std::io::BufReader::new(r),
-            decompressor,
-            digest,
+            decompressor: if have_dict {
+                flate::Reader::new_dict(r, dict)
+            } else {
+                flate::Reader::new(r)
+            },
+            digest: hash::adler32::new(),
         })
     }
 
     pub fn read(&mut self, p: &mut [u8]) -> Result<usize, Error> {
-        let (n, err) = self.decompressor.read(&mut self.r, p);
+        let (n, err) = crate::io::Reader::read(&mut self.decompressor, p);
         self.digest.write_all(&p[0..n])?;
 
         if n > 0 {
@@ -131,7 +117,7 @@ impl<'a> Reader<'a> {
         // Finished file; check checksum.
         let mut scratch = [0; 4];
 
-        self.r.read_exact(&mut scratch)?;
+        std::io::Read::read_exact(self.decompressor.input_reader(), &mut scratch)?;
 
         // ZLIB (RFC 1950) is big-endian, unlike GZIP (RFC 1952).
         let checksum = (scratch[0] as u32) << 24
@@ -154,21 +140,19 @@ impl<'a> Reader<'a> {
     /// reset discards any buffered data and resets the Reader as if it was
     /// newly initialized with the given reader.
     /// This permits reusing a Reader instead of allocating a new one.
-    pub fn reset(&mut self, r: &'a mut dyn std::io::Read, dict: &'a [u8]) -> Result<(), Error> {
-        let (decompressor, digest) = init_stream(r, dict)?;
-        self.decompressor = decompressor;
-        self.digest = digest;
+    pub fn reset(&mut self, r: &'a mut Input, dict: &'a [u8]) -> Result<(), Error> {
+        let have_dict = read_dictionary_config(r, dict)?;
+        self.decompressor = if have_dict {
+            flate::Reader::new_dict(r, dict)
+        } else {
+            flate::Reader::new(r)
+        };
+        self.digest = hash::adler32::new();
         Ok(())
     }
 }
 
-impl std::io::Read for Reader<'_> {
-    /// When using this fuction, error reporting will not be precise
-    /// because any error will be converted to std::io::Error.
-    /// If you want precise error reporting, use Reader::Read method.
-    //
-    // ggrust TODO: ??? save the exact error to make it possible to get it with a separate
-    // function call (get_last_read_error)?
+impl<Input: std::io::BufRead> std::io::Read for Reader<'_, Input> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let res = Reader::read(self, buf);
         match res {
@@ -178,10 +162,11 @@ impl std::io::Read for Reader<'_> {
     }
 }
 
-fn init_stream<'a>(
-    r: &'a mut dyn std::io::Read,
-    dict: &'a [u8],
-) -> Result<(flate::DecompressorFilter, adler32::Digest), Error> {
+/// Read the header, validate it and return true if the dictionary is used.
+fn read_dictionary_config<Input: std::io::BufRead>(
+    r: &mut Input,
+    dict: &[u8],
+) -> Result<bool, Error> {
     let mut scratch = [0; 4];
     r.read_exact(&mut scratch[0..2])?;
     let h = ((scratch[0] as usize) << 8) | (scratch[1] as usize);
@@ -199,13 +184,5 @@ fn init_stream<'a>(
             return Err(Error::ErrDictionary);
         }
     }
-
-    // 	if self.decompressor == nil {
-    let decompressor = if have_dict {
-        flate::DecompressorFilter::new_dict(dict)
-    } else {
-        flate::DecompressorFilter::new()
-    };
-    let digest = hash::adler32::new();
-    Ok((decompressor, digest))
+    Ok(have_dict)
 }

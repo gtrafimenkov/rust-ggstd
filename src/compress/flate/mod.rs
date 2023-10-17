@@ -7,10 +7,9 @@ mod inflate;
 mod token;
 
 pub use deflate::{
-    WriteFilter, Writer, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, HUFFMAN_ONLY,
-    NO_COMPRESSION,
+    Writer, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, HUFFMAN_ONLY, NO_COMPRESSION,
 };
-pub use inflate::{DecompressorFilter, Reader};
+pub use inflate::Reader;
 
 #[cfg(test)]
 mod deflate_test;

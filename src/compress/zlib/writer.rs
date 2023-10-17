@@ -17,22 +17,13 @@ pub const BEST_COMPRESSION: isize = flate::BEST_COMPRESSION;
 pub const DEFAULT_COMPRESSION: isize = flate::DEFAULT_COMPRESSION;
 pub const HUFFMAN_ONLY: isize = flate::HUFFMAN_ONLY;
 
-// We need underlying writer to:
-//   - write header and footer
-//   - write compressed data
-// When writing compressed data, the writer is kept in the fate::Writer object and
-// can't keep reference in it in the Writer struct.
-// We are going to use WriterState to keep the underlying writer itself or flate::Writer.
-
 /// A Writer takes data written to it and writes the compressed
 /// form of that data to an underlying writer (see new_writer).
-pub struct Writer<'a> {
-    w: &'a mut dyn std::io::Write,
+pub struct Writer<'a, Output: std::io::Write> {
     level: isize,
     dict: &'a [u8],
-    compressor: flate::WriteFilter<'a>,
+    compressor: flate::Writer<'a, Output>,
     digest: Box<dyn hash::Hash32>,
-    // 	err         error
     scratch: [u8; 4],
     wrote_header: bool,
 }
@@ -42,7 +33,7 @@ pub struct Writer<'a> {
 ///
 /// It is the caller's responsibility to call close on the Writer when done.
 /// Writes may be buffered and not flushed until close.
-pub fn new_writer(w: &mut dyn std::io::Write) -> Writer {
+pub fn new_writer<Output: std::io::Write>(w: &mut Output) -> Writer<Output> {
     new_writer_level_dict(w, DEFAULT_COMPRESSION, &[]).unwrap()
 }
 
@@ -52,7 +43,7 @@ pub fn new_writer(w: &mut dyn std::io::Write) -> Writer {
 /// The compression level can be DEFAULT_COMPRESSION, NO_COMPRESSION, HUFFMAN_ONLY
 /// or any integer value between BEST_SPEED and BEST_COMPRESSION inclusive.
 /// The error returned will be nil if the level is valid.
-pub fn new_writer_level(w: &mut dyn std::io::Write, level: isize) -> Writer {
+pub fn new_writer_level<Output: std::io::Write>(w: &mut Output, level: isize) -> Writer<Output> {
     return new_writer_level_dict(w, level, &[]).unwrap();
 }
 
@@ -61,11 +52,11 @@ pub fn new_writer_level(w: &mut dyn std::io::Write, level: isize) -> Writer {
 ///
 /// The dictionary may be nil. If not, its contents should not be modified until
 /// the Writer is closed.
-pub fn new_writer_level_dict<'a>(
-    w: &'a mut dyn std::io::Write,
+pub fn new_writer_level_dict<'a, Output: std::io::Write>(
+    w: &'a mut Output,
     level: isize,
     dict: &'a [u8],
-) -> std::io::Result<Writer<'a>> {
+) -> std::io::Result<Writer<'a, Output>> {
     if !(HUFFMAN_ONLY..=BEST_COMPRESSION).contains(&level) {
         return Err(errors::new_stdio_other_error(format!(
             "zlib: invalid compression level: {}",
@@ -73,23 +64,22 @@ pub fn new_writer_level_dict<'a>(
         )));
     }
     Ok(Writer {
-        w,
         level,
         dict,
-        compressor: flate::WriteFilter::new_dict(level, dict).unwrap(),
+        compressor: flate::Writer::new_dict(w, level, dict).unwrap(),
         digest: Box::new(adler32::new()),
         scratch: [0; 4],
         wrote_header: false,
     })
 }
 
-impl<'a> Writer<'a> {
+impl<'a, Output: std::io::Write> Writer<'a, Output> {
     /// reset clears the state of the Writer z such that it is equivalent to its
     /// initial state from new_writer_level or new_writer_level_dict, but instead writing
     /// to w.
-    pub fn reset(&mut self, w: &'a mut dyn std::io::Write) {
-        self.w = w;
-        self.compressor.reset();
+    pub fn reset(&mut self, w: &'a mut Output) {
+        // self.w = w;
+        self.compressor.reset(w);
         self.digest.reset();
         self.scratch = [0; 4];
         self.wrote_header = false;
@@ -123,11 +113,11 @@ impl<'a> Writer<'a> {
         }
         self.scratch[1] +=
             (31 - (((self.scratch[0] as u16) << 8) + (self.scratch[1] as u16)) % 31) as u8;
-        self.w.write_all(&self.scratch[0..2])?;
+        self.compressor.output().write_all(&self.scratch[0..2])?;
         if !self.dict.is_empty() {
             // The next four bytes are the Adler-32 checksum of the dictionary.
             binary::BIG_ENDIAN.put_uint32(&mut self.scratch[..], adler32::checksum(self.dict));
-            self.w.write_all(&self.scratch[0..4])?;
+            self.compressor.output().write_all(&self.scratch[0..4])?;
         }
         Ok(())
     }
@@ -140,7 +130,7 @@ impl<'a> Writer<'a> {
         if p.is_empty() {
             return Ok(0);
         }
-        let written = self.compressor.write(self.w, p)?;
+        let written = self.compressor.write(p)?;
         if written != p.len() {
             panic!(
                 "not all data were written: written {}, all {}",
@@ -162,7 +152,7 @@ impl<'a> Writer<'a> {
     /// flush flushes the Writer to its underlying ggio::Writer.
     pub fn flush(&'a mut self) -> std::io::Result<()> {
         self.write_header()?;
-        self.compressor.flush(self.w)?;
+        self.compressor.flush()?;
         Ok(())
     }
 
@@ -170,11 +160,11 @@ impl<'a> Writer<'a> {
     /// writer, but does not close the underlying writer.
     pub fn close(&mut self) -> std::io::Result<()> {
         self.write_header()?;
-        self.compressor.close(self.w)?;
+        self.compressor.close()?;
         let checksum = self.digest.sum32();
         // ZLIB (RFC 1950) is big-endian, unlike GZIP (RFC 1952).
         binary::BIG_ENDIAN.put_uint32(&mut self.scratch[..], checksum);
-        self.w.write_all(&self.scratch[0..4])?;
+        self.compressor.output().write_all(&self.scratch[0..4])?;
         Ok(())
     }
 }

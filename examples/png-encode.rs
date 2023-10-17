@@ -35,7 +35,8 @@ fn example_encode() {
     // decoding just the header
     {
         let mut f = std::fs::File::open("image.png").unwrap();
-        let config = png::decode_config(&mut f).unwrap();
+        let mut br = std::io::BufReader::new(&mut f);
+        let config = png::decode_config(&mut br).unwrap();
         println!("size:        {}x{}", config.width, config.height);
         println!("color model: {:?}", config.color_model);
     }
@@ -43,7 +44,8 @@ fn example_encode() {
     // decoding everything
     {
         let mut f = std::fs::File::open("image.png").unwrap();
-        let img = png::decode(&mut f).unwrap();
+        let mut br = std::io::BufReader::new(&mut f);
+        let img = png::decode(&mut br).unwrap();
         let width = img.bounds().dx();
         let height = img.bounds().dy();
         println!("size:        {}x{}", width, height);
