@@ -15,7 +15,7 @@ fn main() {
 
     let repeats = 200;
     for _i in 0..repeats {
-        w.write(&content).unwrap();
+        w.write_all(&content).unwrap();
     }
 
     w.close().unwrap();

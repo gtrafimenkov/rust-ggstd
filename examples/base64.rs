@@ -78,7 +78,7 @@ fn example_new_encoder() {
     let stdout = std::io::stdout();
     let mut stdout_writer = stdout.lock();
     let mut encoder = base64::Encoder::new(base64::get_std_encoding(), &mut stdout_writer);
-    encoder.write(input).unwrap();
+    encoder.write_all(input).unwrap();
     // Must close the encoder when finished to flush any partial blocks.
     // If you comment out the following line, the last partial block "r"
     // won't be encoded.

@@ -21,8 +21,8 @@ fn main() {
 
 fn example_new() {
     let mut h = md5::new();
-    h.write(b"The fog is getting thicker!").unwrap();
-    h.write(b"And Leon's getting laaarger!").unwrap();
+    h.write_all(b"The fog is getting thicker!").unwrap();
+    h.write_all(b"And Leon's getting laaarger!").unwrap();
     println!("{}", hex::encode_to_string(&h.sum(&[])));
     // Output: e2c569be17396eca2a2e3c11578123ed
 }
