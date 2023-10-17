@@ -18,7 +18,7 @@ pub const DEFAULT_COMPRESSION: isize = flate::DEFAULT_COMPRESSION;
 pub const HUFFMAN_ONLY: isize = flate::HUFFMAN_ONLY;
 
 /// A Writer takes data written to it and writes the compressed
-/// form of that data to an underlying writer (see new_writer).
+/// form of that data to an underlying writer (output).
 pub struct Writer<'a, Output: std::io::Write> {
     level: isize,
     dict: &'a [u8],
@@ -28,54 +28,54 @@ pub struct Writer<'a, Output: std::io::Write> {
     wrote_header: bool,
 }
 
-/// new_writer creates a new Writer.
-/// Writes to the returned Writer are compressed and written to w.
-///
-/// It is the caller's responsibility to call close on the Writer when done.
-/// Writes may be buffered and not flushed until close.
-pub fn new_writer<Output: std::io::Write>(w: &mut Output) -> Writer<Output> {
-    new_writer_level_dict(w, DEFAULT_COMPRESSION, &[]).unwrap()
-}
-
-/// new_writer_level is like new_writer but specifies the compression level instead
-/// of assuming DEFAULT_COMPRESSION.
-///
-/// The compression level can be DEFAULT_COMPRESSION, NO_COMPRESSION, HUFFMAN_ONLY
-/// or any integer value between BEST_SPEED and BEST_COMPRESSION inclusive.
-/// The error returned will be nil if the level is valid.
-pub fn new_writer_level<Output: std::io::Write>(w: &mut Output, level: isize) -> Writer<Output> {
-    return new_writer_level_dict(w, level, &[]).unwrap();
-}
-
-/// new_writer_level_dict is like new_writer_level but specifies a dictionary to
-/// compress with.
-///
-/// The dictionary may be nil. If not, its contents should not be modified until
-/// the Writer is closed.
-pub fn new_writer_level_dict<'a, Output: std::io::Write>(
-    w: &'a mut Output,
-    level: isize,
-    dict: &'a [u8],
-) -> std::io::Result<Writer<'a, Output>> {
-    if !(HUFFMAN_ONLY..=BEST_COMPRESSION).contains(&level) {
-        return Err(errors::new_stdio_other_error(format!(
-            "zlib: invalid compression level: {}",
-            level
-        )));
-    }
-    Ok(Writer {
-        level,
-        dict,
-        compressor: flate::Writer::new_dict(w, level, dict).unwrap(),
-        digest: Box::new(adler32::new()),
-        scratch: [0; 4],
-        wrote_header: false,
-    })
-}
-
 impl<'a, Output: std::io::Write> Writer<'a, Output> {
+    /// new creates a new Writer.
+    /// Writes to the returned Writer are compressed and written to w.
+    ///
+    /// It is the caller's responsibility to call close on the Writer when done.
+    /// Writes may be buffered and not flushed until close.
+    pub fn new(w: &'a mut Output) -> Self {
+        Writer::new_level_dict(w, DEFAULT_COMPRESSION, &[]).unwrap()
+    }
+
+    /// new_level is like new but specifies the compression level instead
+    /// of assuming DEFAULT_COMPRESSION.
+    ///
+    /// The compression level can be DEFAULT_COMPRESSION, NO_COMPRESSION, HUFFMAN_ONLY
+    /// or any integer value between BEST_SPEED and BEST_COMPRESSION inclusive.
+    /// The error returned will be nil if the level is valid.
+    pub fn new_level(w: &'a mut Output, level: isize) -> Self {
+        Writer::new_level_dict(w, level, &[]).unwrap()
+    }
+
+    /// new_level_dict is like new_level but specifies a dictionary to
+    /// compress with.
+    ///
+    /// The dictionary may be nil. If not, its contents should not be modified until
+    /// the Writer is closed.
+    pub fn new_level_dict(
+        w: &'a mut Output,
+        level: isize,
+        dict: &'a [u8],
+    ) -> std::io::Result<Self> {
+        if !(HUFFMAN_ONLY..=BEST_COMPRESSION).contains(&level) {
+            return Err(errors::new_stdio_other_error(format!(
+                "zlib: invalid compression level: {}",
+                level
+            )));
+        }
+        Ok(Writer {
+            level,
+            dict,
+            compressor: flate::Writer::new_dict(w, level, dict).unwrap(),
+            digest: Box::new(adler32::new()),
+            scratch: [0; 4],
+            wrote_header: false,
+        })
+    }
+
     /// reset clears the state of the Writer z such that it is equivalent to its
-    /// initial state from new_writer_level or new_writer_level_dict, but instead writing
+    /// initial state from new_level or new_level_dict, but instead writing
     /// to w.
     pub fn reset(&mut self, w: &'a mut Output) {
         // self.w = w;

@@ -869,7 +869,7 @@ impl<'a, Output: std::io::Write> Writer<'a, Output> {
     }
 
     /// reset discards the writer's state and makes it equivalent to
-    /// tOutput: std::io::Writehe result of new_writer or Writer::new_dict called with dst
+    /// the result of Writer::new_dict called with dst
     /// and w's level and dictionary.
     pub fn reset(&mut self, dst: &'a mut Output) {
         if self.dict.is_some() {

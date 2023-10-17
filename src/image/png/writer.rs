@@ -320,13 +320,13 @@ impl<'a> EncoderBuffer<'a> {
         level: isize,
     ) -> std::io::Result<()> {
         // if self.zw.is_none() || self.zwLevel != level {
-        //     self.zw = Some(zlib::new_writer_level(&mut w, level));
+        //     self.zw = Some(zlib::new_level(&mut w, level));
         //     self.zwLevel = level;
         // } else {
         //     self.zw.as_mut().unwrap().reset(&mut w);
         // }
 
-        let mut zw = zlib::new_writer_level(w, level);
+        let mut zw = zlib::Writer::new_level(w, level);
         self.zw_level = level;
 
         let bits_per_pixel = match cb {

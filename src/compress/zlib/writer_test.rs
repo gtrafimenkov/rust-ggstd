@@ -4,8 +4,7 @@
 // license that can be found in the LICENSE file.
 
 use super::writer::{
-    new_writer_level_dict, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, HUFFMAN_ONLY,
-    NO_COMPRESSION,
+    Writer, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, HUFFMAN_ONLY, NO_COMPRESSION,
 };
 use crate::bytes;
 use crate::compress::zlib;
@@ -31,7 +30,7 @@ fn test_level_dict(_name: &str, b0: &[u8], level: isize, dict: &[u8]) {
     let mut b = bytes::Buffer::new();
 
     // compress
-    let mut zlibw = new_writer_level_dict(&mut b, level, dict).unwrap();
+    let mut zlibw = Writer::new_level_dict(&mut b, level, dict).unwrap();
     zlibw.write(b0).unwrap();
     zlibw.close().unwrap();
 
@@ -46,7 +45,7 @@ fn test_level_dict(_name: &str, b0: &[u8], level: isize, dict: &[u8]) {
 
 fn test_file_level_dict_reset(file_name: &str, level: isize, dict: &[u8]) {
     let mut buf = bytes::Buffer::new();
-    let mut zlibw = zlib::new_writer_level_dict(&mut buf, level, dict).unwrap();
+    let mut zlibw = zlib::Writer::new_level_dict(&mut buf, level, dict).unwrap();
 
     // Compress once.
     let data = ggos::read_file(file_name).unwrap();
@@ -124,7 +123,7 @@ fn test_writer_dict_is_used() {
     let input = b"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
     let mut buf = bytes::Buffer::new();
     {
-        let mut compressor = new_writer_level_dict(&mut buf, BEST_COMPRESSION, input).unwrap();
+        let mut compressor = Writer::new_level_dict(&mut buf, BEST_COMPRESSION, input).unwrap();
         compressor.write(input).unwrap();
         compressor.close().unwrap();
     }

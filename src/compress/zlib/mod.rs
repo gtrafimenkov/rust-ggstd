@@ -8,7 +8,7 @@
 //!     use ggstd::compress::zlib;
 //!
 //!     let mut b = bytes::Buffer::new();
-//!     let mut w = zlib::new_writer(&mut b);
+//!     let mut w = zlib::Writer::new(&mut b);
 //!     w.write("hello, world\n".as_bytes()).unwrap();
 //!     w.close().unwrap();
 //!     println!("{:?}", b.bytes());
@@ -36,8 +36,7 @@ mod writer;
 
 pub use reader::{Error, Reader};
 pub use writer::{
-    new_writer, new_writer_level, new_writer_level_dict, Writer, BEST_COMPRESSION, BEST_SPEED,
-    DEFAULT_COMPRESSION, HUFFMAN_ONLY, NO_COMPRESSION,
+    Writer, BEST_COMPRESSION, BEST_SPEED, DEFAULT_COMPRESSION, HUFFMAN_ONLY, NO_COMPRESSION,
 };
 
 #[cfg(test)]

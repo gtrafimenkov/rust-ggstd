@@ -3,7 +3,7 @@ use ggstd::compress::zlib;
 
 fn main() {
     let mut b = bytes::Buffer::new();
-    let mut w = zlib::new_writer(&mut b);
+    let mut w = zlib::Writer::new(&mut b);
     w.write("hello, world\n".as_bytes()).unwrap();
     w.close().unwrap();
     println!("{:?}", b.bytes());
