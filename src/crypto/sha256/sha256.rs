@@ -48,9 +48,9 @@ const INIT5_224: u32 = 0x68581511;
 const INIT6_224: u32 = 0x64F98FA7;
 const INIT7_224: u32 = 0xBEFA4FA4;
 
-/// digest represents the partial evaluation of a checksum.
+/// Digest represents the partial evaluation of a SHA256 checksum.
 #[derive(Copy, Clone)]
-struct Digest {
+pub struct Digest {
     h: [u32; 8],
     x: [u8; CHUNK],
     nx: usize,
@@ -58,15 +58,31 @@ struct Digest {
     is224: bool, // mark if this digest is SHA-224
 }
 
+impl Default for Digest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Digest {
-    fn new() -> Self {
-        Self {
+    /// new returns a new hash.Hash computing the SHA256 checksum.
+    // The Hash
+    // also implements encoding.BinaryMarshaler and
+    // encoding.BinaryUnmarshaler to marshal and unmarshal the internal
+    // state of the hash.
+    pub fn new() -> Self {
+        // if boring.Enabled {
+        // 	return boring.NewSHA256()
+        // }
+        let mut d = Self {
             h: [0; 8],
             x: [0; CHUNK],
             nx: 0,
             len: 0,
             is224: false,
-        }
+        };
+        d.reset();
+        d
     }
 }
 
@@ -131,19 +147,6 @@ impl Digest {
 // 	xu32;  := (b[3])u32;  | (b[2])<<8u3,2;  | (b[1])<<16u32;  | (b[0])<<24
 // 	return b[4:], x
 // },
-
-/// new returns a new hash.Hash computing the SHA256 checksum. The Hash
-/// also implements encoding.BinaryMarshaler and
-/// encoding.BinaryUnmarshaler to marshal and unmarshal the internal
-/// state of the hash.
-pub fn new() -> impl hash::Hash {
-    // if boring.Enabled {
-    // 	return boring.NewSHA256()
-    // }
-    let mut d = Digest::new();
-    d.reset();
-    d
-}
 
 /// New224 returns a new hash.Hash computing the SHA224 checksum.
 // fn New224() hash.Hash {

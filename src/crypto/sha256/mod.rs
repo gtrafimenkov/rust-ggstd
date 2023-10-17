@@ -4,4 +4,4 @@
 mod sha256;
 mod sha256block;
 
-pub use sha256::{new, sum256};
+pub use sha256::{sum256, Digest};

@@ -179,7 +179,7 @@ fn test_golden() {
         let s = hex::encode_to_string(&md5::sum(g.input));
         assert_eq!(g.output, s);
 
-        let mut c = md5::new();
+        let mut c = md5::Digest::new();
         let mut buf = vec![0_u8; g.input.len() + 4];
         for j in 0..3 + 4 {
             #[allow(clippy::comparison_chain)]

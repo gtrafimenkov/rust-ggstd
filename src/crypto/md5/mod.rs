@@ -6,7 +6,7 @@
 mod md5;
 mod md5block;
 
-pub use md5::{new, sum, BLOCK_SIZE, SIZE};
+pub use md5::{sum, Digest, BLOCK_SIZE, SIZE};
 
 #[cfg(test)]
 mod md5_test;

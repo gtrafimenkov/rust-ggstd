@@ -26,17 +26,27 @@ pub(super) type State = [u32; 4];
 
 const INIT_STATE: State = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476];
 
-/// digest represents the partial evaluation of a checksum.
+/// Digest represents the partial evaluation of a MD5 checksum.
 #[derive(Copy, Clone)]
-pub(super) struct Digest {
+pub struct Digest {
     s: State,
     x: [u8; BLOCK_SIZE],
     nx: usize,
     len: u64,
 }
 
+impl Default for Digest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Digest {
-    fn new() -> Self {
+    /// new returns a new Digest for computing the MD5 checksum.
+    // The Hash also
+    // implements encoding.BinaryMarshaler and encoding.BinaryUnmarshaler to
+    // marshal and unmarshal the internal state of the hash.
+    pub fn new() -> Self {
         Self {
             s: INIT_STATE,
             x: [0; BLOCK_SIZE],
@@ -115,13 +125,6 @@ impl Digest {
 // fn consumeUint32(b []byte) ([]byte, u32) {
 // 	return b[4..], binary.BigEndian.Uint32(b[0:4])
 // }
-
-/// new returns a new hash::Hash computing the MD5 checksum. The Hash also
-/// implements encoding.BinaryMarshaler and encoding.BinaryUnmarshaler to
-/// marshal and unmarshal the internal state of the hash.
-pub fn new() -> impl hash::Hash {
-    Digest::new()
-}
 
 impl hash::Hash for Digest {
     fn reset(&mut self) {

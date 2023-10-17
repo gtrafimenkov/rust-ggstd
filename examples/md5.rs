@@ -20,7 +20,7 @@ fn main() {
 }
 
 fn example_new() {
-    let mut h = md5::new();
+    let mut h = md5::Digest::new();
     h.write_all(b"The fog is getting thicker!").unwrap();
     h.write_all(b"And Leon's getting laaarger!").unwrap();
     println!("{}", hex::encode_to_string(&h.sum(&[])));
@@ -36,7 +36,7 @@ fn example_sum() {
 
 fn example_new_file(path: &str) {
     let mut f = std::fs::File::open(path).unwrap();
-    let mut h = md5::new();
+    let mut h = md5::Digest::new();
     std::io::copy(&mut f, &mut h).unwrap();
     println!("{}", hex::encode_to_string(&h.sum(&[])));
 }
