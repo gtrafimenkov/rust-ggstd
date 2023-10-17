@@ -45,39 +45,23 @@ pub struct Reader<'a> {
 const MIN_READ_BUFFER_SIZE: usize = 16;
 pub(super) const MAX_CONSECUTIVE_EMPTY_READS: usize = 100;
 
-/// new_reader_size returns a new Reader whose buffer has at least the specified
-/// size.
-// not implemented: can it be implemented?
-// If the argument std::io::Read is already a Reader with large enough
-// size, it returns the underlying Reader.
-pub fn new_reader_size(rd: &mut dyn std::io::Read, size: usize) -> Reader {
-    // Is it already a Reader?
-    // 	b, ok := rd.(*Reader)
-    // 	if ok && b.buf.len() >= size {
-    // 		return b
-    // 	}
-    let size = size.max(MIN_READ_BUFFER_SIZE);
-    Reader {
-        buf: vec![0; size],
-        rd,
-        r: 0,
-        w: 0,
-        err: None,
-        last_byte: -1,
-        last_rune_size: -1,
-    }
-}
-
-/// new_reader returns a new Reader whose buffer has the default size.
-pub fn new_reader(rd: &mut dyn std::io::Read) -> Reader {
-    new_reader_size(rd, DEFAULT_BUF_SIZE)
-}
-
 impl<'a> Reader<'a> {
     /// new creates a reader with the default size buffer
     pub fn new(r: &'a mut dyn std::io::Read) -> Self {
-        Self {
-            buf: vec![0; DEFAULT_BUF_SIZE],
+        Self::new_size(r, DEFAULT_BUF_SIZE)
+    }
+
+    /// new_size returns a new Reader whose buffer has at least the specified
+    /// size.
+    pub fn new_size(r: &mut dyn std::io::Read, size: usize) -> Reader {
+        // Is it already a Reader?
+        // 	b, ok := rd.(*Reader)
+        // 	if ok && b.buf.len() >= size {
+        // 		return b
+        // 	}
+        let size = size.max(MIN_READ_BUFFER_SIZE);
+        Reader {
+            buf: vec![0; size],
             rd: r,
             r: 0,
             w: 0,

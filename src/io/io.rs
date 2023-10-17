@@ -287,7 +287,7 @@ pub trait Closer {
 ///
 /// read_byte provides an efficient interface for byte-at-time
 /// processing. A Reader that does not implement  ByteReader
-/// can be wrapped using bufio.new_reader to add this method.
+/// can be wrapped using bufio::Reader to add this method.
 pub trait ByteReader {
     fn read_byte(&mut self) -> std::io::Result<u8>;
 }

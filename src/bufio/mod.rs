@@ -1,7 +1,7 @@
 mod bufio;
 mod scan;
 
-pub use bufio::{new_reader, Reader, Writer};
+pub use bufio::{Reader, Writer};
 pub use scan::{scan_bytes, scan_lines, Error, Scanner};
 
 #[cfg(test)]
