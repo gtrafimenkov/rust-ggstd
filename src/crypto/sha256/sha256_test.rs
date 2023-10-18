@@ -7,7 +7,8 @@
 
 use std::io::Write;
 
-use crate::{encoding::hex, hash::Hash};
+use crate::encoding::hex;
+use crate::hash::Hash;
 
 struct Sha256test {
     out: &'static str,
@@ -116,31 +117,31 @@ fn test_golden() {
             );
             c.reset();
         }
-        for g in GOLDEN224 {
-            let s = hex::encode_to_string(&super::sum224(g.input.as_bytes()));
+    }
+    for g in GOLDEN224 {
+        let s = hex::encode_to_string(&super::sum224(g.input.as_bytes()));
+        assert_eq!(
+            s, g.out,
+            "sum224 function: sha224({}) = {} want {}",
+            g.input, s, g.out
+        );
+        let mut c = super::Digest::new224();
+        for j in 0..3 {
+            let data = g.input.as_bytes();
+            if j < 2 {
+                c.write_all(data).unwrap();
+            } else {
+                c.write_all(&data[0..data.len() / 2]).unwrap();
+                _ = c.sum(&[]);
+                c.write_all(&data[data.len() / 2..]).unwrap();
+            }
+            let s = hex::encode_to_string(&c.sum(&[]));
             assert_eq!(
                 s, g.out,
-                "sum224 function: sha224({}) = {} want {}",
-                g.input, s, g.out
+                "sha224[{}]({}) = {} want {}",
+                j, g.input, s, g.out
             );
-            let mut c = super::Digest::new224();
-            for j in 0..3 {
-                let data = g.input.as_bytes();
-                if j < 2 {
-                    c.write_all(data).unwrap();
-                } else {
-                    c.write_all(&data[0..data.len() / 2]).unwrap();
-                    _ = c.sum(&[]);
-                    c.write_all(&data[data.len() / 2..]).unwrap();
-                }
-                let s = hex::encode_to_string(&c.sum(&[]));
-                assert_eq!(
-                    s, g.out,
-                    "sha224[{}]({}) = {} want {}",
-                    j, g.input, s, g.out
-                );
-                c.reset();
-            }
+            c.reset();
         }
     }
 }

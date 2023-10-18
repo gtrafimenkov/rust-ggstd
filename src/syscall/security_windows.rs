@@ -236,7 +236,7 @@ pub fn lookup_account(
     system: &str,
 ) -> std::io::Result<AccontLookupResult> {
     let system_wide_str: Vec<u16>;
-    let mut system_wide_str_ptr = std::ptr::null::<u16>() as *const u16;
+    let mut system_wide_str_ptr = std::ptr::null::<u16>();
     if !system.is_empty() {
         system_wide_str = super::utf16_from_string(system);
         system_wide_str_ptr = system_wide_str.as_ptr();
@@ -251,9 +251,9 @@ pub fn lookup_account(
             LookupAccountSidW(
                 system_wide_str_ptr,
                 sid,
-                b.as_mut_ptr() as *mut u16,
+                b.as_mut_ptr(),
                 &mut n,
-                db.as_mut_ptr() as *mut u16,
+                db.as_mut_ptr(),
                 &mut dn,
                 &mut acc_type,
             )

@@ -4,6 +4,7 @@
 // license that can be found in the LICENSE file.
 
 use super::sha256block::block_generic;
+use crate::compat;
 use crate::encoding::binary::{ByteOrder, BIG_ENDIAN};
 use crate::hash::{self, Hash};
 use std::io::Write;
@@ -87,6 +88,29 @@ impl Digest {
         d.is224 = true;
         d.reset();
         d
+    }
+
+    pub fn write(&mut self, p: &[u8]) {
+        // 	boringUnreachable()
+        let mut p = p;
+        self.len += p.len() as u64;
+        if self.nx > 0 {
+            let n = compat::copy(&mut self.x[self.nx..], p);
+            self.nx += n;
+            if self.nx == CHUNK {
+                block_generic(&mut self.h, &self.x[..]);
+                self.nx = 0
+            }
+            p = &p[n..];
+        }
+        if p.len() >= CHUNK {
+            let n = p.len() & !(CHUNK - 1);
+            block_generic(&mut self.h, &p[..n]);
+            p = &p[n..];
+        }
+        if !p.is_empty() {
+            self.nx = compat::copy(&mut self.x, p);
+        }
     }
 }
 
@@ -203,42 +227,10 @@ impl hash::Hash for Digest {
     }
 }
 
-impl Digest {
-    /// Fills the internal buffer from the slice, returns number of bytes copied.
-    fn fill_buf(&mut self, p: &[u8]) -> usize {
-        let free_buf_space = CHUNK - self.nx;
-        let bytes_to_copy = free_buf_space.min(p.len());
-        if bytes_to_copy > 0 {
-            self.x[self.nx..(self.nx + bytes_to_copy)].copy_from_slice(&p[..bytes_to_copy]);
-        }
-        bytes_to_copy
-    }
-}
-
 impl std::io::Write for Digest {
     fn write(&mut self, p: &[u8]) -> std::io::Result<usize> {
-        // boring.Unreachable()
-        let mut p = p;
-        let nn = p.len();
-        self.len += nn as u64;
-        if self.nx > 0 {
-            let n = self.fill_buf(p);
-            self.nx += n;
-            if self.nx == CHUNK {
-                block_generic(&mut self.h, &self.x);
-                self.nx = 0;
-            }
-            p = &p[n..];
-        }
-        if p.len() >= CHUNK {
-            let n = p.len() & !(CHUNK - 1);
-            block_generic(&mut self.h, &p[..n]);
-            p = &p[n..];
-        }
-        if !p.is_empty() {
-            self.nx = self.fill_buf(p);
-        }
-        Ok(nn)
+        Digest::write(self, p);
+        Ok(p.len())
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
