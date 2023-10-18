@@ -4,4 +4,7 @@
 mod sha256;
 mod sha256block;
 
-pub use sha256::{sum256, Digest};
+pub use sha256::{sum224, sum256, Digest, BLOCK_SIZE, SIZE, SIZE224};
+
+#[cfg(test)]
+mod sha256_test;

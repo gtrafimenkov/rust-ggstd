@@ -3,21 +3,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// import (
-// 	"crypto"
-// 	"crypto/internal/boring"
-// 	"encoding/binary"
-// 	"errors"
-// 	"hash"
-// )
-
 use super::sha256block::block_generic;
 use crate::encoding::binary::{ByteOrder, BIG_ENDIAN};
 use crate::hash::{self, Hash};
 use std::io::Write;
 
 // fn init() {
-// 	crypto.RegisterHash(crypto.SHA224, New224)
+// 	crypto.RegisterHash(crypto.SHA224, new224)
 // 	crypto.RegisterHash(crypto.SHA256, New)
 // }
 
@@ -49,6 +41,7 @@ const INIT6_224: u32 = 0x64F98FA7;
 const INIT7_224: u32 = 0xBEFA4FA4;
 
 /// Digest represents the partial evaluation of a SHA256 checksum.
+/// Digest implements crate::hash::Hash trait.
 #[derive(Copy, Clone)]
 pub struct Digest {
     h: [u32; 8],
@@ -65,7 +58,7 @@ impl Default for Digest {
 }
 
 impl Digest {
-    /// new returns a new hash.Hash computing the SHA256 checksum.
+    /// new returns a new Digest for computing the SHA256 checksum.
     // The Hash
     // also implements encoding.BinaryMarshaler and
     // encoding.BinaryUnmarshaler to marshal and unmarshal the internal
@@ -81,6 +74,17 @@ impl Digest {
             len: 0,
             is224: false,
         };
+        d.reset();
+        d
+    }
+
+    /// new224 returns a new hash.Hash computing the SHA224 checksum.
+    pub fn new224() -> Self {
+        // 	if boring.Enabled {
+        // 		return boring.NewSHA224()
+        // 	}
+        let mut d = Self::new();
+        d.is224 = true;
         d.reset();
         d
     }
@@ -147,17 +151,6 @@ impl Digest {
 // 	xu32;  := (b[3])u32;  | (b[2])<<8u3,2;  | (b[1])<<16u32;  | (b[0])<<24
 // 	return b[4:], x
 // },
-
-/// New224 returns a new hash.Hash computing the SHA224 checksum.
-// fn New224() hash.Hash {
-// 	if boring.Enabled {
-// 		return boring.NewSHA224()
-// 	}
-// 	d := new(digest)
-// 	d.is224 = true
-// 	d.Reset()
-// 	return d
-// }
 
 impl hash::Hash for Digest {
     fn reset(&mut self) {
@@ -254,6 +247,8 @@ impl std::io::Write for Digest {
 }
 
 impl Digest {
+    /// checksum returns checksum of the data.
+    /// It is the same as `hash::Hash::sum(&[])`, but returns array, not vector.
     fn checksum(&mut self) -> [u8; SIZE] {
         let len = self.len;
         // Padding. Add a 1 bit and 0 bits until 56 bytes mod 64.
@@ -303,19 +298,18 @@ pub fn sum256(data: &[u8]) -> [u8; SIZE] {
     d.checksum()
 }
 
-// Sum224 returns the SHA224 checksum of the data.
-// fn Sum224(data []u8) [Size224]u8 {
-// 	if boring.Enabled {
-// 		return boring.SHA224(data)
-// 	}
-// 	var d digest
-// 	d.is224 = true
-// 	d.Reset()
-// 	d.Write(data)
-// 	sum := d.checksum()
-// 	ap := (*[Size224]u8)(sum[..])
-// 	return *ap
-// }
+/// sum224 returns the SHA224 checksum of the data.
+pub fn sum224(data: &[u8]) -> [u8; SIZE224] {
+    // 	if boring.Enabled {
+    // 		return boring.SHA224(data)
+    // 	}
+    let mut d = Digest::new224();
+    d.write_all(data).unwrap();
+
+    let mut res: [u8; 28] = [0; 28];
+    res.copy_from_slice(&d.checksum()[0..28]);
+    res
+}
 
 #[cfg(test)]
 mod tests {
