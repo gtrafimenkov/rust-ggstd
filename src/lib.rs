@@ -19,3 +19,6 @@ pub mod strings;
 pub mod syscall;
 pub mod time;
 pub mod unicode;
+
+#[cfg(windows)]
+mod winapi_;

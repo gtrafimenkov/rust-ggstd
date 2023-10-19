@@ -3,19 +3,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+use crate::winapi_;
+
 use crate::syscall;
 
 fn is_domain_joined() -> std::io::Result<bool> {
-    let mut domain: winapi::um::winnt::LPWSTR = std::ptr::null_mut();
+    let mut domain: winapi_::LPWSTR = std::ptr::null_mut();
     let mut status = 0_u32;
-    let e = unsafe {
-        winapi::um::lmjoin::NetGetJoinInformation(std::ptr::null_mut(), &mut domain, &mut status)
-    };
+    let e =
+        unsafe { winapi_::NetGetJoinInformation(std::ptr::null_mut(), &mut domain, &mut status) };
     if e != 0 {
         return Err(std::io::Error::last_os_error());
     }
-    unsafe { winapi::um::lmapibuf::NetApiBufferFree(domain as winapi::shared::minwindef::LPVOID) };
-    Ok(status == winapi::um::lmjoin::NetSetupDomainName)
+    unsafe { winapi_::NetApiBufferFree(domain as winapi_::LPVOID) };
+    Ok(status == winapi_::NetSetupDomainName)
 }
 
 fn lookup_full_name_domain(domain_and_user: &str) -> std::io::Result<String> {
@@ -30,12 +31,11 @@ fn lookup_full_name_server(servername: &str, username: &str) -> std::io::Result<
     let s = syscall::utf16_from_string(servername);
     let u = syscall::utf16_from_string(username);
     let mut p: *mut u8 = std::ptr::null_mut();
-    let e = unsafe { winapi::um::lmaccess::NetUserGetInfo(s.as_ptr(), u.as_ptr(), 10, &mut p) };
+    let e = unsafe { winapi_::NetUserGetInfo(s.as_ptr(), u.as_ptr(), 10, &mut p) };
     if e == 0 {
-        let p_user_info: winapi::um::lmaccess::PUSER_INFO_10 =
-            p as winapi::um::lmaccess::PUSER_INFO_10;
+        let p_user_info: winapi_::PUSER_INFO_10 = p as winapi_::PUSER_INFO_10;
         let name = unsafe { syscall::utf16_ptr_to_string((*p_user_info).usri10_full_name) };
-        unsafe { winapi::um::lmapibuf::NetApiBufferFree(p as *mut winapi::ctypes::c_void) };
+        unsafe { winapi_::NetApiBufferFree(p as *mut winapi_::c_void) };
         return Ok(name);
     }
     Err(std::io::Error::last_os_error())
@@ -81,9 +81,9 @@ fn lookup_full_name(
 // }
 
 /// lookup_username_and_domain obtains the username and domain for usid.
-fn lookup_username_and_domain(usid: winapi::um::winnt::PSID) -> std::io::Result<(String, String)> {
+fn lookup_username_and_domain(usid: winapi_::PSID) -> std::io::Result<(String, String)> {
     let res = syscall::lookup_account(usid, "")?;
-    if res.acc_type != winapi::um::winnt::SidTypeUser {
+    if res.acc_type != winapi_::SidTypeUser {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
             format!("user: should be user account type, not {}", res.acc_type),

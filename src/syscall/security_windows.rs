@@ -3,17 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-use winapi::shared::minwindef::BOOL;
-use winapi::shared::minwindef::LPVOID;
-use winapi::shared::winerror::ERROR_INSUFFICIENT_BUFFER;
-use winapi::um::handleapi::CloseHandle;
-use winapi::um::processthreadsapi::GetCurrentProcess;
-use winapi::um::processthreadsapi::OpenProcessToken;
-use winapi::um::securitybaseapi::GetTokenInformation;
-use winapi::um::winbase::LookupAccountSidW;
-use winapi::um::winnt::HANDLE;
-use winapi::um::winnt::LPWSTR;
-use winapi::um::winnt::TOKEN_QUERY;
+use crate::winapi_;
 
 use super::utf16_from_string;
 use super::utf16_to_string;
@@ -50,12 +40,12 @@ pub const NAME_DISPLAY: u32 = 3;
 // //sys	TranslateName(accName *uint16, accNameFormat u32, desiredNameFormat u32, translatedName *uint16, nSize *u32) (err error) [failretval&0xff==0] = secur32.TranslateNameW
 extern "system" {
     pub fn TranslateNameW(
-        lpAccountName: winapi::um::winnt::LPCWSTR,
+        lpAccountName: winapi_::LPCWSTR,
         AccountNameFormat: u32,
         DesiredNameFormat: u32,
-        lpTranslatedName: winapi::um::winnt::LPWSTR,
+        lpTranslatedName: winapi_::LPWSTR,
         nSize: *mut u32,
-    ) -> winapi::um::winnt::BOOLEAN;
+    ) -> winapi_::BOOLEAN;
 }
 
 // //sys	GetUserNameEx(nameFormat u32, nameBuffre *uint16, nSize *u32) (err error) [failretval&0xff==0] = secur32.GetUserNameExW
@@ -75,7 +65,7 @@ pub fn translate_account_name(
             unsafe { TranslateNameW(u.as_ptr(), from_format, to_format, b.as_mut_ptr(), &mut n) };
         if e == 0 {
             let last_err = std::io::Error::last_os_error();
-            if last_err.raw_os_error().unwrap() == ERROR_INSUFFICIENT_BUFFER as i32 {
+            if last_err.raw_os_error().unwrap() == winapi_::ERROR_INSUFFICIENT_BUFFER as i32 {
                 b.resize(n as usize, 0);
                 continue;
             }
@@ -182,7 +172,7 @@ pub fn translate_account_name(
 // 	}
 // }
 
-// impl std::fmt::Display for winapi::um::winnt::PSID {
+// impl std::fmt::Display for winapi_::PSID {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         todo!()
 //     }
@@ -191,16 +181,16 @@ pub fn translate_account_name(
 /// String converts sid to a string format
 /// suitable for display, storage, or transmission.
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub fn sid_to_string(sid: winapi::um::winnt::PSID) -> std::io::Result<String> {
+pub fn sid_to_string(sid: winapi_::PSID) -> std::io::Result<String> {
     // fn (sid *SID) String() (string, error) {
 
-    let mut raw_string: LPWSTR = std::ptr::null_mut();
-    let res = unsafe { winapi::shared::sddl::ConvertSidToStringSidW(sid, &mut raw_string) };
+    let mut raw_string: winapi_::LPWSTR = std::ptr::null_mut();
+    let res = unsafe { winapi_::ConvertSidToStringSidW(sid, &mut raw_string) };
     if res == 0 {
         return Err(std::io::Error::last_os_error());
     }
     let s = super::utf16_ptr_to_string(raw_string);
-    unsafe { winapi::um::winbase::LocalFree(raw_string as *mut winapi::ctypes::c_void) };
+    unsafe { winapi_::LocalFree(raw_string as *mut winapi_::c_void) };
     Ok(s)
 }
 
@@ -231,10 +221,7 @@ pub struct AccontLookupResult {
 /// and the name of the first domain on which this sid is found.
 /// System specify target computer to search for.
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub fn lookup_account(
-    sid: winapi::um::winnt::PSID,
-    system: &str,
-) -> std::io::Result<AccontLookupResult> {
+pub fn lookup_account(sid: winapi_::PSID, system: &str) -> std::io::Result<AccontLookupResult> {
     let system_wide_str: Vec<u16>;
     let mut system_wide_str_ptr = std::ptr::null::<u16>();
     if !system.is_empty() {
@@ -248,7 +235,7 @@ pub fn lookup_account(
     let mut acc_type = 0;
     loop {
         let ret = unsafe {
-            LookupAccountSidW(
+            winapi_::LookupAccountSidW(
                 system_wide_str_ptr,
                 sid,
                 b.as_mut_ptr(),
@@ -260,7 +247,7 @@ pub fn lookup_account(
         };
         if ret == 0 {
             let last_err = std::io::Error::last_os_error();
-            if last_err.raw_os_error().unwrap() == ERROR_INSUFFICIENT_BUFFER as i32 {
+            if last_err.raw_os_error().unwrap() == winapi_::ERROR_INSUFFICIENT_BUFFER as i32 {
                 if n as usize > b.len() || dn as usize > db.len() {
                     b.resize(n as usize, 0);
                     db.resize(dn as usize, 0);
@@ -350,15 +337,15 @@ pub fn lookup_account(
 #[derive(Debug)]
 pub struct Tokenuser {
     raw_data: Vec<u8>,
-    // actual data is winapi::um::winnt::TOKEN_USER
+    // actual data is winapi_::TOKEN_USER
 }
 
 impl Tokenuser {
-    fn get(&self) -> *const winapi::um::winnt::TOKEN_USER {
-        self.raw_data.as_ptr() as winapi::um::winnt::PTOKEN_USER
+    fn get(&self) -> *const winapi_::TOKEN_USER {
+        self.raw_data.as_ptr() as winapi_::PTOKEN_USER
     }
 
-    pub fn get_sid(&self) -> winapi::um::winnt::PSID {
+    pub fn get_sid(&self) -> winapi_::PSID {
         let p = self.get();
         unsafe { (*p).User.Sid }
     }
@@ -368,15 +355,15 @@ impl Tokenuser {
 pub struct Tokenprimarygroup {
     raw_data: Vec<u8>,
     // 	PrimaryGroup *SID
-    // actual data is winapi::um::winnt::TokenUser
+    // actual data is winapi_::TokenUser
 }
 
 impl Tokenprimarygroup {
-    fn get(&self) -> *const winapi::um::winnt::TOKEN_PRIMARY_GROUP {
-        self.raw_data.as_ptr() as winapi::um::winnt::PTOKEN_PRIMARY_GROUP
+    fn get(&self) -> *const winapi_::TOKEN_PRIMARY_GROUP {
+        self.raw_data.as_ptr() as winapi_::PTOKEN_PRIMARY_GROUP
     }
 
-    pub fn get_sid(&self) -> winapi::um::winnt::PSID {
+    pub fn get_sid(&self) -> winapi_::PSID {
         let p = self.get();
         unsafe { (*p).PrimaryGroup }
     }
@@ -395,7 +382,7 @@ impl Tokenprimarygroup {
 /// system-related operations on the local computer.
 #[derive(Debug)]
 pub struct Token {
-    pub h: HANDLE,
+    pub h: winapi_::HANDLE,
 }
 
 impl Drop for Token {
@@ -408,11 +395,11 @@ impl Drop for Token {
 /// associated with current process.
 pub fn open_current_process_token() -> std::io::Result<Token> {
     unsafe {
-        let p = GetCurrentProcess();
+        let p = winapi_::GetCurrentProcess();
         let mut token: Token = Token {
             h: std::ptr::null_mut(),
         };
-        let result = OpenProcessToken(p, TOKEN_QUERY, &mut token.h);
+        let result = winapi_::OpenProcessToken(p, winapi_::TOKEN_QUERY, &mut token.h);
         get_error(result)?;
         Ok(token)
     }
@@ -421,7 +408,7 @@ pub fn open_current_process_token() -> std::io::Result<Token> {
 impl Token {
     /// close releases access to access token.
     pub fn close(&mut self) -> std::io::Result<()> {
-        unsafe { get_error(CloseHandle(self.h)) }
+        unsafe { get_error(winapi_::CloseHandle(self.h)) }
     }
 
     /// get_info retrieves a specified type of information about an access token.
@@ -429,11 +416,18 @@ impl Token {
         let mut n = init_size as u32;
         let mut b = vec![0_u8; n as usize];
         loop {
-            let e =
-                unsafe { GetTokenInformation(self.h, class, b.as_mut_ptr() as LPVOID, n, &mut n) };
+            let e = unsafe {
+                winapi_::GetTokenInformation(
+                    self.h,
+                    class,
+                    b.as_mut_ptr() as winapi_::LPVOID,
+                    n,
+                    &mut n,
+                )
+            };
             if e == 0 {
                 let last_err = std::io::Error::last_os_error();
-                if last_err.raw_os_error().unwrap() == ERROR_INSUFFICIENT_BUFFER as i32 {
+                if last_err.raw_os_error().unwrap() == winapi_::ERROR_INSUFFICIENT_BUFFER as i32 {
                     b.resize(n as usize, 0);
                     continue;
                 }
@@ -446,7 +440,7 @@ impl Token {
     /// get_token_user retrieves access token t user account information.
     pub fn get_token_user(&self) -> std::io::Result<Tokenuser> {
         Ok(Tokenuser {
-            raw_data: self.get_info(winapi::um::winnt::TokenUser, 50)?,
+            raw_data: self.get_info(winapi_::TokenUser, 50)?,
         })
     }
 
@@ -455,7 +449,7 @@ impl Token {
     /// the primary group of any objects created by a process using this access token.
     pub fn get_token_primary_group(&self) -> std::io::Result<Tokenprimarygroup> {
         Ok(Tokenprimarygroup {
-            raw_data: self.get_info(winapi::um::winnt::TokenPrimaryGroup, 50)?,
+            raw_data: self.get_info(winapi_::TokenPrimaryGroup, 50)?,
         })
     }
 
@@ -465,12 +459,10 @@ impl Token {
         let mut n = 100_u32;
         let mut b = vec![0_u16; n as usize];
         loop {
-            let e = unsafe {
-                winapi::um::userenv::GetUserProfileDirectoryW(self.h, b.as_mut_ptr(), &mut n)
-            };
+            let e = unsafe { winapi_::GetUserProfileDirectoryW(self.h, b.as_mut_ptr(), &mut n) };
             if e == 0 {
                 let last_err = std::io::Error::last_os_error();
-                if last_err.raw_os_error().unwrap() == ERROR_INSUFFICIENT_BUFFER as i32 {
+                if last_err.raw_os_error().unwrap() == winapi_::ERROR_INSUFFICIENT_BUFFER as i32 {
                     b.resize(n as usize, 0);
                     continue;
                 }
@@ -481,7 +473,7 @@ impl Token {
     }
 }
 
-fn get_error(res: BOOL) -> std::io::Result<()> {
+fn get_error(res: winapi_::BOOL) -> std::io::Result<()> {
     if res == 0 {
         Err(std::io::Error::last_os_error())
     } else {

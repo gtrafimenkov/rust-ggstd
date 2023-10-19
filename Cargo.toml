@@ -11,9 +11,6 @@ repository = "https://github.com/gtrafimenkov/rust-ggstd"
 
 [dependencies]
 
-[target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["everything"] }
-
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"
 
