@@ -112,5 +112,5 @@ Rust: `1 << 1 + 1 == 4`
 Majority of the code is under the same license as used by Go project (BSD 3-Clause):
 see [LICENSE](./LICENSE).
 
-There are small pieces under different licenses:
-- `src/winapi_.rs` is under MIT or Apache 2.0
+There are small pieces under [MIT](https://opensource.org/license/mit/) license:
+`src/winapi_.rs`.

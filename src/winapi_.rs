@@ -1,8 +1,6 @@
 // Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright (c) 2015-2018 The winapi-rs Developers
-// Licensed under the Apache License, Version 2.0
-// <LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your option.
+// Licensed under the terms of [MIT License](https://opensource.org/license/mit/).
 
 // Original content of this file was copied from https://github.com/retep998/winapi-rs
 
