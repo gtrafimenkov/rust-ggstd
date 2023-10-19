@@ -109,8 +109,8 @@ Rust: `1 << 1 + 1 == 4`
 
 ## License
 
-Majority of the code is under the same license as used by Go project (BSD 3-Clause):
+Most of the code is under the same license as used by Go project (BSD 3-Clause):
 see [LICENSE](./LICENSE).
 
 There are small pieces under [MIT](https://opensource.org/license/mit/) license:
-`src/winapi_.rs`.
+`src/winapi_.rs`, `src/libc_.rs`.

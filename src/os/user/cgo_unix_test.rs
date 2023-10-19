@@ -3,8 +3,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-fn struct_passwd_for_negative_test() -> libc::passwd {
-    let mut pwd = unsafe { std::mem::zeroed::<libc::passwd>() };
+use crate::libc_;
+
+fn struct_passwd_for_negative_test() -> libc_::passwd {
+    let mut pwd = unsafe { std::mem::zeroed::<libc_::passwd>() };
     pwd.pw_uid = ((1_u64 << 32) - 2) as u32;
     pwd.pw_gid = ((1_u64 << 32) - 3) as u32;
     pwd

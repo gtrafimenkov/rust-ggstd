@@ -11,8 +11,5 @@ repository = "https://github.com/gtrafimenkov/rust-ggstd"
 
 [dependencies]
 
-[target.'cfg(not(windows))'.dependencies]
-libc = "0.2"
-
 [dev-dependencies]
 # flate2 = "1.0" # for examples/gunzip.rs

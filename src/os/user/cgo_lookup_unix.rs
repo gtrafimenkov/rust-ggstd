@@ -5,8 +5,8 @@
 
 use super::User;
 use crate::errors;
+use crate::libc_;
 use crate::strings;
-use libc;
 
 // //go:build (cgo || darwin) && !osusergo && unix && !android
 
@@ -20,7 +20,7 @@ use libc;
 // )
 
 pub fn current_internal() -> std::io::Result<User> {
-    lookup_unix_uid(unsafe { libc::getuid() })
+    lookup_unix_uid(unsafe { libc_::getuid() })
 }
 
 // fn lookupUser(username string) (*User, error) {
@@ -53,13 +53,13 @@ pub fn current_internal() -> std::io::Result<User> {
 // }
 
 fn lookup_unix_uid(uid: u32) -> std::io::Result<User> {
-    let mut pwd = unsafe { std::mem::zeroed::<libc::passwd>() };
+    let mut pwd = unsafe { std::mem::zeroed::<libc_::passwd>() };
     let mut buf = vec![0; 1024];
-    let mut result = std::ptr::null_mut::<libc::passwd>();
+    let mut result = std::ptr::null_mut::<libc_::passwd>();
 
     loop {
         let err =
-            unsafe { libc::getpwuid_r(uid, &mut pwd, buf.as_mut_ptr(), buf.len(), &mut result) };
+            unsafe { libc_::getpwuid_r(uid, &mut pwd, buf.as_mut_ptr(), buf.len(), &mut result) };
 
         // from man getpwuid_r:
         //   On success, getpwnam_r() and getpwuid_r() return zero, and set *result to pwd.
@@ -70,7 +70,7 @@ fn lookup_unix_uid(uid: u32) -> std::io::Result<User> {
         //     ...
         //     ERANGE Insufficient buffer space supplied.
 
-        if err == libc::ERANGE {
+        if err == libc_::ERANGE {
             let new_size = buf.len() * 2;
             if !is_size_reasonable(new_size) {
                 return Err(errors::new_stdio_other_error(format!(
@@ -108,7 +108,7 @@ fn c_to_string(ptr: *const i8) -> String {
     }
 }
 
-pub(super) fn build_user(pwd: &libc::passwd) -> User {
+pub(super) fn build_user(pwd: &libc_::passwd) -> User {
     let mut name = c_to_string(pwd.pw_gecos);
     // The pw_gecos field isn't quite standardized. Some docs
     // say: "It is expected to be a comma separated list of

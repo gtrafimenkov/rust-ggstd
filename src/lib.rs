@@ -22,3 +22,6 @@ pub mod unicode;
 
 #[cfg(windows)]
 mod winapi_;
+
+#[cfg(not(windows))]
+mod libc_;
