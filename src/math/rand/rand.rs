@@ -4,7 +4,6 @@
 // license that can be found in the LICENSE file.
 
 use super::rng::RngSource;
-use crate::time;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
@@ -340,12 +339,7 @@ impl<S: Source> Rand<S> {
 // var globalRand = Rand::new(new(lockedSource))
 fn global_rand() -> &'static Mutex<Rand<RngSource>> {
     static GLOBAL_RAND: OnceLock<Mutex<Rand<RngSource>>> = OnceLock::new();
-    // ggstd:
-    //   Go uses fastrand64() to seed the random generator.
-    //   No matter how it is seeded, the result is not suitable for
-    //   crypto-sensitive work.  Hence it doesn't matter what is used
-    //   for the seed.  Here we use number of seconds since epoch.
-    let seed = time::now().unix() as i64;
+    let seed = crate::runtime::fastrand64() as i64;
     GLOBAL_RAND.get_or_init(|| Mutex::new(Rand::new(new_source_int(seed))))
 }
 

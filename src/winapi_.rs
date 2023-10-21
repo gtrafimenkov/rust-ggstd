@@ -71,6 +71,7 @@ pub type PDWORD = *mut DWORD;
 pub type BYTE = c_uchar;
 pub type HLOCAL = HANDLE;
 pub type LPBYTE = *mut BYTE;
+pub type ULONG = c_ulong;
 
 // winapi::um::winnt
 
@@ -271,3 +272,10 @@ STRUCT! {struct USER_INFO_10 {
     usri10_full_name: LPWSTR,
 }}
 pub type PUSER_INFO_10 = *mut USER_INFO_10;
+
+// winapi::um::ntsecapi
+
+pub use self::SystemFunction036 as RtlGenRandom;
+extern "system" {
+    pub fn SystemFunction036(RandomBuffer: PVOID, RandomBufferLength: ULONG) -> BOOLEAN;
+}

@@ -14,6 +14,7 @@ mod internal;
 pub mod io;
 pub mod math;
 pub mod os;
+pub mod runtime;
 pub mod strconv;
 pub mod strings;
 pub mod syscall;
