@@ -277,8 +277,7 @@ impl<S: Source> Rand<S> {
     /// with standard normal distribution (mean = 0, stddev = 1).
     /// To produce a different normal distribution, callers can
     /// adjust the output using:
-    ///
-    ///    sample = norm_float64() * desiredStdDev + desiredMean
+    /// `norm_float64() * desired_std_dev + desired_mean`
     pub fn norm_float64(&mut self) -> f64 {
         loop {
             let j = self.uint32() as i32; // Possibly negative
@@ -451,8 +450,7 @@ pub fn float32() -> f32 {
 /// from the default Source.
 /// To produce a different normal distribution, callers can
 /// adjust the output using:
-///
-///     sample = norm_float64() * desiredStdDev + desiredMean
+/// `norm_float64() * desired_std_dev + desired_mean`
 pub fn norm_float64() -> f64 {
     return global_rand().lock().unwrap().norm_float64();
 }
