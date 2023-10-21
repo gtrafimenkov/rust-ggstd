@@ -1,3 +1,4 @@
-/target
+/*.png
 /Cargo.lock
 /goexamples/flate-speed/flate-speed
+/target

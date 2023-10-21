@@ -12,6 +12,7 @@ use super::inflate;
 use super::token::Token;
 use crate::bytes;
 use crate::io as ggio;
+use crate::math::rand;
 use std::io::Write;
 
 struct DeflateTest<'a> {
@@ -1116,12 +1117,10 @@ fn test_best_speed_shift_offsets() {
 
     // testData may not generate internal matches.
     let mut test_data: Vec<u8> = vec![0; 32];
-    // ggrust TODO: use rand when implemented
-    // 	let rng = rand.New(rand.NewSource(0));
+    let mut rng = rand::Rand::new(rand::new_source(1));
     #[allow(clippy::needless_range_loop)]
     for i in 0..test_data.len() {
-        // testData[i] = byte(rng.Uint32())
-        test_data[i] = i as u8;
+        test_data[i] = rng.uint32() as u8;
     }
 
     // Encode the testdata with clean state.

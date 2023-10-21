@@ -42,6 +42,7 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - compress::zlib
 - crypto
 - crypto::md5
+- crypto::sha1
 - crypto::sha256
 - encoding
 - encoding::base64
@@ -61,6 +62,7 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 - io
 - math
 - math::bits
+- math::rand
 - os
 - os::user
 - strconv
