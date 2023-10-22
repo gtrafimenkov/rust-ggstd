@@ -499,9 +499,9 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 
 // fn TestOffsetWriter_Seek() {
 // 	tmpfilename := "TestOffsetWriter_Seek"
-// 	tmpfile, err := os.CreateTemp(t.TempDir(), tmpfilename)
+// 	tmpfile, err := os.create_temp(t.temp_dir(), tmpfilename)
 // 	if err != nil || tmpfile == nil {
-// 		t.Fatalf("CreateTemp(%s) failed: {}", tmpfilename, err)
+// 		t.Fatalf("create_temp(%s) failed: {}", tmpfilename, err)
 // 	}
 // 	defer tmpfile.Close()
 // 	w := NewOffsetWriter(tmpfile, 0)
@@ -559,16 +559,16 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // fn TestOffsetWriter_WriteAt() {
 // 	const content = "0123456789ABCDEF"
 // 	contentSize := int64(len(content))
-// 	tmpdir, err := os.MkdirTemp(t.TempDir(), "TestOffsetWriter_WriteAt")
+// 	tmpdir, err := os.mkdir_temp(t.temp_dir(), "TestOffsetWriter_WriteAt")
 // 	if err != nil {
 // 		t.Fatal(err)
 // 	}
 
 // 	work := fn(off, at int64) {
 // 		position := fmt.Sprintf("off_%d_at_{}", off, at)
-// 		tmpfile, err := os.CreateTemp(tmpdir, position)
+// 		tmpfile, err := os.create_temp(tmpdir, position)
 // 		if err != nil || tmpfile == nil {
-// 			t.Fatalf("CreateTemp(%s) failed: {}", position, err)
+// 			t.Fatalf("create_temp(%s) failed: {}", position, err)
 // 		}
 // 		defer tmpfile.Close()
 
@@ -612,13 +612,13 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 // fn TestOffsetWriter_Write() {
 // 	const content = "0123456789ABCDEF"
 // 	contentSize := len(content)
-// 	tmpdir := t.TempDir()
+// 	tmpdir := t.temp_dir()
 
 // 	makeOffsetWriter := fn(name string) (*OffsetWriter, *os.File) {
 // 		tmpfilename := "TestOffsetWriter_Write_" + name
-// 		tmpfile, err := os.CreateTemp(tmpdir, tmpfilename)
+// 		tmpfile, err := os.create_temp(tmpdir, tmpfilename)
 // 		if err != nil || tmpfile == nil {
-// 			t.Fatalf("CreateTemp(%s) failed: {}", tmpfilename, err)
+// 			t.Fatalf("create_temp(%s) failed: {}", tmpfilename, err)
 // 		}
 // 		return NewOffsetWriter(tmpfile, 0), tmpfile
 // 	}

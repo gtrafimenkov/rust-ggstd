@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-use std::io::Read;
+use std::{io::Read, path::PathBuf};
 
 // // Package os provides a platform-independent interface to operating system
 // // functionality. The design is Unix-like, although the error handling is
@@ -370,18 +370,18 @@ pub fn create(name: &str) -> std::io::Result<std::fs::File> {
 // 	return &PathError{Op: op, Path: f.name, Err: err}
 // }
 
-// // TempDir returns the default directory to use for temporary files.
-// //
-// // On Unix systems, it returns $TMPDIR if non-empty, else /tmp.
-// // On Windows, it uses GetTempPath, returning the first non-empty
-// // value from %TMP%, %TEMP%, %USERPROFILE%, or the Windows directory.
-// // On Plan 9, it returns /tmp.
-// //
-// // The directory is neither guaranteed to exist nor have accessible
-// // permissions.
-// fn TempDir() string {
-// 	return tempDir()
-// }
+/// temp_dir returns the default directory to use for temporary files.
+///
+/// On Unix systems, it returns $TMPDIR if non-empty, else /tmp.
+/// On Windows, it uses GetTempPath, returning the first non-empty
+/// value from %TMP%, %TEMP%, %USERPROFILE%, or the Windows directory.
+// On Plan 9, it returns /tmp.
+///
+/// The directory is neither guaranteed to exist nor have accessible
+/// permissions.
+pub fn temp_dir() -> PathBuf {
+    std::env::temp_dir()
+}
 
 // // UserCacheDir returns the default root directory to use for user-specific
 // // cached data. Users should create their own application-specific subdirectory
@@ -665,7 +665,7 @@ pub fn create(name: &str) -> std::io::Result<std::fs::File> {
 // 	if err != nil {
 // 		return "", ErrInvalid
 // 	}
-// 	if IsPathSeparator(dir[len(dir)-1]) {
+// 	if is_path_separator(dir[len(dir)-1]) {
 // 		return string(dir) + name, nil
 // 	}
 // 	return string(dir) + string(PathSeparator) + name, nil

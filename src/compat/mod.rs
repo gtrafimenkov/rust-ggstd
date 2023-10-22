@@ -46,7 +46,10 @@ pub fn string(b: &[u8]) -> String {
 }
 
 pub mod chars;
+mod defer;
 pub mod readers;
+
+pub use defer::{Defer, DeferDirRemoval};
 
 #[cfg(test)]
 mod readers_test;

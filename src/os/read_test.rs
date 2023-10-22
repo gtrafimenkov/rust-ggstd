@@ -38,7 +38,7 @@
 // }
 
 // func TestWriteFile(t *testing.T) {
-// 	f, err := CreateTemp("", "ioutil-test")
+// 	f, err := create_temp("", "ioutil-test")
 // 	if err != nil {
 // 		t.Fatal(err)
 // 	}
@@ -68,13 +68,13 @@
 // 		t.Skipf("Root can write to read-only files anyway, so skip the read-only test.")
 // 	}
 
-// 	// We don't want to use CreateTemp directly, since that opens a file for us as 0600.
-// 	tempDir, err := MkdirTemp("", t.Name())
+// 	// We don't want to use create_temp directly, since that opens a file for us as 0600.
+// 	temp_dir_int, err := mkdir_temp("", t.Name())
 // 	if err != nil {
 // 		t.Fatal(err)
 // 	}
-// 	defer RemoveAll(tempDir)
-// 	filename := filepath.Join(tempDir, "blurp.txt")
+// 	defer RemoveAll(temp_dir_int)
+// 	filename := filepath.Join(temp_dir_int, "blurp.txt")
 
 // 	shmorp := []byte("shmorp")
 // 	florp := []byte("florp")

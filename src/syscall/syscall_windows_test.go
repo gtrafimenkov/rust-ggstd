@@ -16,7 +16,7 @@
 // )
 
 // func TestOpen_Dir(t *testing.T) {
-// 	dir := t.TempDir()
+// 	dir := t.temp_dir()
 
 // 	h, err := syscall.Open(dir, syscall.O_RDONLY, 0)
 // 	if err != nil {
@@ -38,7 +38,7 @@
 // }
 
 // func TestWin32finddata(t *testing.T) {
-// 	dir := t.TempDir()
+// 	dir := t.temp_dir()
 
 // 	path := filepath.Join(dir, "long_name.and_extension")
 // 	f, err := os.Create(path)
@@ -103,7 +103,7 @@
 // 	testenv.MustHaveCGO(t)
 // 	testenv.MustHaveExecPath(t, "gcc")
 
-// 	tmpdir := t.TempDir()
+// 	tmpdir := t.temp_dir()
 
 // 	// build go dll
 // 	const dlltext = `

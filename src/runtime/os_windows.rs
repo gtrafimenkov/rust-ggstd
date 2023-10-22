@@ -645,7 +645,7 @@ use crate::winapi_;
 pub fn get_random_data(r: &mut [u8]) {
     if unsafe { winapi_::RtlGenRandom(r.as_mut_ptr() as *mut winapi_::c_void, r.len() as u32) } == 0
     {
-        panic!("RtlGenRandom failed: {}", io::Error::last_os_error());
+        panic!("RtlGenRandom failed: {}", std::io::Error::last_os_error());
     }
     // 	n := 0
     // 	if stdcall2(_RtlGenRandom, uintptr(unsafe.Pointer(&r[0])), uintptr(len(r)))&0xff != 0 {
