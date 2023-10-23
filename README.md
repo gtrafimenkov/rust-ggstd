@@ -84,7 +84,7 @@ corresponding Go examples in [goexamples](./goexamples) folder.
 ## Development process
 
 When a piece of functionality is needed, appropriate Go source code is copied from
-[go1.20.8](https://github.com/golang/go/tree/go1.20.8/src) and translated to Rust.
+[go1.20.10](https://github.com/golang/go/tree/go1.20.10/src) and translated to Rust.
 
 ### Changes during convertion from Go to Rust
 
