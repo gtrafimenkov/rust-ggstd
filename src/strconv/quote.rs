@@ -599,10 +599,7 @@ pub fn is_print(r: char) -> bool {
     if r < (1 << 16) {
         let (rr, is_print, is_not_print) = (r as u16, IS_PRINT16, IS_NOT_PRINT16);
         let i = bsearch16(&is_print, rr);
-        if i >= is_print.len()
-            || rr < is_print[i & !1]
-            || is_print[i | 1] < rr
-        {
+        if i >= is_print.len() || rr < is_print[i & !1] || is_print[i | 1] < rr {
             return false;
         }
         let j = bsearch16(&is_not_print, rr);

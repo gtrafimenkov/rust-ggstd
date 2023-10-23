@@ -37,7 +37,11 @@ impl<'a> Reader<'a> {
     pub fn len(&self) -> u64 {
         let pos = self.cursor.position();
         let len = self.cursor.get_ref().len() as u64;
-        if pos > len { 0 } else { len - pos }
+        if pos > len {
+            0
+        } else {
+            len - pos
+        }
     }
 
     #[must_use]

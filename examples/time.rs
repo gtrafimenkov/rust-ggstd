@@ -1,5 +1,3 @@
-
-
 fn main() {
     let t = ggstd::time::unix(0, 0);
     println!(
