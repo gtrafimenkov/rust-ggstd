@@ -642,11 +642,20 @@ use crate::winapi_;
 // 	useQPCTime = 1
 // }
 
-pub fn get_random_data(r: &mut [u8]) {
+pub fn rtl_gen_random(r: &mut [u8]) -> std::io::Result<()> {
     if unsafe { winapi_::RtlGenRandom(r.as_mut_ptr() as *mut winapi_::c_void, r.len() as u32) } == 0
     {
-        panic!("RtlGenRandom failed: {}", std::io::Error::last_os_error());
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("RtlGenRandom: {}", std::io::Error::last_os_error()),
+        ))
+    } else {
+        Ok(())
     }
+}
+
+pub fn get_random_data(r: &mut [u8]) {
+    rtl_gen_random(r).unwrap();
     // 	n := 0
     // 	if stdcall2(_RtlGenRandom, uintptr(unsafe.Pointer(&r[0])), uintptr(len(r)))&0xff != 0 {
     // 		n = len(r)

@@ -3,7 +3,7 @@ mod stubs;
 pub use stubs::{fastrand, fastrand64, fastrandn, fastrandu};
 
 #[cfg(windows)]
-mod os_windows;
+pub(crate) mod os_windows;
 #[cfg(windows)]
 use os_windows::get_random_data;
 

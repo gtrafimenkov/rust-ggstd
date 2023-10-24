@@ -10,7 +10,7 @@ pub mod encoding;
 pub mod errors;
 pub mod hash;
 pub mod image;
-mod internal;
+pub mod internal;
 pub mod io;
 pub mod math;
 pub mod os;

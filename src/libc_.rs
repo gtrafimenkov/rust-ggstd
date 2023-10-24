@@ -11,6 +11,9 @@ pub type c_int = i32;
 pub type gid_t = u32;
 pub type size_t = usize;
 pub type uid_t = u32;
+pub type c_uint = u32;
+pub type c_void = std::os::raw::c_void;
+pub type ssize_t = isize;
 
 #[repr(C)]
 pub struct passwd {
@@ -23,6 +26,9 @@ pub struct passwd {
     pub pw_shell: *mut c_char,
 }
 
+pub const ERANGE: c_int = 34;
+pub const ENOSYS: c_int = 38;
+
 extern "C" {
     pub fn getpwuid_r(
         uid: uid_t,
@@ -33,6 +39,12 @@ extern "C" {
     ) -> c_int;
 
     pub fn getuid() -> uid_t;
+
+    pub fn getrandom(buf: *mut c_void, buflen: size_t, flags: c_uint) -> ssize_t;
+
+    pub fn __errno_location() -> *mut c_int;
 }
 
-pub const ERANGE: c_int = 34;
+pub fn get_errno() -> c_int {
+    unsafe { *__errno_location() }
+}
