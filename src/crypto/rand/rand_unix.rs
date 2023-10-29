@@ -64,7 +64,7 @@ pub fn read_random(b: &mut [u8]) -> std::io::Result<()> {
 
     let read_max = super::get_random_max_read();
     let mut out = b;
-    while out.len() > 0 {
+    while !out.is_empty() {
         let read = out.len().min(read_max);
         match DEVICE_STATE.load(SeqCst) {
             DEV_STATE_USING_GET_RANDOM => super::get_random(&mut out[..read])?,

@@ -84,7 +84,7 @@ impl Digest {
 
 // const (
 // 	magic         = "md5\x01"
-// 	marshaledSize = len(magic) + 4*4 + BlockSize + 8
+// 	marshaledSize = len(magic) + 4*4 + block_size + 8
 // )
 
 // fn (d *digest) MarshalBinary() ([]byte, error) {
@@ -114,7 +114,7 @@ impl Digest {
 // 	b, d.s[3] = consumeUint32(b)
 // 	b = b[copy(d.x[..], b)..]
 // 	b, d.len = consumeUint64(b)
-// 	d.nx = isize(d.len % BlockSize)
+// 	d.nx = isize(d.len % block_size)
 // 	return nil
 // }
 

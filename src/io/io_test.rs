@@ -329,12 +329,12 @@ fn test_read_at_least_int(rb: &mut bytes::Buffer) {
 
 // fn TestTeeReader() {
 // 	src := [u8]("hello, world")
-// 	dst := make([u8], len(src))
+// 	dst := make([u8], src.len())
 // 	rb := bytes::new_buffer(src)
 // 	wb := new(bytes::Buffer::new())
 // 	r := TeeReader(rb, wb)
-// 	if n, err := read_full(r, dst); err != nil || n != len(src) {
-// 		t.Fatalf("read_full(r, dst) = {}, {}; want {}, nil", n, err, len(src))
+// 	if n, err := read_full(r, dst); err != nil || n != src.len() {
+// 		t.Fatalf("read_full(r, dst) = {}, {}; want {}, nil", n, err, src.len())
 // 	}
 // 	if !bytes::equal(dst, src) {
 // 		t.Errorf("bytes read = %q want %q", dst, src)

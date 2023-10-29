@@ -15,7 +15,7 @@ type GetRandomFlag = usize;
 
 /// GetRandom calls the getrandom system call.
 pub fn get_random(p: &mut [u8], flags: GetRandomFlag) -> std::io::Result<usize> {
-    if p.len() == 0 {
+    if p.is_empty() {
         return Ok(0);
     }
     if GETRANDOM_UNSUPPORTED.load(std::sync::atomic::Ordering::SeqCst) != 0 {

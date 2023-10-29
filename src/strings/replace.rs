@@ -167,7 +167,7 @@
 // 	if t.prefix != "" {
 // 		// Need to split the prefix among multiple nodes.
 // 		var n int // length of the longest common prefix
-// 		for ; n < len(t.prefix) && n < len(key); n++ {
+// 		for ; n < len(t.prefix) && n < key.len(); n++ {
 // 			if t.prefix[n] != key[n] {
 // 				break
 // 			}
@@ -270,7 +270,7 @@
 // 	// Find each byte used, then assign them each an index.
 // 	for i := 0; i < len(oldnew); i += 2 {
 // 		key := oldnew[i]
-// 		for j := 0; j < len(key); j++ {
+// 		for j := 0; j < key.len(); j++ {
 // 			r.mapping[key[j]] = 1
 // 		}
 // 	}

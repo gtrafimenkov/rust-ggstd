@@ -452,7 +452,7 @@ impl<'a> EncoderBuffer<'a> {
                             unimplemented!();
                             // 				dst := self.cr0[1..]
                             // 				src := img.pix[img.pix_offset(b.min.x, y):img.pix_offset(b.max.x, y)]
-                            // 				for ; len(src) >= 4; dst, src = dst[4..], src[4..] {
+                            // 				for ; src.len() >= 4; dst, src = dst[4..], src[4..] {
                             // 					d := (*[4]byte)(dst)
                             // 					s := (*[4]byte)(src)
                             // 					if s[3] == 0x00 {

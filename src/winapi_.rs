@@ -1,8 +1,7 @@
 // Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright (c) 2015-2018 The winapi-rs Developers
-// Licensed under the terms of [MIT License](https://opensource.org/license/mit/).
-
-// Original content of this file was copied from https://github.com/retep998/winapi-rs
+// SPDX-License-Identifier: MIT
+// Parts of this file come from https://github.com/retep998/winapi-rs
 
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]

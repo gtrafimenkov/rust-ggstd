@@ -209,10 +209,10 @@
 // 	// load state
 // 	a, b, c, d := dig.s[0], dig.s[1], dig.s[2], dig.s[3]
 
-// 	for i := 0; i <= len(p)-BlockSize; i += BlockSize {
+// 	for i := 0; i <= len(p)-block_size; i += block_size {
 // 		// eliminate bounds checks on p
 // 		q := p[i:]
-// 		q = q[:BlockSize:BlockSize]
+// 		q = q[:block_size:block_size]
 
 // 		// save current state
 // 		aa, bb, cc, dd := a, b, c, d

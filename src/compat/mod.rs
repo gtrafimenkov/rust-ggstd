@@ -1,3 +1,6 @@
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! compat module contains functions that ease porting of Go code to Rust.
 //! These functions are intended for internal usage only.
 

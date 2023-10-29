@@ -558,7 +558,7 @@ fn test_hmac() {
         assert_eq!(
             h.block_size(),
             tt.blocksize,
-            "BlockSize: got {}, want {}",
+            "block_size: got {}, want {}",
             h.block_size(),
             tt.blocksize
         );

@@ -1,3 +1,8 @@
+// Copyright 2023 The rust-ggstd authors.
+// Copyright 2009 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 //! Package zlib implements reading and writing of zlib format compressed data,
 //! as specified in RFC 1950.
 //! The implementation provides filters that uncompress during reading

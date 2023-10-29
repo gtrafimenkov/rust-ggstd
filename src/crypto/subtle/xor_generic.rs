@@ -1,10 +1,9 @@
-// // Copyright 2013 The Go Authors. All rights reserved.
-// // Use of this source code is governed by a BSD-style
-// // license that can be found in the LICENSE file.
+// Copyright 2023 The rust-ggstd authors. All rights reserved.
+// Copyright 2013 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// //go:build (!amd64 && !arm64 && !ppc64 && !ppc64le) || purego
-
-// package subtle
+//go:build (!amd64 && !arm64 && !ppc64 && !ppc64le) || purego
 
 // import (
 // 	"runtime"
@@ -55,10 +54,11 @@
 // 	return unsafe.Slice((*uintptr)(unsafe.Pointer(&x[0])), n)
 // }
 
-// func xorLoop[T byte | uintptr](dst, x, y []T) {
-// 	x = x[:len(dst)] // remove bounds check in loop
-// 	y = y[:len(dst)] // remove bounds check in loop
-// 	for i := range dst {
-// 		dst[i] = x[i] ^ y[i]
-// 	}
-// }
+pub fn xor_loop(dst: &mut [u8], x: &[u8], y: &[u8]) {
+    // func xorLoop[T byte | uintptr](dst, x, y []T) {
+    assert!(x.len() >= dst.len());
+    assert!(y.len() >= dst.len());
+    for i in 0..dst.len() {
+        dst[i] = x[i] ^ y[i];
+    }
+}

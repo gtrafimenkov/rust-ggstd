@@ -172,7 +172,7 @@ fn test_block_size() {
     assert_eq!(
         got,
         super::BLOCK_SIZE,
-        "BlockSize = {} want {}",
+        "block_size = {} want {}",
         got,
         super::BLOCK_SIZE
     );
@@ -185,7 +185,7 @@ fn test_block_size() {
 // 	}
 // 	for i := 1; i < 30; i++ { // arbitrary factor
 // 		gen, asm := New().(*digest), New().(*digest)
-// 		buf := make([]byte, BlockSize*i)
+// 		buf := make([]byte, block_size*i)
 // 		rand.Read(buf)
 // 		blockGeneric(gen, buf)
 // 		block(asm, buf)

@@ -116,3 +116,30 @@ see [LICENSE](./LICENSE).
 
 There are small pieces under [MIT](https://opensource.org/license/mit/) license:
 `src/winapi_.rs`, `src/libc_.rs`.
+
+### How to apply license to new files
+
+When a new file contains anything copied from the Go codebase, add this at the
+top of the file:
+
+```
+// Copyright 2023 The rust-ggstd authors.
+// Copyright 2009 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+```
+
+When nothing is copied from the Go codebase and the file is an example in `examples` or `goexamples`,
+add this:
+
+```
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: 0BSD
+```
+
+When nothing is copied from the Go codebase and the file is not an example:
+
+```
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: BSD-3-Clause
+```

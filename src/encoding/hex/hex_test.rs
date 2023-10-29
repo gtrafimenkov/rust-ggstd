@@ -52,8 +52,8 @@ const ENC_DEC_TESTS: &[EncDecTest] = &[
 // 	for (i, test) in ENC_DEC_TESTS.iter().enumerate() {
 // 		dst := make([u8], encoded_len(len(test.dec)))
 // 		n := Encode(dst, test.dec)
-// 		if n != len(dst) {
-// 			t.Errorf("#{}: bad return value: got: {} want: {}", i, n, len(dst))
+// 		if n != dst.len() {
+// 			t.Errorf("#{}: bad return value: got: {} want: {}", i, n, dst.len())
 // 		}
 // 		if string(dst) != test.enc {
 // 			t.Errorf("#{}: got: %#v want: %#v", i, dst, test.enc)
@@ -69,7 +69,7 @@ const ENC_DEC_TESTS: &[EncDecTest] = &[
 // 		dst := make([u8], decoded_len(len(test.enc)))
 // 		n, err := Decode(dst, [u8](test.enc))
 // 		if err != nil {
-// 			t.Errorf("#{}: bad return value: got:{} want:{}", i, n, len(dst))
+// 			t.Errorf("#{}: bad return value: got:{} want:{}", i, n, dst.len())
 // 		} else if !bytes::equal(dst, test.dec) {
 // 			t.Errorf("#{}: got: %#v want: %#v", i, dst, test.dec)
 // 		}

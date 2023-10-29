@@ -11,9 +11,9 @@ pub fn read_random(b: &mut [u8]) -> std::io::Result<()> {
     // RtlGenRandom only returns 1<<32-1 bytes at a time. We only read at
     // most 1<<31-1 bytes at a time so that  this works the same on 32-bit
     // and 64-bit systems.
-    let read_max = 1 << 31 - 1;
+    let read_max = (1 << 31) - 1;
     let mut out = b;
-    while out.len() > 0 {
+    while !out.is_empty() {
         let read = out.len().min(read_max);
         crate::runtime::os_windows::rtl_gen_random(&mut out[..read])?;
         out = &mut out[read..];

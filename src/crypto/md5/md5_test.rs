@@ -262,7 +262,7 @@ fn test_golden() {
 // // Tests that blockGeneric (pure Go) and block (in assembly for amd64, 386, arm) match.
 // fn TestBlockGeneric() {
 // 	gen, asm := New().(*digest), New().(*digest)
-// 	buf := make([]byte, BlockSize*20) // arbitrary factor
+// 	buf := make([]byte, block_size*20) // arbitrary factor
 // 	rand.Read(buf)
 // 	blockGeneric(gen, buf)
 // 	block(asm, buf)

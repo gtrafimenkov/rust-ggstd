@@ -1,8 +1,7 @@
 // Copyright 2023 The rust-ggstd authors. All rights reserved.
 // Copyright (c) 2014-2020 The Rust Project Developers
-// Licensed under the terms of [MIT License](https://opensource.org/license/mit/).
-
-// Original content of this file was copied from https://github.com/rust-lang/libc
+// SPDX-License-Identifier: MIT
+// Parts of this file come from https://github.com/rust-lang/libc
 
 #![allow(non_camel_case_types)]
 

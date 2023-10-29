@@ -8,6 +8,12 @@
 /// The implementation uses `read` function.
 pub struct Reader {}
 
+impl Default for Reader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Reader {
     pub fn new() -> Self {
         Self {}

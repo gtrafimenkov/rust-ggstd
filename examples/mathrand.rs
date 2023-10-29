@@ -90,13 +90,13 @@ fn normal_distr_floats_png() {
 
 fn save_counters_to_png(width: usize, height: usize, counters: &[usize], file_name: &str) {
     let mut img = white_image(width, height);
-    for x in 0..width {
+    (0..width).for_each(|x| {
         img.set(
             x as isize,
             height as isize - counters[x] as isize,
             &color::BLACK,
         );
-    }
+    });
     let mut f = std::fs::File::create(file_name).unwrap();
     png::encode(&mut f, &img).unwrap();
 }

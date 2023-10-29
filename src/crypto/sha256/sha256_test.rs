@@ -231,7 +231,7 @@ fn test_block_size() {
     assert_eq!(
         got,
         super::BLOCK_SIZE,
-        "BlockSize = {} want {}",
+        "block_size = {} want {}",
         got,
         super::BLOCK_SIZE
     );
@@ -244,7 +244,7 @@ fn test_block_size() {
 // 		t.Skip("BoringCrypto doesn't expose digest")
 // 	}
 // 	gen, asm := New().(*digest), New().(*digest)
-// 	buf := make([]byte, BlockSize*20) // arbitrary factor
+// 	buf := make([]byte, block_size*20) // arbitrary factor
 // 	rand.Read(buf)
 // 	blockGeneric(gen, buf)
 // 	block(asm, buf)
