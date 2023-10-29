@@ -166,6 +166,17 @@ const NSEC_MASK: u64 = (1 << 30) - 1;
 // // to make them cheaper to call.
 
 impl Time {
+    /// from_systime creates Time structure from std::time::SystemTime
+    pub fn from_systime(sys_time: &std::time::SystemTime) -> Self {
+        let duration = sys_time
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap();
+        Time {
+            wall: duration.subsec_nanos() as u64,
+            ext: duration.as_secs() as i64 + UNIX_TO_INTERNAL,
+        }
+    }
+
     /// nsec returns the time's nanoseconds.
     fn nsec(&self) -> i32 {
         (self.wall & NSEC_MASK) as i32
