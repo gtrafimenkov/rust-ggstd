@@ -117,7 +117,7 @@ fn test_cbcdecrypter_aes() {
 
         // from one buffer to another
         let mut data = vec![0; test.out.len()];
-        decrypter.crypt_blocks(&mut data, &test.out);
+        decrypter.crypt_blocks(&mut data, test.out);
         assert_eq!(
             test.input, &data,
             "{}: CBCDecrypter\nhave {:?}\nwant {:?}",

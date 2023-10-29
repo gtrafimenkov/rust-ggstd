@@ -93,7 +93,7 @@ impl<'a, B: Block> Stream for CTR<'a, B> {
         // 	}
         let mut dst = dst;
         let mut src = src;
-        while src.len() > 0 {
+        while !src.is_empty() {
             if self.out_used + self.b.block_size() >= self.out_size {
                 self.refill()
             }

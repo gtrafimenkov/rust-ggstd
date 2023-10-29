@@ -63,13 +63,17 @@ fn test_empty_plaintext() {
     // 		}
     // 	}
 
-    for b in [a /*/, d*/] {
+    let ciphers = &[
+        a,
+        // d
+    ];
+    for b in ciphers {
         let iv = vec![0; b.block_size()];
-        let mut cbce = cipher::CBCEncrypter::new(&b, &iv);
+        let mut cbce = cipher::CBCEncrypter::new(b, &iv);
         cbce.crypt_blocks(&mut ct, &pt[..0]);
         assert_eq!(&ct, &pt, "CBC encrypt");
 
-        let mut cbcd = cipher::CBCDecrypter::new(&b, &iv);
+        let mut cbcd = cipher::CBCDecrypter::new(b, &iv);
         cbcd.crypt_blocks(&mut ct, &pt[..0]);
         assert_eq!(&ct, &pt, "CBC decrypt");
 
