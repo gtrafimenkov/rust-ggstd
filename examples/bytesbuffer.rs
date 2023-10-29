@@ -1,3 +1,6 @@
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: 0BSD
+
 use ggstd::bytes::Buffer;
 
 use std::io::Write;

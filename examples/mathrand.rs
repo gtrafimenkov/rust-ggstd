@@ -1,3 +1,6 @@
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: 0BSD
+
 use ggstd::image::{self, color, png, Image};
 use ggstd::math::rand;
 

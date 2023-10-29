@@ -1,3 +1,6 @@
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: 0BSD
+
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;

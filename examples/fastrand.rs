@@ -1,3 +1,6 @@
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: 0BSD
+
 // This example shows fastrand pseudorandom number generator.
 //
 // fastrand is used internally in Go standard library, but not exposed

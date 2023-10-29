@@ -1,3 +1,6 @@
+// Copyright 2023 The rust-ggstd authors.
+// SPDX-License-Identifier: 0BSD
+
 // Replacement for Go's defer.
 
 use ggstd::compat::Defer;
