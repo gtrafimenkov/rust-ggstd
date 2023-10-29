@@ -848,7 +848,7 @@ fn test_dimension_overflow() {
             i, cfg.height, tc.height
         );
 
-        #[cfg(windows)]
+        #[cfg(target_os = "windows")]
         {
             // skip tests that fail on Windows in GitHub Actions
 

@@ -6,6 +6,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
+#![allow(clippy::upper_case_acronyms)]
 
 pub use std::os::raw::c_void;
 pub type c_uchar = u8;
@@ -72,6 +73,21 @@ pub type HLOCAL = HANDLE;
 pub type LPBYTE = *mut BYTE;
 pub type ULONG = c_ulong;
 
+STRUCT! {struct SECURITY_ATTRIBUTES {
+    nLength: DWORD,
+    lpSecurityDescriptor: LPVOID,
+    bInheritHandle: BOOL,
+}}
+// pub type PSECURITY_ATTRIBUTES = *mut SECURITY_ATTRIBUTES;
+pub type LPSECURITY_ATTRIBUTES = *mut SECURITY_ATTRIBUTES;
+
+STRUCT! {#[debug] struct FILETIME {
+    dwLowDateTime: DWORD,
+    dwHighDateTime: DWORD,
+}}
+// pub type PFILETIME = *mut FILETIME;
+// pub type LPFILETIME = *mut FILETIME;
+
 // winapi::um::winnt
 
 pub type HANDLE = *mut c_void;
@@ -116,6 +132,31 @@ pub type PTOKEN_PRIMARY_GROUP = *mut TOKEN_PRIMARY_GROUP;
 
 pub const TOKEN_QUERY: DWORD = 0x0008;
 
+pub const FILE_WRITE_ATTRIBUTES: DWORD = 0x0100;
+pub const FILE_SHARE_WRITE: DWORD = 0x00000002;
+
+// winapi::um::fileapi
+
+extern "system" {
+    pub fn CreateFileW(
+        lpFileName: LPCWSTR,
+        dwDesiredAccess: DWORD,
+        dwShareMode: DWORD,
+        lpSecurityAttributes: LPSECURITY_ATTRIBUTES,
+        dwCreationDisposition: DWORD,
+        dwFlagsAndAttributes: DWORD,
+        hTemplateFile: HANDLE,
+    ) -> HANDLE;
+    pub fn SetFileTime(
+        hFile: HANDLE,
+        lpCreationTime: *const FILETIME,
+        lpLastAccessTime: *const FILETIME,
+        lpLastWriteTime: *const FILETIME,
+    ) -> BOOL;
+}
+
+pub const OPEN_EXISTING: DWORD = 3;
+
 // winapi::shared::winerror
 
 pub const ERROR_INSUFFICIENT_BUFFER: DWORD = 122;
@@ -125,6 +166,8 @@ pub const ERROR_INSUFFICIENT_BUFFER: DWORD = 122;
 extern "system" {
     pub fn CloseHandle(hObject: HANDLE) -> BOOL;
 }
+
+pub const INVALID_HANDLE_VALUE: HANDLE = -1isize as HANDLE;
 
 // winapi::um::processthreadsapi
 
@@ -209,6 +252,8 @@ extern "system" {
 
     pub fn LocalFree(hMem: HLOCAL) -> HLOCAL;
 }
+
+pub const FILE_FLAG_BACKUP_SEMANTICS: DWORD = 0x02000000;
 
 // winapi::um::userenv
 

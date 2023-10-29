@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 use std::fs::{DirBuilder, File};
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 use std::os::unix::{fs::DirBuilderExt, prelude::OpenOptionsExt};
 use std::path::{Path, PathBuf};
 
@@ -143,7 +143,7 @@ pub fn create_temp(
         let mut options = std::fs::OpenOptions::new();
         options.read(true).write(true).create_new(true);
 
-        #[cfg(not(windows))]
+        #[cfg(target_os = "linux")]
         options.mode(0o600);
 
         let file = options.open(&path);
@@ -214,10 +214,10 @@ pub fn mkdir_temp(dir: Option<&std::path::Path>, pattern: &str) -> std::io::Resu
         };
         let path = dir.join(file_name);
 
-        #[cfg(windows)]
+        #[cfg(target_os = "windows")]
         let err = DirBuilder::new().create(&path);
 
-        #[cfg(not(windows))]
+        #[cfg(target_os = "linux")]
         let err = DirBuilder::new().mode(0o700).create(&path);
 
         if let Err(err) = err {

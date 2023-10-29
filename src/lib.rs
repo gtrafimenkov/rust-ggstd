@@ -24,8 +24,8 @@ pub mod syscall;
 pub mod time;
 pub mod unicode;
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 mod winapi_;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 mod libc_;

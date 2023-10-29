@@ -473,10 +473,17 @@ impl Token {
     }
 }
 
-fn get_error(res: winapi_::BOOL) -> std::io::Result<()> {
+/// Check the numeric result of a WinAPI function.
+/// In case of an error (zero value), return the last OS error,
+/// otherwise return Ok.
+pub fn get_error(res: winapi_::BOOL) -> std::io::Result<()> {
     if res == 0 {
         Err(std::io::Error::last_os_error())
     } else {
         Ok(())
     }
+}
+
+pub fn close_handle(h: winapi_::HANDLE) -> std::io::Result<()> {
+    unsafe { get_error(winapi_::CloseHandle(h)) }
 }

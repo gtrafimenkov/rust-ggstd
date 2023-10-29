@@ -1,7 +1,7 @@
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 fn print_platform_settings() {}
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 fn print_platform_settings() {
     println!("cargo:rustc-link-lib=dylib=secur32");
     println!("cargo:rustc-link-lib=dylib=netapi32");

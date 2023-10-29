@@ -31,7 +31,7 @@ use crate::syscall;
 /// get_uid returns the numeric user id of the caller.
 ///
 /// On Windows, it returns -1.
-// #[cfg(not(windows))]
+// #[cfg(target_os = "linux")]
 pub fn get_uid() -> isize {
     syscall::get_uid()
 }

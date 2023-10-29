@@ -10,21 +10,21 @@ mod rand;
 
 pub use rand::{read, Reader};
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 mod rand_getrandom;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 mod rand_unix;
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 use rand_unix::read_random;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 use rand_getrandom::{get_random, get_random_max_read};
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 mod rand_windows;
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 use rand_windows::read_random;
 
 #[cfg(test)]

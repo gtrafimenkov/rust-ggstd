@@ -5,12 +5,12 @@ mod stubs;
 
 pub use stubs::{fastrand, fastrand64, fastrandn, fastrandu};
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 pub(crate) mod os_windows;
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 use os_windows::get_random_data;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 mod os_linux;
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 use os_linux::get_random_data;

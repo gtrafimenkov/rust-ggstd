@@ -177,6 +177,17 @@ impl Time {
         }
     }
 
+    /// unix returns the local Time corresponding to the given Unix time,
+    /// sec seconds and nsec nanoseconds since January 1, 1970 UTC.
+    /// It is valid to pass nsec outside the range [0, 999999999].
+    /// Not all sec values have a corresponding time value. One such
+    /// value is 1<<63-1 (the largest i64 value).
+    ///
+    /// This is the same as `unix`.
+    pub fn from_unix(sec: i64, nsec: i64) -> Self {
+        unix(sec, nsec)
+    }
+
     /// nsec returns the time's nanoseconds.
     fn nsec(&self) -> i32 {
         (self.wall & NSEC_MASK) as i32
@@ -1290,34 +1301,35 @@ impl Time {
     pub fn unix(&self) -> i64 {
         self.unix_sec()
     }
+
+    // // UnixMilli returns t as a Unix time, the number of milliseconds elapsed since
+    // // January 1, 1970 UTC. The result is undefined if the Unix time in
+    // // milliseconds cannot be represented by an i64 (a date more than 292 million
+    // // years before or after 1970). The result does not depend on the
+    // // location associated with t.
+    // fn UnixMilli(&self) -> i64 {
+    // 	return t.unix_sec()*1e3 + i64(t.nsec())/1e6
+    // }
+
+    // // UnixMicro returns t as a Unix time, the number of microseconds elapsed since
+    // // January 1, 1970 UTC. The result is undefined if the Unix time in
+    // // microseconds cannot be represented by an i64 (a date before year -290307 or
+    // // after year 294246). The result does not depend on the location associated
+    // // with t.
+    // fn UnixMicro(&self) -> i64 {
+    // 	return t.unix_sec()*1e6 + i64(t.nsec())/1e3
+    // }
+
+    /// unix_nano returns t as a Unix time, the number of nanoseconds elapsed
+    /// since January 1, 1970 UTC. The result is undefined if the Unix time
+    /// in nanoseconds cannot be represented by an i64 (a date before the year
+    /// 1678 or after 2262). Note that this means the result of calling unix_nano
+    /// on the zero Time is undefined. The result does not depend on the
+    /// location associated with t.
+    pub fn unix_nano(&self) -> i64 {
+        (self.unix_sec()) * 1_000_000_000 + (self.nsec() as i64)
+    }
 }
-// // UnixMilli returns t as a Unix time, the number of milliseconds elapsed since
-// // January 1, 1970 UTC. The result is undefined if the Unix time in
-// // milliseconds cannot be represented by an i64 (a date more than 292 million
-// // years before or after 1970). The result does not depend on the
-// // location associated with t.
-// fn UnixMilli(&self) -> i64 {
-// 	return t.unix_sec()*1e3 + i64(t.nsec())/1e6
-// }
-
-// // UnixMicro returns t as a Unix time, the number of microseconds elapsed since
-// // January 1, 1970 UTC. The result is undefined if the Unix time in
-// // microseconds cannot be represented by an i64 (a date before year -290307 or
-// // after year 294246). The result does not depend on the location associated
-// // with t.
-// fn UnixMicro(&self) -> i64 {
-// 	return t.unix_sec()*1e6 + i64(t.nsec())/1e3
-// }
-
-// // UnixNano returns t as a Unix time, the number of nanoseconds elapsed
-// // since January 1, 1970 UTC. The result is undefined if the Unix time
-// // in nanoseconds cannot be represented by an i64 (a date before the year
-// // 1678 or after 2262). Note that this means the result of calling UnixNano
-// // on the zero Time is undefined. The result does not depend on the
-// // location associated with t.
-// fn UnixNano(&self) -> i64 {
-// 	return (t.unix_sec())*1e9 + i64(t.nsec())
-// }
 
 // const (
 // 	timeBinaryVersionV1 byte = iota + 1 // For general situation

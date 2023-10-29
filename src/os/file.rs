@@ -254,7 +254,7 @@ use std::{io::Read, path::PathBuf};
 // // bits (before umask).
 // // If there is an error, it will be of type *PathError.
 // fn Mkdir(name string, perm FileMode) error {
-// 	longName := fixLongPath(name)
+// 	longName := fix_long_path(name)
 // 	e := ignoringEINTR(fn() error {
 // 		return syscall.Mkdir(longName, syscallMode(perm))
 // 	})

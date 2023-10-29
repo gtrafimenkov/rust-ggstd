@@ -1189,7 +1189,7 @@ fn test_days_in() {
 // 	fn    fn()
 // }{
 // 	{0, `time.Now()`, fn() { t = Now() }},
-// 	{0, `time.Now().UnixNano()`, fn() { u = Now().UnixNano() }},
+// 	{0, `time.Now().unix_nano()`, fn() { u = Now().unix_nano() }},
 // 	{0, `time.Now().UnixMilli()`, fn() { u = Now().UnixMilli() }},
 // 	{0, `time.Now().UnixMicro()`, fn() { u = Now().UnixMicro() }},
 // }
@@ -1506,7 +1506,7 @@ fn test_days_in() {
 // 	}},
 
 // 	{"unix", fn(t1, t2 Time) bool { return t1.unix() == t2.unix() }},
-// 	{"UnixNano", fn(t1, t2 Time) bool { return t1.UnixNano() == t2.UnixNano() }},
+// 	{"unix_nano", fn(t1, t2 Time) bool { return t1.unix_nano() == t2.unix_nano() }},
 // 	{"UnixMilli", fn(t1, t2 Time) bool { return t1.UnixMilli() == t2.UnixMilli() }},
 // 	{"UnixMicro", fn(t1, t2 Time) bool { return t1.UnixMicro() == t2.UnixMicro() }},
 
@@ -1557,7 +1557,7 @@ fn test_days_in() {
 
 // fn BenchmarkNowUnixNano(b *testing.B) {
 // 	for i := 0; i < b.N; i += 1 {
-// 		u = Now().UnixNano()
+// 		u = Now().unix_nano()
 // 	}
 // }
 

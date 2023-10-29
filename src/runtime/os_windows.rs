@@ -491,7 +491,7 @@ use crate::winapi_;
 // // error-prone fixup function in order to access long paths. So this init
 // // function first checks the Windows build number, sets the flag, and then
 // // tests to see if it's actually working. If everything checks out, then
-// // canUseLongPaths is set to true, and later when called, os.fixLongPath
+// // canUseLongPaths is set to true, and later when called, os.fix_long_path
 // // returns early without doing work.
 // func initLongPathSupport() {
 // 	const (

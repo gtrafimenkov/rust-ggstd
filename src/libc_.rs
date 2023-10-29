@@ -7,12 +7,13 @@
 
 pub type c_char = i8;
 pub type c_int = i32;
-pub type gid_t = u32;
-pub type size_t = usize;
-pub type uid_t = u32;
+pub type c_long = i64;
 pub type c_uint = u32;
 pub type c_void = std::os::raw::c_void;
+pub type gid_t = u32;
+pub type size_t = usize;
 pub type ssize_t = isize;
+pub type uid_t = u32;
 
 #[repr(C)]
 pub struct passwd {
@@ -25,8 +26,19 @@ pub struct passwd {
     pub pw_shell: *mut c_char,
 }
 
+pub const ENOENT: c_int = 2;
 pub const ERANGE: c_int = 34;
 pub const ENOSYS: c_int = 38;
+
+pub const AT_FDCWD: c_int = -100;
+
+pub type time_t = i64;
+
+#[repr(C)]
+pub struct timespec {
+    pub tv_sec: time_t,
+    pub tv_nsec: c_long,
+}
 
 extern "C" {
     pub fn getpwuid_r(
@@ -42,6 +54,14 @@ extern "C" {
     pub fn getrandom(buf: *mut c_void, buflen: size_t, flags: c_uint) -> ssize_t;
 
     pub fn __errno_location() -> *mut c_int;
+
+    pub fn utimensat(
+        dirfd: c_int,
+        path: *const c_char,
+        times: *const timespec,
+        flag: c_int,
+    ) -> c_int;
+
 }
 
 pub fn get_errno() -> c_int {

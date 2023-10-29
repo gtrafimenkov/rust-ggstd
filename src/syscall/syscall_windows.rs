@@ -11,6 +11,8 @@ use std::iter::once;
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::ffi::OsStringExt;
 
+use crate::winapi_;
+
 // import (
 // 	errorspkg "errors"
 // 	"internal/bytealg"
@@ -445,7 +447,7 @@ pub fn utf16_ptr_to_string(p: *const u16) -> String {
 // 	return err
 // }
 
-// var ioSync int64
+// var ioSync i64
 
 // var procSetFilePointerEx = modkernel32.NewProc("SetFilePointerEx")
 
@@ -453,7 +455,7 @@ pub fn utf16_ptr_to_string(p: *const u16) -> String {
 
 // // setFilePointerEx calls SetFilePointerEx.
 // // See https://msdn.microsoft.com/en-us/library/windows/desktop/aa365542(v=vs.85).aspx
-// fn setFilePointerEx(handle Handle, distToMove int64, newFilePointer *int64, whence uint32) error {
+// fn setFilePointerEx(handle Handle, distToMove i64, newFilePointer *i64, whence uint32) error {
 // 	var e1 Errno
 // 	if unsafe.Sizeof(uintptr(0)) == 8 {
 // 		_, _, e1 = Syscall6(procSetFilePointerEx.Addr(), 4, uintptr(handle), uintptr(distToMove), uintptr(unsafe.Pointer(newFilePointer)), uintptr(whence), 0, 0)
@@ -477,7 +479,7 @@ pub fn utf16_ptr_to_string(p: *const u16) -> String {
 // 	return nil
 // }
 
-// fn Seek(fd Handle, offset int64, whence int) (newoffset int64, err error) {
+// fn Seek(fd Handle, offset i64, whence int) (newoffset i64, err error) {
 // 	var w uint32
 // 	switch whence {
 // 	case 0:
@@ -576,7 +578,7 @@ pub fn utf16_ptr_to_string(p: *const u16) -> String {
 // 	return string(utf16.Decode(b[0:n])), nil
 // }
 
-// fn Ftruncate(fd Handle, length int64) (err error) {
+// fn Ftruncate(fd Handle, length i64) (err error) {
 // 	curoffset, e := Seek(fd, 0, 1)
 // 	if e != nil {
 // 		return e
@@ -629,30 +631,60 @@ pub fn utf16_ptr_to_string(p: *const u16) -> String {
 // 		return e
 // 	}
 // 	defer Close(h)
-// 	a := NsecToFiletime(tv[0].Nanoseconds())
-// 	w := NsecToFiletime(tv[1].Nanoseconds())
+// 	a := nsec_to_filetime(tv[0].Nanoseconds())
+// 	w := nsec_to_filetime(tv[1].Nanoseconds())
 // 	return SetFileTime(h, nil, &a, &w)
 // }
 
-// fn UtimesNano(path string, ts []Timespec) (err error) {
-// 	if len(ts) != 2 {
-// 		return EINVAL
-// 	}
-// 	pathp, e := UTF16PtrFromString(path)
-// 	if e != nil {
-// 		return e
-// 	}
-// 	h, e := CreateFile(pathp,
-// 		FILE_WRITE_ATTRIBUTES, FILE_SHARE_WRITE, nil,
-// 		OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0)
-// 	if e != nil {
-// 		return e
-// 	}
-// 	defer Close(h)
-// 	a := NsecToFiletime(TimespecToNsec(ts[0]))
-// 	w := NsecToFiletime(TimespecToNsec(ts[1]))
-// 	return SetFileTime(h, nil, &a, &w)
-// }
+pub fn utimes_nano(path: &str, ts: &[Timespec; 2]) -> std::io::Result<()> {
+    // 	if len(ts) != 2 {
+    // 		return EINVAL
+    // 	}
+    let pathp = super::utf16_from_string(path);
+    // 	pathp, e := UTF16PtrFromString(path)
+    // 	if e != nil {
+    // 		return e
+    // 	}
+    // std::sys
+    let h = unsafe {
+        winapi_::CreateFileW(
+            pathp.as_ptr(),
+            winapi_::FILE_WRITE_ATTRIBUTES,
+            winapi_::FILE_SHARE_WRITE,
+            std::ptr::null_mut(),
+            winapi_::OPEN_EXISTING,
+            winapi_::FILE_FLAG_BACKUP_SEMANTICS,
+            std::ptr::null_mut(),
+        )
+    };
+    if h == winapi_::INVALID_HANDLE_VALUE {
+        return Err(std::io::Error::last_os_error());
+    }
+    // 	h, e := CreateFile(pathp,
+    // 		FILE_WRITE_ATTRIBUTES, FILE_SHARE_WRITE, nil,
+    // 		OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0)
+    // 	if e != nil {
+    // 		return e
+    // 	}
+    // 	defer Close(h)
+    let a = super::nsec_to_filetime(timespec_to_nsec(&ts[0]));
+    let w = super::nsec_to_filetime(timespec_to_nsec(&ts[1]));
+    let a = winapi_::FILETIME {
+        dwLowDateTime: a.low_date_time,
+        dwHighDateTime: a.high_date_time,
+    };
+    let w = winapi_::FILETIME {
+        dwLowDateTime: w.low_date_time,
+        dwHighDateTime: w.high_date_time,
+    };
+    let set_time_res =
+        unsafe { super::get_error(winapi_::SetFileTime(h, std::ptr::null_mut(), &a, &w)) };
+    let close_handle_res = super::close_handle(h);
+
+    set_time_res?;
+    close_handle_res?;
+    Ok(())
+}
 
 // fn Fsync(fd Handle) (err error) {
 // 	return FlushFileBuffers(fd)
@@ -1065,20 +1097,23 @@ pub fn utf16_ptr_to_string(p: *const u16) -> String {
 
 // fn (w WaitStatus) TrapCause() int { return -1 }
 
-// // Timespec is an invented structure on Windows, but here for
-// // consistency with the syscall package for other operating systems.
-// type Timespec struct {
-// 	Sec  int64
-// 	Nsec int64
-// }
+/// Timespec is an invented structure on Windows, but here for
+/// consistency with the syscall package for other operating systems.
+pub struct Timespec {
+    sec: i64,
+    nsec: i64,
+}
 
-// fn TimespecToNsec(ts Timespec) int64 { return int64(ts.Sec)*1e9 + int64(ts.Nsec) }
+pub fn timespec_to_nsec(ts: &Timespec) -> i64 {
+    ts.sec * 1_000_000_000 + ts.nsec
+}
 
-// fn NsecToTimespec(nsec int64) (ts Timespec) {
-// 	ts.Sec = nsec / 1e9
-// 	ts.Nsec = nsec % 1e9
-// 	return
-// }
+pub fn nsec_to_timespec(nsec: i64) -> Timespec {
+    Timespec {
+        sec: nsec / 1_000_000_000,
+        nsec: nsec % 1_000_000_000,
+    }
+}
 
 // // TODO(brainman): fix all needed for net
 

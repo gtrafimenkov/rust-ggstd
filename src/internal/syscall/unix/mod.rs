@@ -3,7 +3,7 @@
 
 mod getrandom;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 mod getrandom_linux;
 
 pub use getrandom::get_random;

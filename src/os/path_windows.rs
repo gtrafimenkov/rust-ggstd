@@ -37,17 +37,18 @@ pub fn is_path_separator(c: char) -> bool {
 // 	return name
 // }
 
-// fn isAbs(path string) (b bool) {
-// 	v := volumeName(path)
-// 	if v == "" {
-// 		return false
-// 	}
-// 	path = path[len(v):]
-// 	if path == "" {
-// 		return false
-// 	}
-// 	return is_path_separator(path[0])
-// }
+fn is_abs(path: &str) -> bool {
+    std::path::Path::new(path).is_absolute()
+    // 	v := volumeName(path)
+    // 	if v == "" {
+    // 		return false
+    // 	}
+    // 	path = path[len(v):]
+    // 	if path == "" {
+    // 		return false
+    // 	}
+    // 	return is_path_separator(path[0])
+}
 
 // fn volumeName(path string) (v string) {
 // 	if len(path) < 2 {
@@ -130,95 +131,105 @@ pub fn is_path_separator(c: char) -> bool {
 // // supports opting into proper long path handling without the need for fixups.
 // var canUseLongPaths bool
 
-// // fixLongPath returns the extended-length (\\?\-prefixed) form of
-// // path when needed, in order to avoid the default 260 character file
-// // path limit imposed by Windows. If path is not easily converted to
-// // the extended-length form (for example, if path is a relative path
-// // or contains .. elements), or is short enough, fixLongPath returns
-// // path unmodified.
-// //
-// // See https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath
-// fn fixLongPath(path string) string {
-// 	if canUseLongPaths {
-// 		return path
-// 	}
-// 	// Do nothing (and don't allocate) if the path is "short".
-// 	// Empirically (at least on the Windows Server 2013 builder),
-// 	// the kernel is arbitrarily okay with < 248 bytes. That
-// 	// matches what the docs above say:
-// 	// "When using an API to create a directory, the specified
-// 	// path cannot be so long that you cannot append an 8.3 file
-// 	// name (that is, the directory name cannot exceed MAX_PATH
-// 	// minus 12)." Since MAX_PATH is 260, 260 - 12 = 248.
-// 	//
-// 	// The MSDN docs appear to say that a normal path that is 248 bytes long
-// 	// will work; empirically the path must be less then 248 bytes long.
-// 	if len(path) < 248 {
-// 		// Don't fix. (This is how Go 1.7 and earlier worked,
-// 		// not automatically generating the \\?\ form)
-// 		return path
-// 	}
+/// fix_long_path returns the extended-length (\\?\-prefixed) form of
+/// path when needed, in order to avoid the default 260 character file
+/// path limit imposed by Windows. If path is not easily converted to
+/// the extended-length form (for example, if path is a relative path
+/// or contains .. elements), or is short enough, fix_long_path returns
+/// path unmodified.
+///
+/// See [https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath]
+///
+/// Rust standard library has `std::fs::canonicalize` which is somewhat similar,
+/// but it doesn't work for paths which don't point to actual files on disk.
+pub fn fix_long_path(path: &str) -> String {
+    // 	if canUseLongPaths {
+    // 		return path
+    // 	}
+    // Do nothing (and don't allocate) if the path is "short".
+    // Empirically (at least on the Windows Server 2013 builder),
+    // the kernel is arbitrarily okay with < 248 bytes. That
+    // matches what the docs above say:
+    // "When using an API to create a directory, the specified
+    // path cannot be so long that you cannot append an 8.3 file
+    // name (that is, the directory name cannot exceed MAX_PATH
+    // minus 12)." Since MAX_PATH is 260, 260 - 12 = 248.
+    //
+    // The MSDN docs appear to say that a normal path that is 248 bytes long
+    // will work; empirically the path must be less then 248 bytes long.
+    if path.len() < 248 {
+        // Don't fix. (This is how Go 1.7 and earlier worked,
+        // not automatically generating the \\?\ form)
+        return path.to_string();
+    }
 
-// 	// The extended form begins with \\?\, as in
-// 	// \\?\c:\windows\foo.txt or \\?\UNC\server\share\foo.txt.
-// 	// The extended form disables evaluation of . and .. path
-// 	// elements and disables the interpretation of / as equivalent
-// 	// to \. The conversion here rewrites / to \ and elides
-// 	// . elements as well as trailing or duplicate separators. For
-// 	// simplicity it avoids the conversion entirely for relative
-// 	// paths or paths containing .. elements. For now,
-// 	// \\server\share paths are not converted to
-// 	// \\?\UNC\server\share paths because the rules for doing so
-// 	// are less well-specified.
-// 	if len(path) >= 2 && path[:2] == `\\` {
-// 		// Don't canonicalize UNC paths.
-// 		return path
-// 	}
-// 	if !isAbs(path) {
-// 		// Relative path
-// 		return path
-// 	}
+    // The extended form begins with \\?\, as in
+    // \\?\c:\windows\foo.txt or \\?\UNC\server\share\foo.txt.
+    // The extended form disables evaluation of . and .. path
+    // elements and disables the interpretation of / as equivalent
+    // to \. The conversion here rewrites / to \ and elides
+    // . elements as well as trailing or duplicate separators. For
+    // simplicity it avoids the conversion entirely for relative
+    // paths or paths containing .. elements. For now,
+    // \\server\share paths are not converted to
+    // \\?\UNC\server\share paths because the rules for doing so
+    // are less well-specified.
+    if path.len() >= 2 && &path[..2] == "\\\\" {
+        // Don't canonicalize UNC paths.
+        return path.to_string();
+    }
+    if !is_abs(path) {
+        // Relative path
+        return path.to_string();
+    }
 
-// 	const prefix = `\\?`
+    let prefix = r"\\?";
 
-// 	pathbuf := make([]byte, len(prefix)+len(path)+len(`\`))
-// 	copy(pathbuf, prefix)
-// 	n := len(path)
-// 	r, w := 0, len(prefix)
-// 	for r < n {
-// 		switch {
-// 		case is_path_separator(path[r]):
-// 			// empty block
-// 			r++
-// 		case path[r] == '.' && (r+1 == n || is_path_separator(path[r+1])):
-// 			// /./
-// 			r++
-// 		case r+1 < n && path[r] == '.' && path[r+1] == '.' && (r+2 == n || is_path_separator(path[r+2])):
-// 			// /../ is currently unhandled
-// 			return path
-// 		default:
-// 			pathbuf[w] = '\\'
-// 			w++
-// 			for ; r < n && !is_path_separator(path[r]); r++ {
-// 				pathbuf[w] = path[r]
-// 				w++
-// 			}
-// 		}
-// 	}
-// 	// A drive's root directory needs a trailing \
-// 	if w == len(`\\?\c:`) {
-// 		pathbuf[w] = '\\'
-// 		w++
-// 	}
-// 	return string(pathbuf[:w])
-// }
+    let mut pathbuf = String::with_capacity(prefix.len() + path.len() + r"\".len());
+    pathbuf.push_str(prefix);
+    let pathchars: Vec<char> = path.chars().collect();
+    let n = pathchars.len();
+    let mut r = 0;
+    while r < n {
+        // for ch in path.chars() {
+        // 		switch {
+        if is_path_separator(pathchars[r]) {
+            // empty block
+            r += 1;
+            continue;
+        }
+        if pathchars[r] == '.' && (r + 1 == n || is_path_separator(pathchars[r + 1])) {
+            // /./
+            r += 1;
+            continue;
+        }
+        if r + 1 < n
+            && pathchars[r] == '.'
+            && pathchars[r + 1] == '.'
+            && (r + 2 == n || is_path_separator(pathchars[r + 2]))
+        {
+            // /../ is currently unhandled
+            return path.to_string();
+        }
+        pathbuf.push('\\');
+        while r < n && !is_path_separator(pathchars[r]) {
+            pathbuf.push(pathchars[r]);
+            r += 1;
+        }
+    }
+    // A drive's root directory needs a trailing \
+    if pathbuf.len() == r"\\?\c:".len() {
+        pathbuf.push('\\');
+    }
+    pathbuf
+}
 
 // // fixRootDirectory fixes a reference to a drive's root directory to
 // // have the required trailing slash.
 // fn fixRootDirectory(p string) string {
 // 	if len(p) == len(`\\?\c:`) {
 // 		if is_path_separator(p[0]) && is_path_separator(p[1]) && p[2] == '?' && is_path_separator(p[3]) && p[5] == ':' {
-// 			return p + `\`
+// 			return p + r"\`
 // 		}
 // 	}
 // 	return p
