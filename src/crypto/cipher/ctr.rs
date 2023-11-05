@@ -108,4 +108,20 @@ impl<'a, B: Block> Stream for CTR<'a, B> {
             self.out_used += n;
         }
     }
+
+    fn xor_key_stream_inplace(&mut self, data: &mut [u8]) {
+        let mut data = data;
+        while !data.is_empty() {
+            if self.out_used + self.b.block_size() >= self.out_size {
+                self.refill()
+            }
+            let size = (self.out_size - self.out_used).min(data.len());
+            let n = subtle::xor_bytes_inplace(
+                &mut data[..size],
+                &self.out[self.out_used..self.out_size],
+            );
+            data = &mut data[n..];
+            self.out_used += n;
+        }
+    }
 }

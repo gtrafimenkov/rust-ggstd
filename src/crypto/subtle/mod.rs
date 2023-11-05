@@ -11,7 +11,7 @@ mod xor;
 mod xor_generic;
 
 pub use constant_time::{constant_time_byte_eq, constant_time_compare};
-pub use xor::xor_bytes;
+pub use xor::{xor_bytes, xor_bytes_inplace};
 
 #[cfg(test)]
 mod constant_time_test;

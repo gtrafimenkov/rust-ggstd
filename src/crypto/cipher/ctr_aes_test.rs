@@ -91,6 +91,7 @@ fn test_ctr_aes() {
     for tt in CTR_AES_TESTS {
         let test = tt.name;
 
+        // testing encryption with input data size multiple of the block size and not multiple
         let c = aes::Cipher::new(tt.key).unwrap();
         for j in (0..=5).step_by(5) {
             let input = &tt.input[0..tt.input.len() - j];
@@ -110,6 +111,16 @@ fn test_ctr_aes() {
             );
         }
 
+        // testing encryption inplace
+        {
+            let c = aes::Cipher::new(tt.key).unwrap();
+            let mut ctr = cipher::CTR::new(&c, tt.iv);
+            let mut buffer = tt.input.to_vec();
+            ctr.xor_key_stream_inplace(&mut buffer);
+            assert_eq!(&buffer, tt.out);
+        }
+
+        // testing decryption with input data size multiple of the block size and not multiple
         for j in (0..=7).step_by(7) {
             let input = &tt.out[0..tt.out.len() - j];
             let mut ctr = cipher::CTR::new(&c, tt.iv);
@@ -125,6 +136,15 @@ fn test_ctr_aes() {
                 plain,
                 out
             );
+        }
+
+        // testing decryption inplace
+        {
+            let c = aes::Cipher::new(tt.key).unwrap();
+            let mut ctr = cipher::CTR::new(&c, tt.iv);
+            let mut buffer = tt.out.to_vec();
+            ctr.xor_key_stream_inplace(&mut buffer);
+            assert_eq!(&buffer, tt.input);
         }
     }
 }

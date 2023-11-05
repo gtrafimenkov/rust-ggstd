@@ -62,3 +62,10 @@ pub fn xor_loop(dst: &mut [u8], x: &[u8], y: &[u8]) {
         dst[i] = x[i] ^ y[i];
     }
 }
+
+pub fn xor_loop_inplace(dst: &mut [u8], y: &[u8]) {
+    assert!(y.len() >= dst.len());
+    for i in 0..dst.len() {
+        dst[i] ^= y[i];
+    }
+}

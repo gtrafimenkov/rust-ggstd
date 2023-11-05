@@ -32,6 +32,10 @@ pub trait Stream {
     /// the src buffers was passed in a single run. That is, Stream
     /// maintains state and does not reset at each xor_key_stream call.
     fn xor_key_stream(&mut self, dst: &mut [u8], src: &[u8]);
+
+    /// xor_key_stream_inplace is like xor_key_stream when the source
+    /// and destination buffer are the same.
+    fn xor_key_stream_inplace(&mut self, data: &mut [u8]);
 }
 
 /// A BlockMode represents a block cipher running in a block-based mode (CBC,

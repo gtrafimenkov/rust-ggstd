@@ -19,3 +19,14 @@ pub fn xor_bytes(dst: &mut [u8], x: &[u8], y: &[u8]) -> usize {
     super::xor_generic::xor_loop(dst, x, y);
     n
 }
+
+/// xor_bytes_inplace sets dst[i] = dst[i] ^ y[i] for all i < n = min(len(dst), len(y)),
+/// returning n, the number of bytes written to dst.
+pub fn xor_bytes_inplace(dst: &mut [u8], y: &[u8]) -> usize {
+    let n = dst.len().min(y.len());
+    if n == 0 {
+        return 0;
+    }
+    super::xor_generic::xor_loop_inplace(dst, y);
+    n
+}
