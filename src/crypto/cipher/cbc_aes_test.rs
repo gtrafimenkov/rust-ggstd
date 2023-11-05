@@ -135,3 +135,15 @@ fn test_cbcdecrypter_aes() {
         );
     }
 }
+
+#[test]
+fn test_single_block() {
+    // testing the crash on a single block encryption
+    let key = b"0123456789abcdef";
+    let plaintext = b"hello world.....";
+    let iv = [0; 16];
+    let block = aes::Cipher::new(key).unwrap();
+    let mut mode = cipher::CBCEncrypter::new(&block, &iv);
+    let mut ciphertext = vec![0; plaintext.len()];
+    mode.crypt_blocks(&mut ciphertext, plaintext);
+}
