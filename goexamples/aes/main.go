@@ -12,14 +12,20 @@ import (
 )
 
 func main() {
-	aes_basic()
-	aes_cbc()
+	key := []byte("0123456789abcdef")
+	plaintext := []byte("hello world.....hello world.....hello world.....")
+
+	fmt.Printf("plaintext:      %v\n", string(plaintext))
+	aes_basic(key, plaintext)
+	aes_cbc(key, plaintext)
+
+	// in CTR mode plaintext doesn't have to be a multiple of the block size
+	plaintext = []byte("hello world.....hello world.....hello worl")
+	fmt.Printf("plaintext:      %v\n", string(plaintext))
+	aes_ctr(key, plaintext)
 }
 
-var key = []byte("0123456789abcdef")
-var plaintext = []byte("hello world.....hello world.....")
-
-func aes_basic() {
+func aes_basic(key []byte, plaintext []byte) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		fmt.Println("Error creating AES cipher block:", err)
@@ -31,31 +37,24 @@ func aes_basic() {
 		return
 	}
 
-	ciphertext1 := make([]byte, len(plaintext))
+	ciphertext := make([]byte, len(plaintext))
 
-	block.Encrypt(ciphertext1, plaintext)
-	block.Encrypt(ciphertext1[aes.BlockSize:], plaintext[aes.BlockSize:])
+	for offset := 0; offset < len(plaintext); offset += aes.BlockSize {
+		block.Encrypt(ciphertext[offset:offset+aes.BlockSize], plaintext[offset:offset+aes.BlockSize])
+	}
 
-	ciphertext2 := make([]byte, len(plaintext))
-	block.Encrypt(ciphertext2, plaintext)
-	block.Encrypt(ciphertext2[aes.BlockSize:], plaintext[aes.BlockSize:])
+	// decrypted := make([]byte, len(plaintext))
+	// for offset := 0; offset < len(plaintext); offset += aes.BlockSize {
+	// 	block.Decrypt(decrypted[offset:offset+aes.BlockSize], ciphertext[offset:offset+aes.BlockSize])
+	// }
 
-	decrypted1 := make([]byte, len(plaintext))
-	block.Decrypt(decrypted1, ciphertext1)
-	block.Decrypt(decrypted1[aes.BlockSize:], ciphertext1[aes.BlockSize:])
-
-	decrypted2 := make([]byte, len(plaintext))
-	block.Decrypt(decrypted2, ciphertext2)
-	block.Decrypt(decrypted2[aes.BlockSize:], ciphertext2[aes.BlockSize:])
-
-	fmt.Printf("plaintext:        %v\n", string(plaintext))
-	fmt.Printf("aes basic 1:      %x\n", ciphertext1)
-	fmt.Printf("aes basic 2:      %x\n", ciphertext2)
-	fmt.Printf("decrypted 1:      %v\n", string(decrypted1))
-	fmt.Printf("decrypted 2:      %v\n", string(decrypted1))
+	// fmt.Printf("plaintext:      %v\n", string(plaintext))
+	fmt.Printf("ECB encrypted:  %x\n", ciphertext)
+	// fmt.Printf("decrypted:      %v\n", string(decrypted))
+	// fmt.Println()
 }
 
-func aes_cbc() {
+func aes_cbc(key []byte, plaintext []byte) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		fmt.Println("Error creating AES cipher block:", err)
@@ -67,24 +66,48 @@ func aes_cbc() {
 		return
 	}
 
+	encrypted := make([]byte, len(plaintext))
+
+	// Using all the initialization vector of all zeroes for demo purposes.
+	// In practice the IV should be unique for each encryption operation and upredictable,
+	// for example, generated using a secure random generator.
 	iv := make([]byte, aes.BlockSize)
+
 	mode := cipher.NewCBCEncrypter(block, iv)
 
-	ciphertext1 := make([]byte, len(plaintext))
-	mode.CryptBlocks(ciphertext1, plaintext)
-	ciphertext2 := make([]byte, len(plaintext))
-	mode.CryptBlocks(ciphertext2, plaintext)
+	mode.CryptBlocks(encrypted, plaintext)
 
-	mode = cipher.NewCBCDecrypter(block, iv)
+	// decrypted := make([]byte, len(plaintext))
+	// mode = cipher.NewCBCDecrypter(block, iv)
+	// mode.CryptBlocks(decrypted, ciphertext)
 
-	decrypted1 := make([]byte, len(plaintext))
-	mode.CryptBlocks(decrypted1, ciphertext1)
-	decrypted2 := make([]byte, len(plaintext))
-	mode.CryptBlocks(decrypted2, ciphertext2)
+	// fmt.Printf("plaintext:      %v\n", string(plaintext))
+	fmt.Printf("CBC encrypted:  %x\n", encrypted)
+	// fmt.Printf("decrypted:      %v\n", string(decrypted))
+	// fmt.Println()
+}
 
-	fmt.Printf("plaintext:        %v\n", string(plaintext))
-	fmt.Printf("aes cbc (iv=0) 1: %x\n", ciphertext1)
-	fmt.Printf("aes cbc (iv=0) 2: %x\n", ciphertext2)
-	fmt.Printf("decrypted 1:      %v\n", string(decrypted1))
-	fmt.Printf("decrypted 2:      %v\n", string(decrypted2))
+func aes_ctr(key []byte, plaintext []byte) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println("Error creating AES cipher:", err)
+		return
+	}
+
+	// Using all the initialization vector of all zeroes for demo purposes.
+	// In practice the IV should be unique for each encryption operation and upredictable,
+	// for example, generated using a secure random generator.
+	nonce := make([]byte, 16)
+
+	stream := cipher.NewCTR(block, nonce)
+
+	encrypted := make([]byte, len(plaintext))
+	stream.XORKeyStream(encrypted, plaintext)
+
+	fmt.Printf("CTR encrypted:  %x\n", encrypted)
+
+	// decrypted := make([]byte, len(encrypted))
+	// stream = cipher.NewCTR(block, nonce)
+	// stream.XORKeyStream(decrypted, encrypted)
+	// fmt.Printf("decrypted:      %v\n", string(decrypted))
 }
