@@ -22,24 +22,39 @@ fn aes_basic() {
         "Plaintext length must be a multiple of the block size"
     );
 
-    let mut ciphertext = [0; PLAINTEXT.len()];
-
-    block.encrypt(&mut ciphertext, PLAINTEXT);
+    let mut ciphertext1 = [0; PLAINTEXT.len()];
+    block.encrypt(&mut ciphertext1, PLAINTEXT);
     block.encrypt(
-        &mut ciphertext[aes::BLOCK_SIZE..],
+        &mut ciphertext1[aes::BLOCK_SIZE..],
         &PLAINTEXT[aes::BLOCK_SIZE..],
     );
 
-    let mut decrypted = [0; PLAINTEXT.len()];
-    block.decrypt(&mut decrypted, &ciphertext);
-    block.decrypt(
-        &mut decrypted[aes::BLOCK_SIZE..],
-        &ciphertext[aes::BLOCK_SIZE..],
+    let mut ciphertext2 = [0; PLAINTEXT.len()];
+    block.encrypt(&mut ciphertext2, PLAINTEXT);
+    block.encrypt(
+        &mut ciphertext2[aes::BLOCK_SIZE..],
+        &PLAINTEXT[aes::BLOCK_SIZE..],
     );
 
-    println!("plaintext:      {}", String::from_utf8_lossy(PLAINTEXT));
-    println!("aes basic:      {}", hex::encode_to_string(&ciphertext));
-    println!("decrypted:      {}", String::from_utf8_lossy(&decrypted));
+    let mut decrypted1 = [0; PLAINTEXT.len()];
+    block.decrypt(&mut decrypted1, &ciphertext1);
+    block.decrypt(
+        &mut decrypted1[aes::BLOCK_SIZE..],
+        &ciphertext1[aes::BLOCK_SIZE..],
+    );
+
+    let mut decrypted2 = [0; PLAINTEXT.len()];
+    block.decrypt(&mut decrypted2, &ciphertext2);
+    block.decrypt(
+        &mut decrypted2[aes::BLOCK_SIZE..],
+        &ciphertext2[aes::BLOCK_SIZE..],
+    );
+
+    println!("plaintext:        {}", String::from_utf8_lossy(PLAINTEXT));
+    println!("aes basic 1:      {}", hex::encode_to_string(&ciphertext1));
+    println!("aes basic 2:      {}", hex::encode_to_string(&ciphertext2));
+    println!("decrypted 1:      {}", String::from_utf8_lossy(&decrypted1));
+    println!("decrypted 2:      {}", String::from_utf8_lossy(&decrypted2));
 }
 
 fn aes_cbc() {
@@ -49,19 +64,27 @@ fn aes_cbc() {
         "Plaintext length must be a multiple of the block size"
     );
 
-    let mut ciphertext = [0; PLAINTEXT.len()];
-
     let iv = vec![0; aes::BLOCK_SIZE];
-
     let mut mode = cipher::CBCEncrypter::new(&block, &iv);
-    mode.crypt_blocks(&mut ciphertext, PLAINTEXT);
 
-    let mut decrypted = [0; PLAINTEXT.len()];
+    let mut ciphertext1 = [0; PLAINTEXT.len()];
+    mode.crypt_blocks(&mut ciphertext1, PLAINTEXT);
+
+    let mut ciphertext2 = [0; PLAINTEXT.len()];
+    mode.crypt_blocks(&mut ciphertext2, PLAINTEXT);
+
     let mut mode = cipher::CBCDecrypter::new(&block, &iv);
-    mode.crypt_blocks(&mut decrypted, &ciphertext);
+
+    let mut decrypted1 = [0; PLAINTEXT.len()];
+    mode.crypt_blocks(&mut decrypted1, &ciphertext1);
+
+    let mut decrypted2 = [0; PLAINTEXT.len()];
+    mode.crypt_blocks(&mut decrypted2, &ciphertext2);
 
     println!();
-    println!("plaintext:      {}", String::from_utf8_lossy(PLAINTEXT));
-    println!("aes cbc (iv=0): {}", hex::encode_to_string(&ciphertext));
-    println!("decrypted:      {}", String::from_utf8_lossy(&decrypted));
+    println!("plaintext:        {}", String::from_utf8_lossy(PLAINTEXT));
+    println!("aes cbc (iv=0) 1: {}", hex::encode_to_string(&ciphertext1));
+    println!("aes cbc (iv=0) 2: {}", hex::encode_to_string(&ciphertext2));
+    println!("decrypted 1:      {}", String::from_utf8_lossy(&decrypted1));
+    println!("decrypted 2:      {}", String::from_utf8_lossy(&decrypted2));
 }

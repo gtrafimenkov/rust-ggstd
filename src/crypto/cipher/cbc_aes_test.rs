@@ -6,6 +6,7 @@
 use super::common_test::{COMMON_INPUT, COMMON_IV, COMMON_KEY128, COMMON_KEY192, COMMON_KEY256};
 use crate::crypto::aes;
 use crate::crypto::cipher::{self, BlockMode};
+use crate::encoding::hex;
 
 // CBC AES test vectors.
 
@@ -145,5 +146,17 @@ fn test_single_block() {
     let block = aes::Cipher::new(key).unwrap();
     let mut mode = cipher::CBCEncrypter::new(&block, &iv);
     let mut ciphertext = vec![0; plaintext.len()];
+
     mode.crypt_blocks(&mut ciphertext, plaintext);
+    assert_eq!(
+        &hex::decode_string("e0864df37bebc97bd5026baeef64d77c").0,
+        &ciphertext
+    );
+
+    // different output for the same input becase it is CBC
+    mode.crypt_blocks(&mut ciphertext, plaintext);
+    assert_eq!(
+        &hex::decode_string("7fe25d86e7761e2e54260c25d0e7dbe8").0,
+        &ciphertext
+    );
 }

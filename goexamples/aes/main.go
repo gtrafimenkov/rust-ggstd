@@ -31,12 +31,28 @@ func aes_basic() {
 		return
 	}
 
-	ciphertext := make([]byte, len(plaintext))
+	ciphertext1 := make([]byte, len(plaintext))
 
-	block.Encrypt(ciphertext, plaintext)
-	block.Encrypt(ciphertext[aes.BlockSize:], plaintext[aes.BlockSize:])
+	block.Encrypt(ciphertext1, plaintext)
+	block.Encrypt(ciphertext1[aes.BlockSize:], plaintext[aes.BlockSize:])
 
-	fmt.Printf("aes basic: %x\n", ciphertext)
+	ciphertext2 := make([]byte, len(plaintext))
+	block.Encrypt(ciphertext2, plaintext)
+	block.Encrypt(ciphertext2[aes.BlockSize:], plaintext[aes.BlockSize:])
+
+	decrypted1 := make([]byte, len(plaintext))
+	block.Decrypt(decrypted1, ciphertext1)
+	block.Decrypt(decrypted1[aes.BlockSize:], ciphertext1[aes.BlockSize:])
+
+	decrypted2 := make([]byte, len(plaintext))
+	block.Decrypt(decrypted2, ciphertext2)
+	block.Decrypt(decrypted2[aes.BlockSize:], ciphertext2[aes.BlockSize:])
+
+	fmt.Printf("plaintext:        %v\n", string(plaintext))
+	fmt.Printf("aes basic 1:      %x\n", ciphertext1)
+	fmt.Printf("aes basic 2:      %x\n", ciphertext2)
+	fmt.Printf("decrypted 1:      %v\n", string(decrypted1))
+	fmt.Printf("decrypted 2:      %v\n", string(decrypted1))
 }
 
 func aes_cbc() {
@@ -51,12 +67,24 @@ func aes_cbc() {
 		return
 	}
 
-	ciphertext := make([]byte, len(plaintext))
-
 	iv := make([]byte, aes.BlockSize)
-
 	mode := cipher.NewCBCEncrypter(block, iv)
-	mode.CryptBlocks(ciphertext, plaintext)
 
-	fmt.Printf("aes cbc:   %x\n", ciphertext)
+	ciphertext1 := make([]byte, len(plaintext))
+	mode.CryptBlocks(ciphertext1, plaintext)
+	ciphertext2 := make([]byte, len(plaintext))
+	mode.CryptBlocks(ciphertext2, plaintext)
+
+	mode = cipher.NewCBCDecrypter(block, iv)
+
+	decrypted1 := make([]byte, len(plaintext))
+	mode.CryptBlocks(decrypted1, ciphertext1)
+	decrypted2 := make([]byte, len(plaintext))
+	mode.CryptBlocks(decrypted2, ciphertext2)
+
+	fmt.Printf("plaintext:        %v\n", string(plaintext))
+	fmt.Printf("aes cbc (iv=0) 1: %x\n", ciphertext1)
+	fmt.Printf("aes cbc (iv=0) 2: %x\n", ciphertext2)
+	fmt.Printf("decrypted 1:      %v\n", string(decrypted1))
+	fmt.Printf("decrypted 2:      %v\n", string(decrypted2))
 }

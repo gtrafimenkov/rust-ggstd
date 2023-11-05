@@ -1,8 +1,11 @@
-// // Copyright 2009 The Go Authors. All rights reserved.
-// // Use of this source code is governed by a BSD-style
-// // license that can be found in the LICENSE file.
+// Copyright 2023 The rust-ggstd authors.
+// Copyright 2009 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// package aes
+use crate::crypto::aes;
+use crate::crypto::cipher::Block;
+use crate::encoding::hex;
 
 // import (
 // 	"testing"
@@ -381,3 +384,24 @@
 // 		expandKey(tt.key, c.enc, c.dec)
 // 	}
 // }
+
+#[test]
+fn test_single_block() {
+    let key = b"0123456789abcdef";
+    let plaintext = b"hello world.....";
+    let block = aes::Cipher::new(key).unwrap();
+    let mut ciphertext = vec![0; plaintext.len()];
+
+    block.encrypt(&mut ciphertext, plaintext);
+    assert_eq!(
+        &hex::decode_string("e0864df37bebc97bd5026baeef64d77c").0,
+        &ciphertext
+    );
+
+    // same output for the same input
+    block.encrypt(&mut ciphertext, plaintext);
+    assert_eq!(
+        &hex::decode_string("e0864df37bebc97bd5026baeef64d77c").0,
+        &ciphertext
+    );
+}

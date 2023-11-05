@@ -18,3 +18,6 @@ mod cipher;
 mod consts;
 
 pub use cipher::{Cipher, BLOCK_SIZE};
+
+#[cfg(test)]
+mod aes_test;

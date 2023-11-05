@@ -86,7 +86,7 @@ impl<'a, B: Block> BlockMode for CBCEncrypter<'a, B> {
             iv_offset += block_size;
         }
         // save the last encrypted block as the IV for the next encryption
-        compat::copy(&mut self.iv, &dst[iv_offset - block_size..iv_offset]);
+        compat::copy(&mut self.iv, &dst[iv_offset..iv_offset + block_size]);
     }
 
     fn crypt_blocks_inplace(&mut self, data: &mut [u8]) {
