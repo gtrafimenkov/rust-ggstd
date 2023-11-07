@@ -484,6 +484,7 @@ pub fn get_error(res: winapi_::BOOL) -> std::io::Result<()> {
     }
 }
 
-pub fn close_handle(h: winapi_::HANDLE) -> std::io::Result<()> {
+#[allow(clippy::missing_safety_doc)]
+pub unsafe fn close_handle(h: winapi_::HANDLE) -> std::io::Result<()> {
     unsafe { get_error(winapi_::CloseHandle(h)) }
 }

@@ -23,3 +23,5 @@ check:
 	cargo test
 	cargo clippy
 	cargo clippy --tests
+
+# cargo build && cargo build --release && cargo test && cargo clippy && cargo clippy --tests

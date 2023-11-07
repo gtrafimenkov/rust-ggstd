@@ -679,7 +679,7 @@ pub fn utimes_nano(path: &str, ts: &[Timespec; 2]) -> std::io::Result<()> {
     };
     let set_time_res =
         unsafe { super::get_error(winapi_::SetFileTime(h, std::ptr::null_mut(), &a, &w)) };
-    let close_handle_res = super::close_handle(h);
+    let close_handle_res = unsafe { super::close_handle(h) };
 
     set_time_res?;
     close_handle_res?;
