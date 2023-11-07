@@ -68,7 +68,7 @@ func aes_cbc(key []byte, plaintext []byte) {
 
 	encrypted := make([]byte, len(plaintext))
 
-	// Using all the initialization vector of all zeroes for demo purposes.
+	// Using the initialization vector of all zeroes for demo purposes.
 	// In practice the IV should be unique for each encryption operation and upredictable,
 	// for example, generated using a secure random generator.
 	iv := make([]byte, aes.BlockSize)
@@ -94,12 +94,12 @@ func aes_ctr(key []byte, plaintext []byte) {
 		return
 	}
 
-	// Using all the initialization vector of all zeroes for demo purposes.
+	// Using the initialization vector of all zeroes for demo purposes.
 	// In practice the IV should be unique for each encryption operation and upredictable,
 	// for example, generated using a secure random generator.
-	nonce := make([]byte, 16)
+	iv := make([]byte, 16)
 
-	stream := cipher.NewCTR(block, nonce)
+	stream := cipher.NewCTR(block, iv)
 
 	encrypted := make([]byte, len(plaintext))
 	stream.XORKeyStream(encrypted, plaintext)
@@ -107,7 +107,7 @@ func aes_ctr(key []byte, plaintext []byte) {
 	fmt.Printf("CTR encrypted:  %x\n", encrypted)
 
 	// decrypted := make([]byte, len(encrypted))
-	// stream = cipher.NewCTR(block, nonce)
+	// stream = cipher.NewCTR(block, iv)
 	// stream.XORKeyStream(decrypted, encrypted)
 	// fmt.Printf("decrypted:      %v\n", string(decrypted))
 }

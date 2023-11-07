@@ -63,7 +63,7 @@ fn aes_cbc(key: &[u8], plaintext: &[u8]) {
         "Plaintext length must be a multiple of the block size"
     );
 
-    // Using all the initialization vector of all zeroes for demo purposes.
+    // Using the initialization vector of all zeroes for demo purposes.
     // In practice the IV should be unique for each encryption operation and upredictable,
     // for example, generated using a secure random generator.
     let iv = vec![0; aes::BLOCK_SIZE];
@@ -86,7 +86,7 @@ fn aes_cbc(key: &[u8], plaintext: &[u8]) {
 fn aes_ctr(key: &[u8], plaintext: &[u8]) {
     let block = aes::Cipher::new(key).unwrap();
 
-    // Using all the initialization vector of all zeroes for demo purposes.
+    // Using the initialization vector of all zeroes for demo purposes.
     // In practice the IV should be unique for each encryption operation and upredictable,
     // for example, generated using a secure random generator.
     let iv = vec![0; aes::BLOCK_SIZE];
