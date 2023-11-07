@@ -111,7 +111,7 @@ fn test_ctr_aes() {
             );
         }
 
-        // testing encryption inplace
+        // testing encryption in place
         {
             let c = aes::Cipher::new(tt.key).unwrap();
             let mut ctr = cipher::CTR::new(&c, tt.iv);
@@ -138,7 +138,7 @@ fn test_ctr_aes() {
             );
         }
 
-        // testing decryption inplace
+        // testing decryption in place
         {
             let c = aes::Cipher::new(tt.key).unwrap();
             let mut ctr = cipher::CTR::new(&c, tt.iv);

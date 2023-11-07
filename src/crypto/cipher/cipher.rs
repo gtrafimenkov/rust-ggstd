@@ -14,8 +14,18 @@ pub trait Block {
     /// encrypt encrypts the first block in src into dst.
     fn encrypt(&self, dst: &mut [u8], src: &[u8]);
 
+    /// encrypt_inplace encrypts the first block in the buffer.
+    /// It it the same as `encrypt`, but the source and and destination
+    /// buffers are the same.
+    fn encrypt_inplace(&self, buffer: &mut [u8]);
+
     /// decrypt decrypts the first block in src into dst.
     fn decrypt(&self, dst: &mut [u8], src: &[u8]);
+
+    /// decrypt_inplace decrypts the first block in the buffer.
+    /// It it the same as `decrypt`, but the source and and destination
+    /// buffers are the same.
+    fn decrypt_inplace(&self, buffer: &mut [u8]);
 }
 
 /// A Stream represents a stream cipher.

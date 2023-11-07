@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-use super::block::{decrypt_block_go, encrypt_block_go};
+use super::block;
 use crate::crypto::cipher::Block;
 
 /// The AES block size in bytes.
@@ -70,7 +70,7 @@ impl Block for Cipher {
         // 	if alias.InexactOverlap(dst[..block_size], src[..block_size]) {
         // 		panic!("crypto/aes: invalid buffer overlap");
         // 	}
-        encrypt_block_go(&self.enc, dst, src);
+        block::encrypt_block_go(&self.enc, dst, src);
     }
 
     fn decrypt(&self, dst: &mut [u8], src: &[u8]) {
@@ -84,6 +84,20 @@ impl Block for Cipher {
         // if alias.InexactOverlap(dst[..block_size], src[..block_size]) {
         //     panic!("crypto/aes: invalid buffer overlap");
         // }
-        decrypt_block_go(&self.dec, dst, src);
+        block::decrypt_block_go(&self.dec, dst, src);
+    }
+
+    fn encrypt_inplace(&self, buffer: &mut [u8]) {
+        if buffer.len() < BLOCK_SIZE {
+            panic!("crypto/aes: input not full block");
+        }
+        block::encrypt_block_inplace_go(&self.enc, buffer);
+    }
+
+    fn decrypt_inplace(&self, buffer: &mut [u8]) {
+        if buffer.len() < BLOCK_SIZE {
+            panic!("crypto/aes: input not full block");
+        }
+        block::decrypt_block_inplace_go(&self.dec, buffer);
     }
 }

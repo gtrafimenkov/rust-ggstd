@@ -121,6 +121,89 @@ pub fn encrypt_block_go(xk: &[u32], dst: &mut [u8], src: &[u8]) {
     binary::BIG_ENDIAN.put_uint32(&mut dst[12..16], s3);
 }
 
+/// encrypt one block in the buffer
+pub fn encrypt_block_inplace_go(xk: &[u32], buffer: &mut [u8]) {
+    assert!(buffer.len() >= 16); // bounds check
+
+    let mut s0 = binary::BIG_ENDIAN.uint32(&buffer[0..4]);
+    let mut s1 = binary::BIG_ENDIAN.uint32(&buffer[4..8]);
+    let mut s2 = binary::BIG_ENDIAN.uint32(&buffer[8..12]);
+    let mut s3 = binary::BIG_ENDIAN.uint32(&buffer[12..16]);
+
+    // First round just XORs input with key.
+    s0 ^= xk[0];
+    s1 ^= xk[1];
+    s2 ^= xk[2];
+    s3 ^= xk[3];
+
+    // Middle rounds shuffle using tables.
+    // Number of rounds is set by length of expanded key.
+    let nr = xk.len() / 4 - 2; // - 2: one above, one more below
+    let mut k = 4;
+    let mut t0: u32;
+    let mut t1: u32;
+    let mut t2: u32;
+    let mut t3: u32;
+    let mut r = 0;
+    loop {
+        t0 = xk[k]
+            ^ TE0[((s0 >> 24) as u8) as usize]
+            ^ TE1[((s1 >> 16) as u8) as usize]
+            ^ TE2[((s2 >> 8) as u8) as usize]
+            ^ TE3[((s3) as u8) as usize];
+        t1 = xk[k + 1]
+            ^ TE0[((s1 >> 24) as u8) as usize]
+            ^ TE1[((s2 >> 16) as u8) as usize]
+            ^ TE2[((s3 >> 8) as u8) as usize]
+            ^ TE3[((s0) as u8) as usize];
+        t2 = xk[k + 2]
+            ^ TE0[((s2 >> 24) as u8) as usize]
+            ^ TE1[((s3 >> 16) as u8) as usize]
+            ^ TE2[((s0 >> 8) as u8) as usize]
+            ^ TE3[((s1) as u8) as usize];
+        t3 = xk[k + 3]
+            ^ TE0[((s3 >> 24) as u8) as usize]
+            ^ TE1[((s0 >> 16) as u8) as usize]
+            ^ TE2[((s1 >> 8) as u8) as usize]
+            ^ TE3[((s2) as u8) as usize];
+        k += 4;
+        (s0, s1, s2, s3) = (t0, t1, t2, t3);
+        r += 1;
+        if r == nr {
+            break;
+        }
+    }
+
+    // Last round uses s-box directly and XORs to produce output.
+    s0 = (((SBOX0[(t0 >> 24) as usize]) as u32) << 24)
+        | ((SBOX0[((t1 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX0[((t2 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX0[(t3 & 0xff) as usize] as u32);
+    s1 = (((SBOX0[(t1 >> 24) as usize]) as u32) << 24)
+        | ((SBOX0[((t2 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX0[((t3 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX0[(t0 & 0xff) as usize] as u32);
+    s2 = (((SBOX0[(t2 >> 24) as usize]) as u32) << 24)
+        | ((SBOX0[((t3 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX0[((t0 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX0[(t1 & 0xff) as usize] as u32);
+    s3 = (((SBOX0[(t3 >> 24) as usize]) as u32) << 24)
+        | ((SBOX0[((t0 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX0[((t1 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX0[(t2 & 0xff) as usize] as u32);
+
+    s0 ^= xk[k];
+    s1 ^= xk[k + 1];
+    s2 ^= xk[k + 2];
+    s3 ^= xk[k + 3];
+
+    assert!(buffer.len() >= 16); // bounds check
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[0..4], s0);
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[4..8], s1);
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[8..12], s2);
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[12..16], s3);
+}
+
 /// decrypt one block from src into dst, using the expanded key xk.
 pub fn decrypt_block_go(xk: &[u32], dst: &mut [u8], src: &[u8]) {
     assert!(src.len() >= 16); // bounds check
@@ -201,6 +284,88 @@ pub fn decrypt_block_go(xk: &[u32], dst: &mut [u8], src: &[u8]) {
     binary::BIG_ENDIAN.put_uint32(&mut dst[4..8], s1);
     binary::BIG_ENDIAN.put_uint32(&mut dst[8..12], s2);
     binary::BIG_ENDIAN.put_uint32(&mut dst[12..16], s3);
+}
+
+/// decrypt one block in the buffer, using the expanded key xk.
+pub fn decrypt_block_inplace_go(xk: &[u32], buffer: &mut [u8]) {
+    assert!(buffer.len() >= 16); // bounds check
+    let mut s0 = binary::BIG_ENDIAN.uint32(&buffer[0..4]);
+    let mut s1 = binary::BIG_ENDIAN.uint32(&buffer[4..8]);
+    let mut s2 = binary::BIG_ENDIAN.uint32(&buffer[8..12]);
+    let mut s3 = binary::BIG_ENDIAN.uint32(&buffer[12..16]);
+
+    // First round just XORs input with key.
+    s0 ^= xk[0];
+    s1 ^= xk[1];
+    s2 ^= xk[2];
+    s3 ^= xk[3];
+
+    // Middle rounds shuffle using tables.
+    // Number of rounds is set by length of expanded key.
+    let nr = xk.len() / 4 - 2; // - 2: one above, one more below
+    let mut k = 4;
+    let mut t0: u32;
+    let mut t1: u32;
+    let mut t2: u32;
+    let mut t3: u32;
+    let mut r = 0;
+    loop {
+        t0 = xk[k]
+            ^ TD0[((s0 >> 24) as u8) as usize]
+            ^ TD1[((s3 >> 16) as u8) as usize]
+            ^ TD2[((s2 >> 8) as u8) as usize]
+            ^ TD3[((s1) as u8) as usize];
+        t1 = xk[k + 1]
+            ^ TD0[((s1 >> 24) as u8) as usize]
+            ^ TD1[((s0 >> 16) as u8) as usize]
+            ^ TD2[((s3 >> 8) as u8) as usize]
+            ^ TD3[((s2) as u8) as usize];
+        t2 = xk[k + 2]
+            ^ TD0[((s2 >> 24) as u8) as usize]
+            ^ TD1[((s1 >> 16) as u8) as usize]
+            ^ TD2[((s0 >> 8) as u8) as usize]
+            ^ TD3[((s3) as u8) as usize];
+        t3 = xk[k + 3]
+            ^ TD0[((s3 >> 24) as u8) as usize]
+            ^ TD1[((s2 >> 16) as u8) as usize]
+            ^ TD2[((s1 >> 8) as u8) as usize]
+            ^ TD3[((s0) as u8) as usize];
+        k += 4;
+        (s0, s1, s2, s3) = (t0, t1, t2, t3);
+        r += 1;
+        if r == nr {
+            break;
+        }
+    }
+
+    // Last round uses s-box directly and XORs to produce output.
+    s0 = (((SBOX1[(t0 >> 24) as usize]) as u32) << 24)
+        | ((SBOX1[((t3 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX1[((t2 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX1[(t1 & 0xff) as usize] as u32);
+    s1 = (((SBOX1[(t1 >> 24) as usize]) as u32) << 24)
+        | ((SBOX1[((t0 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX1[((t3 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX1[(t2 & 0xff) as usize] as u32);
+    s2 = (((SBOX1[(t2 >> 24) as usize]) as u32) << 24)
+        | ((SBOX1[((t1 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX1[((t0 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX1[(t3 & 0xff) as usize] as u32);
+    s3 = (((SBOX1[(t3 >> 24) as usize]) as u32) << 24)
+        | ((SBOX1[((t2 >> 16) & 0xff) as usize] as u32) << 16)
+        | ((SBOX1[((t1 >> 8) & 0xff) as usize] as u32) << 8)
+        | (SBOX1[(t0 & 0xff) as usize] as u32);
+
+    s0 ^= xk[k];
+    s1 ^= xk[k + 1];
+    s2 ^= xk[k + 2];
+    s3 ^= xk[k + 3];
+
+    assert!(buffer.len() >= 16); // bounds check
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[0..4], s0);
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[4..8], s1);
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[8..12], s2);
+    binary::BIG_ENDIAN.put_uint32(&mut buffer[12..16], s3);
 }
 
 /// Apply sbox0 to each byte in w.

@@ -318,10 +318,17 @@ fn test_cipher_encrypt() {
         let mut out = vec![0; tt.input.len()];
         c.encrypt(&mut out, tt.input);
         assert_eq!(tt.out, &out);
+
+        // encryption in place
+        let mut buf = tt.input.to_vec();
+        c.encrypt_inplace(&mut buf);
+        assert_eq!(tt.out, &buf);
+
+        assert_eq!(&out, &buf);
     }
 }
 
-// // Test Cipher decrypt against FIPS 197 examples.
+/// Test Cipher decrypt against FIPS 197 examples.
 #[test]
 fn test_cipher_decrypt() {
     for tt in ENCRYPT_TESTS {
@@ -329,6 +336,13 @@ fn test_cipher_decrypt() {
         let mut plain = vec![0; tt.input.len()];
         c.decrypt(&mut plain, tt.out);
         assert_eq!(tt.input, &plain);
+
+        // decryption in place
+        let mut buf = tt.out.to_vec();
+        c.decrypt_inplace(&mut buf);
+        assert_eq!(tt.input, &buf);
+
+        assert_eq!(&plain, &buf);
     }
 }
 

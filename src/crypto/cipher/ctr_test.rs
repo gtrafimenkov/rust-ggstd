@@ -20,6 +20,10 @@ impl Block for NoopBlock {
     fn decrypt(&self, dst: &mut [u8], src: &[u8]) {
         compat::copy(dst, src);
     }
+
+    fn encrypt_inplace(&self, _buffer: &mut [u8]) {}
+
+    fn decrypt_inplace(&self, _buffer: &mut [u8]) {}
 }
 
 fn inc(b: &mut [u8]) {

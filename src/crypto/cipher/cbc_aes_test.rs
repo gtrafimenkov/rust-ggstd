@@ -97,7 +97,7 @@ fn test_cbcencrypter_aes() {
             test.name, data, test.out
         );
 
-        // inplace
+        // in place
         encrypter.set_iv(test.iv);
         let mut data = test.input.to_vec();
         encrypter.crypt_blocks_inplace(&mut data);
@@ -125,7 +125,7 @@ fn test_cbcdecrypter_aes() {
             test.name, data, test.input
         );
 
-        // inplace
+        // in place
         decrypter.set_iv(test.iv);
         let mut data = test.out.to_vec();
         decrypter.crypt_blocks_inplace(&mut data);
