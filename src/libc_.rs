@@ -8,7 +8,7 @@
 #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
 pub type c_char = u8;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub type c_char = i8;
 
 pub type c_int = i32;

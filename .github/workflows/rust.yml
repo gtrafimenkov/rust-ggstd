@@ -29,7 +29,19 @@ jobs:
     - { name: "cargo clippy",         run: "cargo clippy" }
     - { name: "example user",         run: "cargo run --example user" }
 
-  crosscompile:
+  crosscompile-for-linux-32bit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - { name: "print target list",    run: "rustc --print target-list" }
+    - { name: "add 32bit target",     run: "rustup target add i686-unknown-linux-gnu" }
+    - { name: "add gcc-multilib",     run: "sudo apt install -y gcc-multilib" }
+    - { name: "cargo build",          run: "cargo build  --target i686-unknown-linux-gnu --verbose" }
+    - { name: "cargo test",           run: "cargo test   --target i686-unknown-linux-gnu --verbose" }
+    - { name: "cargo test --release", run: "cargo test   --target i686-unknown-linux-gnu --verbose --release" }
+    - { name: "cargo clippy",         run: "cargo clippy --target i686-unknown-linux-gnu" }
+
+  crosscompile-for-windows:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -48,3 +60,5 @@ jobs:
     - { name: "cargo test --release", run: "cargo test --verbose --release" }
     - { name: "cargo clippy",         run: "cargo clippy" }
     - { name: "example user",         run: "cargo run --example user" }
+    - { name: "add 32bit target",     run: "rustup target add i686-pc-windows-msvc" }
+    - { name: "cargo clippy 32bit",   run: "cargo clippy --target i686-pc-windows-msvc" }
