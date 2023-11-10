@@ -736,10 +736,7 @@ e6 b5 b5 b5 b5 b5 b5 f7 .. .. .. .. .. .. .. \n";
     assert_eq!(got, want, "got:\n{}want:\n{}", got, want);
 }
 
-// Disabled temporarily because it consumes a lot of memory.
-// Enable under condition "computer RAM >= 8 GB" when runtime.MemStats is implemented.
-// #[test]
-#[allow(dead_code)]
+#[test]
 fn test_dimension_overflow() {
     const HAVE32_BIT_INTS: bool = std::mem::size_of::<isize>() == 4;
 
@@ -814,6 +811,19 @@ fn test_dimension_overflow() {
             height: 0x00000001,
         },
     ];
+
+    // Some of these tests require a lot of memory.
+    // Let's try to allocate 1 GB and if that fails, then skip the test.
+    // If allocation succeeded, free it and do the testing.
+    {
+        let layout = std::alloc::Layout::from_size_align(1 * 1024 * 1024 * 1024, 1).unwrap();
+        let ptr = unsafe { std::alloc::alloc(layout) };
+        if !ptr.is_null() {
+            unsafe { std::alloc::dealloc(ptr, layout) };
+        } else {
+            println!("Allocating 1GB of memory failed.  Skipping test_dimension_overflow tests.");
+        }
+    }
 
     for (i, tc) in TEST_CASES.iter().enumerate() {
         let cfg = decode_config(&mut bytes::Reader::new(tc.src));
