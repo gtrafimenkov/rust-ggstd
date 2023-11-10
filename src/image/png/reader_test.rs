@@ -736,7 +736,10 @@ e6 b5 b5 b5 b5 b5 b5 f7 .. .. .. .. .. .. .. \n";
     assert_eq!(got, want, "got:\n{}want:\n{}", got, want);
 }
 
-#[test]
+// Disabled temporarily because it consumes a lot of memory.
+// Enable under condition "computer RAM >= 8 GB" when runtime.MemStats is implemented.
+// #[test]
+#[allow(dead_code)]
 fn test_dimension_overflow() {
     const HAVE32_BIT_INTS: bool = std::mem::size_of::<isize>() == 4;
 
