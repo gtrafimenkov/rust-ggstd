@@ -162,7 +162,8 @@ impl<S: Source> Rand<S> {
         if n <= 0 {
             panic!("invalid argument to intn");
         }
-        if n < (1 << 31) {
+        if std::mem::size_of::<isize>() == 4 {
+            // 32 bit system
             (self.int31n(n as i32)) as isize
         } else {
             (self.int63n(n as i64)) as isize
