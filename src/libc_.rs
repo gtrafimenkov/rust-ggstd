@@ -5,7 +5,12 @@
 
 #![allow(non_camel_case_types)]
 
+#[cfg(target_arch = "aarch64")]
+pub type c_char = u8;
+
+#[cfg(target_arch = "x86_64")]
 pub type c_char = i8;
+
 pub type c_int = i32;
 pub type c_long = i64;
 pub type c_uint = u32;

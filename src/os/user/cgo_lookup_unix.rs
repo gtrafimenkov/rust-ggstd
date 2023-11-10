@@ -99,7 +99,7 @@ fn lookup_unix_uid(uid: u32) -> std::io::Result<User> {
     Ok(build_user(&pwd))
 }
 
-fn c_to_string(ptr: *const i8) -> String {
+fn c_to_string(ptr: *const libc_::c_char) -> String {
     if ptr.is_null() {
         "".to_string()
     } else {
