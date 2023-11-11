@@ -33,10 +33,10 @@ func ExampleDecode() {
 
 	levels := []string{" ", "░", "▒", "▓", "█"}
 
-	for y := img.bounds().min.y; y < img.bounds().max.y; y++ {
-		for x := img.bounds().min.x; x < img.bounds().max.x; x++ {
+	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
+		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
 			c := color.GrayModel.Convert(img.At(x, y)).(color.Gray)
-			level := c.y / 51 // 51 * 5 = 255
+			level := c.Y / 51 // 51 * 5 = 255
 			if level == 5 {
 				level--
 			}

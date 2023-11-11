@@ -73,7 +73,7 @@ func ExampleEncoding_Decode() {
 		fmt.Println("decode error:", err)
 		return
 	}
-	dst = dst[..n]
+	dst = dst[:n]
 	fmt.Printf("%q\n", dst)
 	// Output:
 	// "Hello, world!"

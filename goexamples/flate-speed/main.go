@@ -35,7 +35,7 @@ func main() {
 
 	compressed_data := buffer.Bytes()
 	hash := sha256.Sum256(compressed_data)
-	hash_str := hex.encode_to_string(hash[:])
+	hash_str := hex.EncodeToString(hash[:])
 	fmt.Println("compressed data hash:")
 	fmt.Println(hash_str)
 }
