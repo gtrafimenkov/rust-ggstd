@@ -254,6 +254,7 @@ fn test_writer_close() {
 
 /// A SparseReader returns a stream consisting of 0s followed by 1<<16 1s.
 /// This tests missing hash references in a very large input.
+#[allow(dead_code)]
 struct SparseReader {
     l: u64,
     cur: u64,

@@ -20,6 +20,7 @@ pub const MAX_LATIN1: char = '\u{00FF}';
 pub struct RangeTable {
     pub r16: &'static [Range16],
     pub r32: &'static [Range32],
+    #[allow(dead_code)]
     pub latin_offset: isize, // number of entries in R16 with Hi <= MaxLatin1
 }
 
