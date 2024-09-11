@@ -162,6 +162,7 @@ pub const OPEN_EXISTING: DWORD = 3;
 // winapi::shared::winerror
 
 pub const ERROR_INSUFFICIENT_BUFFER: DWORD = 122;
+pub const ERROR_MORE_DATA: DWORD = 234;
 
 // winapi::um::handleapi
 
@@ -324,4 +325,27 @@ pub type PUSER_INFO_10 = *mut USER_INFO_10;
 pub use self::SystemFunction036 as RtlGenRandom;
 extern "system" {
     pub fn SystemFunction036(RandomBuffer: PVOID, RandomBufferLength: ULONG) -> BOOLEAN;
+}
+
+// winapi::um::sysinfoapi
+// copied from https://github.com/retep998/winapi-rs, src/um/sysinfoapi.rs
+
+ENUM! {enum COMPUTER_NAME_FORMAT {
+    ComputerNameNetBIOS,
+    ComputerNameDnsHostname,
+    ComputerNameDnsDomain,
+    ComputerNameDnsFullyQualified,
+    ComputerNamePhysicalNetBIOS,
+    ComputerNamePhysicalDnsHostname,
+    // ComputerNamePhysicalDnsDomain,
+    // ComputerNamePhysicalDnsFullyQualified,
+    // ComputerNameMax,
+}}
+
+extern "system" {
+    pub fn GetComputerNameExW(
+        NameType: COMPUTER_NAME_FORMAT,
+        lpBuffer: LPWSTR,
+        nSize: LPDWORD,
+    ) -> BOOL;
 }

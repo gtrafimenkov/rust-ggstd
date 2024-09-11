@@ -45,7 +45,19 @@ pub struct timespec {
     pub tv_nsec: c_long,
 }
 
+// copied from https://github.com/rust-lang/libc, src/unix/linux_like/mod.rs
+#[repr(C)]
+pub struct utsname {
+    pub sysname: [c_char; 65],
+    pub nodename: [c_char; 65],
+    pub release: [c_char; 65],
+    pub version: [c_char; 65],
+    pub machine: [c_char; 65],
+    pub domainname: [c_char; 65],
+}
+
 extern "C" {
+    // copied from https://github.com/rust-lang/libc, src/unix/linux_like/linux/mod.rs
     pub fn getpwuid_r(
         uid: uid_t,
         pwd: *mut passwd,
@@ -67,6 +79,8 @@ extern "C" {
         flag: c_int,
     ) -> c_int;
 
+    // copied from https://github.com/rust-lang/libc, src/unix/linux_like/mod.rs
+    pub fn uname(buf: *mut utsname) -> c_int;
 }
 
 pub fn get_errno() -> c_int {

@@ -46,3 +46,15 @@ mod os_test;
 
 #[cfg(all(test, target_os = "windows"))]
 mod path_windows_test;
+
+#[cfg(target_os = "linux")]
+mod sys_linux;
+
+#[cfg(target_os = "linux")]
+pub use sys_linux::hostname;
+
+#[cfg(target_os = "windows")]
+mod sys_windows;
+
+#[cfg(target_os = "windows")]
+pub use sys_windows::hostname;
