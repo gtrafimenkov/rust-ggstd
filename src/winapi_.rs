@@ -40,7 +40,9 @@ macro_rules! ENUM {
 
 macro_rules! STRUCT {
     (#[debug] $($rest:tt)*) => (
-        STRUCT!{#[cfg_attr(feature = "impl-debug", derive(Debug))] $($rest)*}
+        STRUCT!{
+            // #[cfg_attr(feature = "impl-debug", derive(Debug))]
+            $($rest)*}
     );
     ($(#[$attrs:meta])* struct $name:ident {
         $($field:ident: $ftype:ty,)+
@@ -53,11 +55,11 @@ macro_rules! STRUCT {
             #[inline]
             fn clone(&self) -> $name { *self }
         }
-        #[cfg(feature = "impl-default")]
-        impl Default for $name {
-            #[inline]
-            fn default() -> $name { unsafe { $crate::_core::mem::zeroed() } }
-        }
+        // #[cfg(feature = "impl-default")]
+        // impl Default for $name {
+        //     #[inline]
+        //     fn default() -> $name { unsafe { $crate::_core::mem::zeroed() } }
+        // }
     );
 }
 
