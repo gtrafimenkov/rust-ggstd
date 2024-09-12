@@ -378,7 +378,7 @@ fn subw(w: u32) -> u32 {
 
 /// Rotate
 fn rotw(w: u32) -> u32 {
-    (w << 8) | (w >> 24)
+    w.rotate_left(8)
 }
 
 /// Key expansion algorithm. See FIPS-197, Figure 11.

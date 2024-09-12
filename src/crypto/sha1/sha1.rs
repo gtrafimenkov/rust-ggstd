@@ -322,7 +322,7 @@ fn block_generic(h: &mut [u32; 5], p: &[u8]) {
         }
         for i in 16_usize..20 {
             let tmp = w[(i - 3) & 0xf] ^ w[(i - 8) & 0xf] ^ w[(i - 14) & 0xf] ^ w[(i) & 0xf];
-            w[i & 0xf] = (tmp << 1) | (tmp >> (32 - 1));
+            w[i & 0xf] = tmp.rotate_left(1);
 
             let f = (b & c) | ((!b) & d);
             let t = rotate_left32(a, 5)
@@ -334,7 +334,7 @@ fn block_generic(h: &mut [u32; 5], p: &[u8]) {
         }
         for i in 20_usize..40 {
             let tmp = w[(i - 3) & 0xf] ^ w[(i - 8) & 0xf] ^ w[(i - 14) & 0xf] ^ w[(i) & 0xf];
-            w[i & 0xf] = (tmp << 1) | (tmp >> (32 - 1));
+            w[i & 0xf] = tmp.rotate_left(1);
             let f = b ^ c ^ d;
             let t = rotate_left32(a, 5)
                 .wrapping_add(f)
@@ -345,7 +345,7 @@ fn block_generic(h: &mut [u32; 5], p: &[u8]) {
         }
         for i in 40_usize..60 {
             let tmp = w[(i - 3) & 0xf] ^ w[(i - 8) & 0xf] ^ w[(i - 14) & 0xf] ^ w[(i) & 0xf];
-            w[i & 0xf] = (tmp << 1) | (tmp >> (32 - 1));
+            w[i & 0xf] = tmp.rotate_left(1);
             let f = ((b | c) & d) | (b & c);
             let t = rotate_left32(a, 5)
                 .wrapping_add(f)
@@ -356,7 +356,7 @@ fn block_generic(h: &mut [u32; 5], p: &[u8]) {
         }
         for i in 60_usize..80 {
             let tmp = w[(i - 3) & 0xf] ^ w[(i - 8) & 0xf] ^ w[(i - 14) & 0xf] ^ w[(i) & 0xf];
-            w[i & 0xf] = (tmp << 1) | (tmp >> (32 - 1));
+            w[i & 0xf] = tmp.rotate_left(1);
             let f = b ^ c ^ d;
             let t = rotate_left32(a, 5)
                 .wrapping_add(f)

@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 use std::fs::File;
-use std::io::{self, Read};
+use std::io::Read;
 
 use crate::libc_;
 
