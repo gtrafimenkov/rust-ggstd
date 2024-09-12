@@ -13,6 +13,7 @@ If you are considering using this library, take following into account:
 - the quality of the code may be lower that in the Go library
 - the code is less tested
 - some optimizations are missing, so the performance may be lower than expected
+- Go 1.20 is the source of the port; Go 1.20 is not supported since February 2024
 
 ## Usage examples
 
